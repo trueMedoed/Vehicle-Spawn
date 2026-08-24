@@ -1,5 +1,5 @@
 GameProject {
- ID "MEVehicleSpawn"
+ ID "ME_Vehicle_Spawn"
  GUID "6A30CC9A0322E1B9"
  TITLE "ME_Vehicle_Spawn"
  Dependencies {
