@@ -1,0 +1,10 @@
+GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
+ components {
+  SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+   m_aIncludedEditableEntityLabels {
+    VEHICLE_CAR
+   }
+  }
+ }
+ coords 106.948 0.999 125.743
+}
