@@ -1,3 +1,8 @@
-GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
- coords 106.948 1 125.743
+$grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
+ {
+  coords 106.948 1 125.743
+ }
+ {
+  coords 104.343 1 149.737
+ }
 }
