@@ -1,7 +1,7 @@
 GameProject {
- ID "ME_Vehicle_Spawn"
- GUID "6A30CC9A0322E1B9"
- TITLE "ME_Vehicle_Spawn"
+ ID "ME_Vehicle_Spawn_Test"
+ GUID "B7E4D91C6A2F5083"
+ TITLE "ME_Vehicle_Spawn_Test"
  Dependencies {
   "58D0FB3206B6F859"
  }

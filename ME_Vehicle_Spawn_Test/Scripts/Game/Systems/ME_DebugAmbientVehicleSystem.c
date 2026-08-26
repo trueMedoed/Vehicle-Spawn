@@ -4,6 +4,7 @@ modded class SCR_AmbientVehicleSystem
 	protected bool m_bDebugLastPaused;
 	protected int m_iDebugUpdatePointCalls;
 	protected bool m_bDebugUpdatePointSeen;
+	protected bool m_bDebugSpawnVehiclesHintLogged;
 
 	static override void InitInfo(WorldSystemInfo outInfo)
 	{
@@ -47,6 +48,12 @@ modded class SCR_AmbientVehicleSystem
 		int spawnpointCountBefore = m_aSpawnpoints.Count();
 		bool enabledBefore = IsEnabled();
 		bool spawnVehiclesBefore = GetGame().AreGameFlagsSet(EGameFlags.SpawnVehicles);
+		if (!spawnVehiclesBefore && !m_bDebugSpawnVehiclesHintLogged)
+		{
+			m_bDebugSpawnVehiclesHintLogged = true;
+			Print("[ME_DEBUG_AVSP_HINT] Ambient vehicle spawning is disabled: an ambient spawn point alone is not enough. In Game Mode, enable SpawnVehicles in Test Game Flags / m_eTestGameFlags (EGameFlags.SpawnVehicles = 2; 6 also enables SpawnAI).");
+		}
+
 		PrintFormat("[ME_DEBUG_AVSP_SYS] OnUpdatePoint BEFORE call=%1 timeSlice=%2 timer=%3 interval=%4 index=%5 players=%6 spawnpoints=%7 enabled=%8 spawnVehicles=%9", m_iDebugUpdatePointCalls, args.GetTimeSliceSeconds(), timerBefore, checkIntervalBefore, indexToCheckBefore, playerCountBefore, spawnpointCountBefore, enabledBefore, spawnVehiclesBefore);
 
 		super.OnUpdatePoint(args);
