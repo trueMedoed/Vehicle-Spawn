@@ -6,8 +6,6 @@
 
 - `worlds/MP/MpTest/ME_MpTest.ent` — минимальный тест с диагностической instrumentation.
 - `worlds/MP/MpTest/ME_MpTest_BasicSpawnVehicles.ent` — исходный демонстрационный вариант.
-- `worlds/TestCain.ent` — экспериментальный Cain test world.
-- `worlds/Cain_Broken_Veh_Spawnpoints.ent` — варианты broken/fixed spawn points.
 
 Открывайте этот addon отдельно от production: runtime overrides в обоих addon не должны компилироваться вместе.
 

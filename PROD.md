@@ -4,7 +4,7 @@
 
 ## Требования
 
-Демонстрационный мир `worlds/MP/MpTest/ME_MpTest_BasicSpawnVehicles.ent` должен запускаться с GameMode, содержащим `SCR_FactionManager` и включённым `EGameFlags.SpawnVehicles`. В мире должна присутствовать ambient vehicle spawn point.
+Демонстрационный мир `ME_SpawnVehicles.ent` должен запускаться с GameMode, содержащим `SCR_FactionManager` и включённым `EGameFlags.SpawnVehicles`. В мире должна присутствовать ambient vehicle spawn point.
 
 ## Проверка
 
