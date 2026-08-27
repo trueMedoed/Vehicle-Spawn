@@ -1,3 +1,4 @@
+/*
 modded class SCR_AmbientVehicleSystem
 {
 	protected bool m_bDebugPauseStateKnown;
@@ -5,6 +6,7 @@ modded class SCR_AmbientVehicleSystem
 	protected int m_iDebugUpdatePointCalls;
 	protected bool m_bDebugUpdatePointSeen;
 	protected bool m_bDebugSpawnVehiclesHintLogged;
+	protected int m_iDebugVehicleSpawnedEvents;
 
 	static override void InitInfo(WorldSystemInfo outInfo)
 	{
@@ -108,6 +110,7 @@ modded class SCR_AmbientVehicleSystem
 
 	protected void OnVehicleSpawnedDebug(SCR_AmbientVehicleSpawnPointComponent spawnpoint, Vehicle vehicle)
 	{
+		m_iDebugVehicleSpawnedEvents++;
 		IEntity owner = spawnpoint.GetOwner();
 		PrintFormat("[ME_DEBUG_AVSP_SYS] VehicleSpawned vehicle=%1 vehicleCoords=%2 spawnpoint=%3 spawnpointCoords=%4", vehicle.GetName(), vehicle.GetOrigin(), owner.GetName(), owner.GetOrigin());
 	}
@@ -116,11 +119,19 @@ modded class SCR_AmbientVehicleSystem
 	{
 		array<SCR_AmbientVehicleSpawnPointComponent> spawnpoints = {};
 		int spawnpointCount = GetSpawnpoints(spawnpoints);
+		SCR_AmbientVehicleSpawnPointComponent spawnpoint;
+		bool depletedBefore;
+		bool firstSpawnDoneBefore;
+		int finalCandidateCount = -1;
+		int vehicleSpawnedEventsBefore = m_iDebugVehicleSpawnedEvents;
 		if (spawnpointIndex >= 0 && spawnpointIndex < spawnpointCount)
 		{
-			SCR_AmbientVehicleSpawnPointComponent spawnpoint = spawnpoints[spawnpointIndex];
+			spawnpoint = spawnpoints[spawnpointIndex];
 			IEntity owner = spawnpoint.GetOwner();
-			PrintFormat("[ME_DEBUG_AVSP_SYS] BEFORE index=%1 listCount=%2 entity=%3 coords=%4 depleted=%5 processed=%6 firstSpawnDone=%7", spawnpointIndex, spawnpointCount, owner.GetName(), owner.GetOrigin(), spawnpoint.GetIsDepleted(), spawnpoint.GetIsSpawnProcessed(), spawnpoint.GetIsFirstSpawnDone());
+			depletedBefore = spawnpoint.GetIsDepleted();
+			firstSpawnDoneBefore = spawnpoint.GetIsFirstSpawnDone();
+			PrintFormat("[ME_DEBUG_AVSP_SYS] BEFORE index=%1 listCount=%2 entity=%3 coords=%4 depleted=%5 processed=%6 firstSpawnDone=%7", spawnpointIndex, spawnpointCount, owner.GetName(), owner.GetOrigin(), depletedBefore, spawnpoint.GetIsSpawnProcessed(), firstSpawnDoneBefore);
+			finalCandidateCount = spawnpoint.ME_LogLabelFilter();
 		}
 		else
 		{
@@ -135,9 +146,20 @@ modded class SCR_AmbientVehicleSystem
 		spawnpointCount = GetSpawnpoints(spawnpoints);
 		if (spawnpointIndex >= 0 && spawnpointIndex < spawnpointCount)
 		{
-			SCR_AmbientVehicleSpawnPointComponent spawnpoint = spawnpoints[spawnpointIndex];
-			IEntity owner = spawnpoint.GetOwner();
-			PrintFormat("[ME_DEBUG_AVSP_SYS] AFTER index=%1 listCount=%2 entity=%3 coords=%4 depleted=%5 processed=%6 firstSpawnDone=%7", spawnpointIndex, spawnpointCount, owner.GetName(), owner.GetOrigin(), spawnpoint.GetIsDepleted(), spawnpoint.GetIsSpawnProcessed(), spawnpoint.GetIsFirstSpawnDone());
+			SCR_AmbientVehicleSpawnPointComponent spawnpointAfter = spawnpoints[spawnpointIndex];
+			IEntity owner = spawnpointAfter.GetOwner();
+			bool depletedAfter = spawnpointAfter.GetIsDepleted();
+			bool firstSpawnDoneAfter = spawnpointAfter.GetIsFirstSpawnDone();
+			PrintFormat("[ME_DEBUG_AVSP_SYS] AFTER index=%1 listCount=%2 entity=%3 coords=%4 depleted=%5 processed=%6 firstSpawnDone=%7", spawnpointIndex, spawnpointCount, owner.GetName(), owner.GetOrigin(), depletedAfter, spawnpointAfter.GetIsSpawnProcessed(), firstSpawnDoneAfter);
+
+			if (finalCandidateCount == 0)
+				PrintFormat("[ME_DEBUG_AVSP_ERROR] entity=%1 coords=%2 reason=label_filter_empty", owner.GetName(), owner.GetOrigin());
+			else if (finalCandidateCount > 0 && !depletedBefore && depletedAfter && !firstSpawnDoneBefore)
+				PrintFormat("[ME_DEBUG_AVSP_ERROR] entity=%1 coords=%2 reason=empty_terrain_position", owner.GetName(), owner.GetOrigin());
+			else if (m_iDebugVehicleSpawnedEvents > vehicleSpawnedEventsBefore)
+				PrintFormat("[ME_DEBUG_AVSP_SYS] entity=%1 coords=%2 status=spawn_completed", owner.GetName(), owner.GetOrigin());
+			else
+				PrintFormat("[ME_DEBUG_AVSP_SYS] entity=%1 coords=%2 status=spawn_not_completed", owner.GetName(), owner.GetOrigin());
 		}
 		else
 		{
@@ -145,3 +167,4 @@ modded class SCR_AmbientVehicleSystem
 		}
 	}
 }
+*/

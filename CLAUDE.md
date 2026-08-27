@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Communicate with the user in Russian unless they explicitly request another language.
 
+## Script documentation
+
+- When creating a script, add a brief description of what the script does.
+- Add comments describing the purpose of each function.
+
 ## Project
 
 This is an Arma Reforger / Enfusion addon. The project root contains `addon.gproj` (addon ID `MEVehicleSpawn`) and has a base-game dependency. Runtime code is Enforce Script under `Scripts/Game/`; resources are authored for Arma Reforger Workbench.
@@ -18,7 +23,7 @@ This repository has no package manager, command-line build wrapper, linter, auto
 - To restart Workbench cleanly through EnfusionMCP: stop the existing `ArmaReforgerWorkbenchSteamDiag.exe` process, launch Workbench with `wb_launch` and `addon.gproj`, then verify the bridge using `wb_connect`. Do not assume that a launch or reload completed merely because its call returned.
 - Open a test world with `wb_open_resource`, e.g. `wb_open_resource(path: "worlds/MP/CTI_Campaign_Eden.ent")`; this is the reliable world-opening operation. Campaign Eden has many entities: after a successful call, wait 5 seconds for the world to load before entering Game mode or querying editor state. After the required Game-mode observation/log capture, always call `wb_stop` to return Workbench to edit mode.
 - `wb_open_resource` currently exposes no caller-configurable timeout; its bridge call may report its built-in 10-second timeout while the editor continues loading. Confirm actual loading from Workbench state/logs after the 5-second wait instead of immediately retrying or layering another world into the current session.
-- Workbench Net API is permanently enabled; if the EnfusionMCP bridge cannot connect, investigate Workbench startup or handler-addon loading rather than asking to enable it.
+- Workbench Net API is permanently enabled. If the EnfusionMCP bridge cannot connect, first check Game/Workbench script compilation: a Game-script error prevents the EnfusionMCP handler addon from loading and can leave the bridge unavailable even while the Workbench process and its Net API port are running. Only after compilation is clean investigate Workbench startup or handler-addon loading; do not ask to enable Net API.
 - Inspect the Workbench/runtime log for the diagnostic prefixes `[ME_DEBUG_AVSP]`, `[ME_DEBUG_AVSP_POS]`, `[ME_DEBUG_AVSP_SYS]`, and `[ME_DEBUG_AVSP_GM]`.
 - Workbench creates one timestamped log directory per launch at `C:\Users\Phil\Documents\My Games\ArmaReforgerWorkbench\logs\logs_YYYY-MM-DD_HH-MM-SS\`. Use `script.log` for diagnostic `Print` output, `error.log` for compilation/runtime errors, and `console.log` for complete engine context.
 - Use Git for repository inspection, e.g. `git status` and `git diff`.

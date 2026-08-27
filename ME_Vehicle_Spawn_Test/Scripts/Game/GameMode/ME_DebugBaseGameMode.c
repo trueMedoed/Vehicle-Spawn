@@ -1,3 +1,4 @@
+/*
 modded class SCR_BaseGameMode
 {
 	protected bool m_bDebugSpawnVehiclesHintShown;
@@ -39,3 +40,4 @@ modded class SCR_BaseGameMode
 		m_bDebugSpawnVehiclesHintShown = SCR_HintManagerComponent.ShowCustomHint("Ambient vehicle spawning is disabled: an ambient spawn point alone is not enough. In Game Mode, enable SpawnVehicles in Test Game Flags / m_eTestGameFlags (EGameFlags.SpawnVehicles = 2; 6 also enables SpawnAI).", "Ambient vehicle spawning disabled");
 	}
 }
+*/
