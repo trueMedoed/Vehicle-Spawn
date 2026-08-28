@@ -1,0 +1,8 @@
+$grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
+ Standart3 {
+  coords 145.071 1 168.886
+ }
+ Standart2 {
+  coords 146.027 1 175.657
+ }
+}
