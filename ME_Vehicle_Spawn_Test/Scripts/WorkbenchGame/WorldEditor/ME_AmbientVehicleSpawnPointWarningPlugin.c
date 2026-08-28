@@ -1,3 +1,6 @@
+//! Diagnostic World Editor plugin that validates ambient vehicle spawn-point prerequisites.
+
+//------------------------------------------------------------------------------------------------
 enum EME_AmbientSpawnPointCheckResult
 {
 	WORLD_EDITOR_UNAVAILABLE,
@@ -9,28 +12,8 @@ enum EME_AmbientSpawnPointCheckResult
 	ALLOWED
 }
 
-enum EME_AmbientSpawnPointLabelResult
-{
-	LABEL_CATALOG_UNAVAILABLE,
-	LABEL_SOURCE_ARRAYS_UNAVAILABLE,
-	LABEL_FILTER_EMPTY_EXCLUDED_ALL,
-	LABEL_FILTER_EMPTY,
-	LABEL_NEUTRAL
-}
-
-class ME_AmbientSpawnPointLabelCheck
-{
-	EME_AmbientSpawnPointLabelResult m_eResult;
-	string m_sEntityName;
-	string m_sCatalog;
-	array<EEditableEntityLabel> m_aIncludedLabels;
-	array<EEditableEntityLabel> m_aExcludedLabels;
-	int m_iCandidatesBefore;
-	int m_iCandidatesAfter;
-	bool m_bIncludedArraysAvailable;
-	bool m_bExcludedArraysAvailable;
-}
-
+//------------------------------------------------------------------------------------------------
+//! Stores the result of checking the current world's ambient vehicle prerequisites.
 class ME_AmbientSpawnPointCheck
 {
 	EME_AmbientSpawnPointCheckResult m_eResult;
@@ -44,6 +27,8 @@ class ME_AmbientSpawnPointCheck
 	bool m_bLockedHierarchy;
 }
 
+//------------------------------------------------------------------------------------------------
+//! Checks GameMode, layer, and Spawn Vehicles prerequisites in the World Editor.
 [WorkbenchPluginAttribute(name: "Check ambient vehicle spawning", description: "Checks the open world's ambient vehicle spawn points and GameMode test flags.", wbModules: { "WorldEditor" })]
 class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 {
@@ -59,20 +44,17 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	protected const string STRING_CHECK_GAME_MODE_LAYER_LOCKED = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckGameModeLayerLocked";
 	protected const string STRING_CHECK_TEST_GAME_FLAGS_UNAVAILABLE = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckTestGameFlagsUnavailable";
 	protected const string STRING_CHECK_SPAWN_VEHICLES_DISABLED = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckSpawnVehiclesDisabled";
-	protected const string STRING_CHECK_LABEL_CATALOG_UNAVAILABLE = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckLabelCatalogUnavailable";
-	protected const string STRING_CHECK_LABEL_SOURCE_ARRAYS_UNAVAILABLE = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckLabelSourceArraysUnavailable";
-	protected const string STRING_CHECK_LABEL_FILTER_EMPTY_EXCLUDED_ALL = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckLabelFilterEmptyExcludedAll";
-	protected const string STRING_CHECK_LABEL_FILTER_EMPTY = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckLabelFilterEmpty";
 
 	//------------------------------------------------------------------------------------------------
+	//! Runs the prerequisite check for the open world.
 	override void Run()
 	{
 		ME_AmbientVehicleSpawnPointPreviewController.Activate();
-		Print("[ME_DEBUG_AVSP_LABEL] Full scan requested. After changing labels in Inspector, run 'Check ambient vehicle spawning' again because WorldEditorPlugin has no property-change callback.");
 		CheckOpenWorld();
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Validates a dropped ambient vehicle spawn-point prefab before native placement.
 	override bool OnWorldEditWindowDataDropped(int windowType, int posX, int posY, string dataType, array<string> data)
 	{
 		bool hasAmbientSpawnPoint;
@@ -99,12 +81,11 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 
 		ME_AmbientVehicleSpawnPointPreviewController.Activate();
 		Print("[ME_DEBUG_AVSP_WB] Ambient spawn point drop allowed: forwarding native placement");
-		bool handled = super.OnWorldEditWindowDataDropped(windowType, posX, posY, dataType, data);
-		CheckOpenWorld(true);
-		return handled;
+		return super.OnWorldEditWindowDataDropped(windowType, posX, posY, dataType, data);
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Determines whether an ambient vehicle spawn point can be created in the current world.
 	private ME_AmbientSpawnPointCheck CanCreateAmbientSpawnPoint()
 	{
 		ME_AmbientSpawnPointCheck check = new ME_AmbientSpawnPointCheck();
@@ -179,6 +160,7 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Checks the open world and shows a warning when ambient vehicle prerequisites are not met.
 	private void CheckOpenWorld(bool hasIncomingSpawnPoint = false)
 	{
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);
@@ -196,7 +178,6 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 		}
 
 		int spawnPointCount;
-		array<ref ME_AmbientSpawnPointLabelCheck> labelChecks;
 		int entityCount = api.GetEditorEntityCount();
 		for (int i = 0; i < entityCount; i++)
 		{
@@ -206,168 +187,21 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 
 			IEntity entity = api.SourceToEntity(entitySource);
 			if (entity && entity.FindComponent(SCR_AmbientVehicleSpawnPointComponent))
-			{
 				spawnPointCount++;
-				labelChecks.Insert(CheckSpawnPointLabels(entitySource, entity));
-			}
 		}
 
 		ME_AmbientSpawnPointCheck check = CanCreateAmbientSpawnPoint();
 		LogCheck(check, spawnPointCount);
-		bool hasLabelWarning;
-		string labelWarningMessageId;
-		foreach (ME_AmbientSpawnPointLabelCheck labelCheck : labelChecks)
-		{
-			LogLabelCheck(labelCheck);
-			if (!hasLabelWarning && labelCheck.m_eResult != EME_AmbientSpawnPointLabelResult.LABEL_NEUTRAL)
-			{
-				hasLabelWarning = true;
-				labelWarningMessageId = GetLabelCheckMessageId(labelCheck.m_eResult);
-			}
-		}
 
 		if (spawnPointCount == 0 && !hasIncomingSpawnPoint)
 			return;
 
 		if (check.m_eResult != EME_AmbientSpawnPointCheckResult.ALLOWED)
 			ShowLocalizedDialog(GetCheckMessageId(check.m_eResult));
-		else if (hasLabelWarning)
-			ShowLocalizedDialog(labelWarningMessageId);
 	}
 
 	//------------------------------------------------------------------------------------------------
-	private ME_AmbientSpawnPointLabelCheck CheckSpawnPointLabels(IEntitySource entitySource, IEntity entity)
-	{
-		ME_AmbientSpawnPointLabelCheck check = new ME_AmbientSpawnPointLabelCheck();
-		check.m_sEntityName = entitySource.GetName();
-
-		IEntityComponentSource componentSource;
-		int componentCount = entitySource.GetComponentCount();
-		for (int i = 0; i < componentCount; i++)
-		{
-			IEntityComponentSource candidateSource = entitySource.GetComponent(i);
-			if (candidateSource && candidateSource.GetClassName().Contains("SCR_AmbientVehicleSpawnPointComponent"))
-			{
-				componentSource = candidateSource;
-				break;
-			}
-		}
-
-		if (!componentSource)
-		{
-			check.m_eResult = EME_AmbientSpawnPointLabelResult.LABEL_SOURCE_ARRAYS_UNAVAILABLE;
-			return check;
-		}
-
-		check.m_bIncludedArraysAvailable = componentSource.Get("m_aIncludedEditableEntityLabels", check.m_aIncludedLabels);
-		check.m_bExcludedArraysAvailable = componentSource.Get("m_aExcludedEditableEntityLabels", check.m_aExcludedLabels);
-		if (!check.m_bIncludedArraysAvailable)
-			check.m_aIncludedLabels.Clear();
-		if (!check.m_bExcludedArraysAvailable)
-			check.m_aExcludedLabels.Clear();
-
-		if (SCR_Global.IsEditMode())
-		{
-			PrintFormat("[ME_DEBUG_AVSP_LABEL] entity=%1 catalog unavailable: SCR_EntityCatalogManagerComponent is intentionally not initialized in Edit mode", check.m_sEntityName);
-			check.m_eResult = EME_AmbientSpawnPointLabelResult.LABEL_CATALOG_UNAVAILABLE;
-			return check;
-		}
-
-		SCR_EntityCatalogManagerComponent catalogManager = SCR_EntityCatalogManagerComponent.GetInstance();
-		if (!catalogManager)
-		{
-			check.m_eResult = EME_AmbientSpawnPointLabelResult.LABEL_CATALOG_UNAVAILABLE;
-			return check;
-		}
-
-		SCR_FactionAffiliationComponent factionAffiliation = SCR_FactionAffiliationComponent.Cast(entity.FindComponent(SCR_FactionAffiliationComponent));
-		if (!factionAffiliation)
-		{
-			PrintFormat("[ME_DEBUG_AVSP_LABEL] entity=%1 catalog unavailable: faction affiliation component is unavailable", check.m_sEntityName);
-			check.m_eResult = EME_AmbientSpawnPointLabelResult.LABEL_CATALOG_UNAVAILABLE;
-			return check;
-		}
-
-		Faction faction = factionAffiliation.GetAffiliatedFaction();
-		if (!faction)
-			faction = factionAffiliation.GetDefaultAffiliatedFaction();
-
-		if (!faction)
-		{
-			PrintFormat("[ME_DEBUG_AVSP_LABEL] entity=%1 catalog unavailable: faction context is unavailable", check.m_sEntityName);
-			check.m_eResult = EME_AmbientSpawnPointLabelResult.LABEL_CATALOG_UNAVAILABLE;
-			return check;
-		}
-
-		FactionKey factionKey = faction.GetFactionKey();
-		SCR_EntityCatalog vehicleCatalog = catalogManager.GetFactionEntityCatalogOfType(EEntityCatalogType.VEHICLE, factionKey, false);
-		if (!vehicleCatalog)
-		{
-			check.m_eResult = EME_AmbientSpawnPointLabelResult.LABEL_CATALOG_UNAVAILABLE;
-			return check;
-		}
-
-		check.m_sCatalog = faction.GetFactionKey();
-		array<SCR_EntityCatalogEntry> candidatesBefore = {};
-		array<SCR_EntityCatalogEntry> candidatesAfter = {};
-		check.m_iCandidatesBefore = vehicleCatalog.GetFullFilteredEntityListWithLabels(candidatesBefore, check.m_aIncludedLabels, null, true);
-		check.m_iCandidatesAfter = vehicleCatalog.GetFullFilteredEntityListWithLabels(candidatesAfter, check.m_aIncludedLabels, check.m_aExcludedLabels, true);
-
-		if (check.m_iCandidatesAfter == 0)
-		{
-			if (check.m_iCandidatesBefore > 0)
-				check.m_eResult = EME_AmbientSpawnPointLabelResult.LABEL_FILTER_EMPTY_EXCLUDED_ALL;
-			else
-				check.m_eResult = EME_AmbientSpawnPointLabelResult.LABEL_FILTER_EMPTY;
-			return check;
-		}
-
-		check.m_eResult = EME_AmbientSpawnPointLabelResult.LABEL_NEUTRAL;
-		return check;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	private void LogLabelCheck(ME_AmbientSpawnPointLabelCheck check)
-	{
-		PrintFormat("[ME_DEBUG_AVSP_LABEL] entity=%1 result=%2 catalog=%3 includedAvailable=%4 excludedAvailable=%5 included=%6 excluded=%7 candidatesBefore=%8 candidatesAfter=%9", check.m_sEntityName, GetLabelResultCode(check.m_eResult), check.m_sCatalog, check.m_bIncludedArraysAvailable, check.m_bExcludedArraysAvailable, check.m_aIncludedLabels, check.m_aExcludedLabels, check.m_iCandidatesBefore, check.m_iCandidatesAfter);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	private string GetLabelResultCode(EME_AmbientSpawnPointLabelResult result)
-	{
-		switch (result)
-		{
-			case EME_AmbientSpawnPointLabelResult.LABEL_CATALOG_UNAVAILABLE:
-				return "catalog_unavailable_or_ambiguous";
-			case EME_AmbientSpawnPointLabelResult.LABEL_SOURCE_ARRAYS_UNAVAILABLE:
-				return "serialized_label_arrays_unavailable";
-			case EME_AmbientSpawnPointLabelResult.LABEL_FILTER_EMPTY_EXCLUDED_ALL:
-				return "excluded_labels_removed_all_candidates";
-			case EME_AmbientSpawnPointLabelResult.LABEL_FILTER_EMPTY:
-				return "filtered_result_empty";
-		}
-
-		return "neutral";
-	}
-
-	//------------------------------------------------------------------------------------------------
-	private string GetLabelCheckMessageId(EME_AmbientSpawnPointLabelResult result)
-	{
-		switch (result)
-		{
-			case EME_AmbientSpawnPointLabelResult.LABEL_CATALOG_UNAVAILABLE:
-				return STRING_CHECK_LABEL_CATALOG_UNAVAILABLE;
-			case EME_AmbientSpawnPointLabelResult.LABEL_SOURCE_ARRAYS_UNAVAILABLE:
-				return STRING_CHECK_LABEL_SOURCE_ARRAYS_UNAVAILABLE;
-			case EME_AmbientSpawnPointLabelResult.LABEL_FILTER_EMPTY_EXCLUDED_ALL:
-				return STRING_CHECK_LABEL_FILTER_EMPTY_EXCLUDED_ALL;
-			case EME_AmbientSpawnPointLabelResult.LABEL_FILTER_EMPTY:
-				return STRING_CHECK_LABEL_FILTER_EMPTY;
-		}
-
-		return STRING_CHECK_WORLD_EDITOR_UNAVAILABLE;
-	}
-	//------------------------------------------------------------------------------------------------
+	//! Displays a localized warning dialog for the supplied message identifier.
 	private void ShowLocalizedDialog(string messageId)
 	{
 		string language;
@@ -377,12 +211,14 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Logs the current ambient vehicle prerequisite result and discovered entity state.
 	private void LogCheck(ME_AmbientSpawnPointCheck check, int spawnPointCount = -1)
 	{
 		PrintFormat("[ME_DEBUG_AVSP_WB] editor scan result=%1 spawnpoints=%2 gameModes=%3 m_eTestGameFlags=%4 available=%5 spawnVehicles=%6 subscene=%7 layerId=%8 layerPath=%9 lockedHierarchy=%10", GetResultCode(check.m_eResult), spawnPointCount, check.m_iGameModeCount, check.m_eTestGameFlags, check.m_bHasTestGameFlags, check.m_bSpawnVehiclesEnabled, check.m_iGameModeSubscene, check.m_iGameModeLayerId, check.m_sGameModeLayerPath, check.m_bLockedHierarchy);
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Converts a prerequisite check result to a diagnostic log code.
 	private string GetResultCode(EME_AmbientSpawnPointCheckResult result)
 	{
 		switch (result)
@@ -405,6 +241,7 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Selects the localized dialog shown when native placement is blocked.
 	private string GetDropMessageId(EME_AmbientSpawnPointCheckResult result)
 	{
 		switch (result)
@@ -425,6 +262,7 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Selects the localized dialog shown by the explicit world check.
 	private string GetCheckMessageId(EME_AmbientSpawnPointCheckResult result)
 	{
 		switch (result)

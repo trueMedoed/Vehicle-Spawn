@@ -205,14 +205,71 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 }
 */
 
+//------------------------------------------------------------------------------------------------
+//! Diagnostics for ambient vehicle spawn points that are configured so that no vehicle can ever
+//! be selected. The vanilla component returns silently when the label filter yields no candidates,
+//! which leaves an empty spawn point and no trace in the log. This mod repeats the vanilla filter
+//! after the base call and reports the empty result as an error, separating a self-contradictory
+//! label setup from a filter that simply found nothing in the catalog.
+
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
+	//------------------------------------------------------------------------------------------------
+    //! Formats editable entity labels as a readable comma-separated list for log output.
+    //! \param[in] labels Labels to format, may be null or empty
+    //! \return Enum names joined by ", ", or "<none>" when there is nothing to list	
+	protected string ME_EditableEntityLabelsToString(array<EEditableEntityLabel> labels)
+	{
+		if (!labels || labels.IsEmpty())
+			return "<none>";
+
+		string result;
+		foreach (EEditableEntityLabel label: labels)
+		{
+			if (result != "")
+				result += ", ";
+
+			result += typename.EnumToString(EEditableEntityLabel, label);
+		}
+
+		return result;
+	}
+
+	//------------------------------------------------------------------------------------------------
+    //! Collects labels requested in IncludedEditableEntityLabels that are at the same time rejected
+    //! by ExcludedEditableEntityLabels. Such a label can never be satisfied, so a non-empty result
+    //! means the spawn point contradicts itself. Note that the exclusion may be inherited: the base
+    //! prefab AmbientVehicleSpawnpoint_Base.et already excludes TRAIT_ARMED.
+    //! \return Labels present in both lists, empty when the configuration is consistent
+	protected array<EEditableEntityLabel> ME_GetConflictingEditableEntityLabels()
+	{
+		array<EEditableEntityLabel> conflictingLabels = {};
+		foreach (EEditableEntityLabel includedLabel: m_aIncludedEditableEntityLabels)
+		{
+			if (m_aExcludedEditableEntityLabels.Contains(includedLabel))
+				conflictingLabels.Insert(includedLabel);
+		}
+
+		return conflictingLabels;
+	}
+	
+	//------------------------------------------------------------------------------------------------
+    //! Picks the vehicle prefab for this spawn point and reports a configuration that can never
+    //! produce one. Called from SpawnVehicle() when the affiliated faction changed or when there is
+    //! no faction and no prefab has been chosen yet, so this runs at spawn time rather than on init.
+    //! After the base call the vanilla label filter is repeated: an empty result is logged as an
+    //! error, naming the conflicting labels when the include and exclude lists overlap and listing
+    //! both lists otherwise. The conflicting-labels diagnosis is only conclusive while
+    //! m_bRequireAllIncludedLabels is set, because then a single unsatisfiable label empties the
+    //! result on its own; with the default "any included label" matching the empty result may have
+    //! an unrelated cause.
+    //! \param[in] faction Faction whose vehicle catalog is filtered, null falls back to the global catalog
 	override protected void Update(SCR_Faction faction)
 	{
 		super.Update(faction);
-		
-		Print("[ME_DEBUG] SCR_AmbientVehicleSpawnPointComponent::Update");
-		
+
+		//Print("[ME_DEBUG] SCR_AmbientVehicleSpawnPointComponent::Update");
+
 		m_SavedFaction = faction;
 		SCR_EntityCatalog entityCatalog;
 
@@ -235,28 +292,49 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 		array<SCR_EntityCatalogEntry> data = {};
 		entityCatalog.GetFullFilteredEntityListWithLabels(data, m_aIncludedEditableEntityLabels, m_aExcludedEditableEntityLabels, m_bRequireAllIncludedLabels);
-		
+
 		if (data.IsEmpty())
 		{
-			foreach (EEditableEntityLabel includedLabel: m_aIncludedEditableEntityLabels)
+			array<EEditableEntityLabel> conflictingLabels = ME_GetConflictingEditableEntityLabels();
+			string pointName = GetOwner().GetName();
+		  	string pointInfo = string.Format("coordinates=%1", GetOwner().GetOrigin());
+		
+		 	if (!pointName.IsEmpty())
+       			pointInfo = string.Format("Entity=%1, coordinates=%2", pointName, GetOwner().GetOrigin());
+
+			if (!conflictingLabels.IsEmpty())
 			{
-				Print("includedLabel = " + includedLabel);
-				Print( typename.EnumToString(EEditableEntityLabel, includedLabel) );
+				//string errorMessage = string.Format("[ME_DEBUG_AVSP_ERROR] SCR_AmbientVehicleSpawnPointComponent: conflicting labels [%1] are present in both IncludedEditableEntityLabels and ExcludedEditableEntityLabels. Vehicle will not spawn. Entity=%2, coordinates=%3", ME_EditableEntityLabelsToString(conflictingLabels), pointName);
+				//Print(errorMessage, LogLevel.ERROR);
 				
+				
+				Print(
+        			string.Format(
+		                "[ME_DEBUG_AVSP_ERROR] SCR_AmbientVehicleSpawnPointComponent: conflicting labels [%1] are present in both IncludedEditableEntityLabels and ExcludedEditableEntityLabels. Vehicle will not spawn. Coordinates=%2",
+		                ME_EditableEntityLabelsToString(conflictingLabels),
+		                pointInfo
+			        ),
+			        LogLevel.ERROR
+				);
 			}
-			
-			foreach (EEditableEntityLabel excludedLabel: m_aExcludedEditableEntityLabels)
+			else
 			{
-				Print("excludedLabel = " + excludedLabel);
-				Print( typename.EnumToString(EEditableEntityLabel, excludedLabel) );
+				/*string errorMessage = string.Format("[ME_DEBUG_AVSP_ERROR] SCR_AmbientVehicleSpawnPointComponent: no vehicle matches the configured entity labels. Vehicle will not spawn. Included=[%1], Excluded=[%2], Entity=%3, coordinates=%4", ME_EditableEntityLabelsToString(m_aIncludedEditableEntityLabels), ME_EditableEntityLabelsToString(m_aExcludedEditableEntityLabels), pointName, pointPosition);
+				Print(errorMessage, LogLevel.ERROR);*/
+				Print(
+        			string.Format(
+		                "[ME_DEBUG_AVSP_ERROR] SCR_AmbientVehicleSpawnPointComponent: no vehicle matches the configured entity labels. Vehicle will not spawn. Included=[%1], Excluded=[%2], %3",
+		                ME_EditableEntityLabelsToString(m_aIncludedEditableEntityLabels),
+		                ME_EditableEntityLabelsToString(m_aExcludedEditableEntityLabels),
+		                pointInfo
+			        ),
+			        LogLevel.ERROR
+				);
 			}
-			//Print("[ME_DEBUG] SCR_AmbientVehicleSpawnPointComponent::data.IsEmpty() = " + data.IsEmpty());
-			Print("SCR_AmbientVehicleSpawnPointComponent: conflict between IncludedEditableEntityLabels and ExcludedEditableEntityLabels. Vehicle will not spawn.", LogLevel.ERROR);
-			
+
 			return;
 		}
 
-		m_sPrefab = (data.GetRandomElement().GetPrefab());
+		m_sPrefab = data.GetRandomElement().GetPrefab();
 	}
-
 }

@@ -1,5 +1,5 @@
 $grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
- {
+ APC_ARMED {
   components {
    SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
     m_aIncludedEditableEntityLabels {
@@ -9,7 +9,41 @@ $grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientV
   }
   coords 106.948 1 125.743
  }
- {
+ Standart {
   coords 104.343 1 149.737
+ }
+ noLabels {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aExcludedEditableEntityLabels {
+    }
+   }
+  }
+  coords 94.387 1 142.86
+ }
+ APC {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aIncludedEditableEntityLabels {
+     VEHICLE_APC
+    }
+    m_aExcludedEditableEntityLabels {
+    }
+   }
+  }
+  coords 69.316 1 117.053
+ }
+ APC_APC {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aIncludedEditableEntityLabels {
+     VEHICLE_APC
+    }
+    m_aExcludedEditableEntityLabels {
+     VEHICLE_APC
+    }
+   }
+  }
+  coords 68.559 1 141.89
  }
 }

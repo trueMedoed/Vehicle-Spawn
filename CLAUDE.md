@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Communicate with the user in Russian unless they explicitly request another language.
 
+## Claude project data
+
+- Keep all Claude Code project data, settings, and worktrees for this repository under `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn`, not in the repository-local `.claude` directory.
+
 ## Script documentation
 
 - When creating a script, add a brief description of what the script does.
