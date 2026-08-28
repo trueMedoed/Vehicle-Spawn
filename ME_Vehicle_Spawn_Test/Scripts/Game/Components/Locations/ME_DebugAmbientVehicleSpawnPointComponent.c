@@ -215,6 +215,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
 	ref Shape m_ME_EditorSpawnAreaShape;
+	static ref array<SCR_AmbientVehicleSpawnPointComponent> s_ME_EditorSpawnPoints = {};
+
 	//------------------------------------------------------------------------------------------------
 	//! Formats editable entity labels as a readable comma-separated list for log output.
 	//! \param[in] labels Labels to format, may be null or empty
@@ -340,14 +342,78 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Removes the previous editor-only shape for this spawn point.
+	//! Adds this spawn point to the editor-only registry once.
+	void ME_RegisterEditorDebugSpawnPoint()
+	{
+		if (!s_ME_EditorSpawnPoints.Contains(this))
+			s_ME_EditorSpawnPoints.Insert(this);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Removes this spawn point from the editor-only registry.
+	void ME_UnregisterEditorDebugSpawnPoint()
+	{
+		for (int i = s_ME_EditorSpawnPoints.Count() - 1; i >= 0; i--)
+		{
+			if (s_ME_EditorSpawnPoints[i] == this)
+				s_ME_EditorSpawnPoints.Remove(i);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Rebuilds all registered editor shapes so every point reflects current overlaps.
+	void ME_RefreshAllEditorDebugShapes()
+	{
+		foreach (SCR_AmbientVehicleSpawnPointComponent spawnPoint: s_ME_EditorSpawnPoints)
+		{
+			if (!spawnPoint)
+				continue;
+
+			IEntity owner = spawnPoint.GetOwner();
+			if (owner)
+				spawnPoint.ME_RefreshEditorDebugShape(owner);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Finds the first registered spawn point whose editor area touches this point's area.
+	//! \param[in] origin Origin to compare against
+	//! \param[in] world World in which the origin exists
+	//! \param[out] overlappingPoint First touching or intersecting point, if any
+	//! \return True when another point is within two spawning radii
+	bool ME_FindOverlappingEditorSpawnPoint(vector origin, BaseWorld world, out SCR_AmbientVehicleSpawnPointComponent overlappingPoint)
+	{
+		float maxDistance = 2 * SPAWNING_RADIUS;
+		float maxDistanceSquared = maxDistance * maxDistance;
+
+		foreach (SCR_AmbientVehicleSpawnPointComponent spawnPoint: s_ME_EditorSpawnPoints)
+		{
+			if (!spawnPoint || spawnPoint == this)
+				continue;
+
+			IEntity otherOwner = spawnPoint.GetOwner();
+			if (!otherOwner || otherOwner.GetWorld() != world)
+				continue;
+
+			vector delta = otherOwner.GetOrigin() - origin;
+			float distanceSquared = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2];
+			if (distanceSquared <= maxDistanceSquared)
+			{
+				overlappingPoint = spawnPoint;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	void ME_ClearEditorDebugShape()
 	{
 		m_ME_EditorSpawnAreaShape = null;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Probes the vanilla empty-terrain search area and displays its result in the editor.
+	//! Probes the vanilla empty-terrain search and displays its result and area-overlap warning.
 	//! \param[in] owner Spawn point entity whose origin and world are tested
 	void ME_RefreshEditorDebugShape(IEntity owner)
 	{
@@ -357,60 +423,81 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		BaseWorld world = owner.GetWorld();
 		vector candidate;
 		bool found = SCR_WorldTools.FindEmptyTerrainPosition(candidate, origin, SPAWNING_RADIUS, SPAWNING_RADIUS, 2, TraceFlags.ENTS | TraceFlags.OCEAN, world);
-
-		int color = Color.RED;
-		if (found)
-			color = Color.GREEN;
+		SCR_AmbientVehicleSpawnPointComponent overlappingPoint;
+		bool overlap = ME_FindOverlappingEditorSpawnPoint(origin, world, overlappingPoint);
+		bool red = !found || overlap;
+		int color = Color.GREEN;
+		if (red)
+			color = Color.RED;
 
 		Color colorValue = Color.FromInt(color);
 		colorValue.SetA(0.375);
 		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
 		m_ME_EditorSpawnAreaShape = Shape.CreateSphere(colorValue.PackToInt(), flags, origin, SPAWNING_RADIUS);
 
-		if (found)
-			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=1 candidate=%5", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, candidate);
+		string reason = "none";
+		if (!found)
+			reason = "no_empty_position";
+		else if (overlap)
+			reason = "overlapping_spawn_area";
+
+		if (overlap)
+		{
+			IEntity overlappingOwner = overlappingPoint.GetOwner();
+			if (found)
+				PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=1 candidate=%5 overlap=1 overlappingEntity=%6 overlappingOrigin=%7 reason=%8", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, candidate, overlappingOwner.GetName(), overlappingOwner.GetOrigin(), reason);
+			else
+				PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=0 overlap=1 overlappingEntity=%5 overlappingOrigin=%6 reason=%7", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, overlappingOwner.GetName(), overlappingOwner.GetOrigin(), reason);
+		}
+		else if (found)
+			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=1 candidate=%5 overlap=0 reason=%6", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, candidate, reason);
 		else
-			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=0", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS);
+			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=0 overlap=0 reason=%5", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, reason);
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Refreshes the editor probe when a spawn point is initialized.
+	//! Registers and refreshes the editor probe when a spawn point is initialized.
 	//! \param[in] owner Spawn point entity
 	//! \param[in,out] mat Spawn point transform matrix
 	//! \param[in] src Spawn point entity source
 	override void _WB_OnInit(IEntity owner, inout vector mat[4], IEntitySource src)
 	{
 		super._WB_OnInit(owner, mat, src);
-		ME_RefreshEditorDebugShape(owner);
+		ME_RegisterEditorDebugSpawnPoint();
+		ME_RefreshAllEditorDebugShapes();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Refreshes the editor probe after a spawn point is moved.
+	//! Refreshes every editor probe after a spawn point is moved.
 	//! \param[in] owner Spawn point entity
 	//! \param[in,out] mat Spawn point transform matrix
 	//! \param[in] src Spawn point entity source
 	override void _WB_SetTransform(IEntity owner, inout vector mat[4], IEntitySource src)
 	{
 		super._WB_SetTransform(owner, mat, src);
-		ME_RefreshEditorDebugShape(owner);
+		ME_RefreshAllEditorDebugShapes();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Releases the editor probe shape when the spawn point is deleted.
+	//! Unregisters the point, clears its shape, and refreshes remaining points on deletion.
 	//! \param[in] owner Spawn point entity
 	override void OnDelete(IEntity owner)
 	{
+		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
 		super.OnDelete(owner);
+		ME_RefreshAllEditorDebugShapes();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Releases the editor probe shape before the spawn point is removed from Workbench.
+	//! Unregisters the point before Workbench removes it and refreshes remaining points.
 	//! \param[in] owner Spawn point entity
 	//! \param[in] src Spawn point entity source
 	override void _WB_OnDelete(IEntity owner, IEntitySource src)
 	{
+		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
 		super._WB_OnDelete(owner, src);
+		ME_RefreshAllEditorDebugShapes();
 	}
 }
