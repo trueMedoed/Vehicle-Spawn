@@ -32,18 +32,18 @@ class ME_AmbientSpawnPointCheck
 [WorkbenchPluginAttribute(name: "Check ambient vehicle spawning", description: "Checks the open world's ambient vehicle spawn points and GameMode test flags.", wbModules: { "WorldEditor" })]
 class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 {
-	protected const string STRING_TITLE = "#MEVehicleSpawn_WB_AmbientSpawnWarning_Title";
-	protected const string STRING_DROP_NO_GAME_MODE = "#MEVehicleSpawn_WB_AmbientSpawnWarning_DropNoGameMode";
-	protected const string STRING_DROP_MULTIPLE_GAME_MODES = "#MEVehicleSpawn_WB_AmbientSpawnWarning_DropMultipleGameModes";
-	protected const string STRING_DROP_GAME_MODE_LAYER_LOCKED = "#MEVehicleSpawn_WB_AmbientSpawnWarning_DropGameModeLayerLocked";
-	protected const string STRING_DROP_TEST_GAME_FLAGS_UNAVAILABLE = "#MEVehicleSpawn_WB_AmbientSpawnWarning_DropTestGameFlagsUnavailable";
-	protected const string STRING_DROP_SPAWN_VEHICLES_DISABLED = "#MEVehicleSpawn_WB_AmbientSpawnWarning_DropSpawnVehiclesDisabled";
-	protected const string STRING_CHECK_WORLD_EDITOR_UNAVAILABLE = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckWorldEditorUnavailable";
-	protected const string STRING_CHECK_NO_GAME_MODE = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckNoGameMode";
-	protected const string STRING_CHECK_MULTIPLE_GAME_MODES = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckMultipleGameModes";
-	protected const string STRING_CHECK_GAME_MODE_LAYER_LOCKED = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckGameModeLayerLocked";
-	protected const string STRING_CHECK_TEST_GAME_FLAGS_UNAVAILABLE = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckTestGameFlagsUnavailable";
-	protected const string STRING_CHECK_SPAWN_VEHICLES_DISABLED = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckSpawnVehiclesDisabled";
+	protected const string MESSAGE_TITLE = "Ambient vehicle spawn points";
+	protected const string MESSAGE_DROP_NO_GAME_MODE = "The point was not created because this world has no SCR_BaseGameMode. Create or configure exactly one editable GameMode, then enable Spawn Vehicles.";
+	protected const string MESSAGE_DROP_MULTIPLE_GAME_MODES = "The point was not created because multiple SCR_BaseGameMode entities were found. Configure exactly one editable GameMode, then enable Spawn Vehicles.";
+	protected const string MESSAGE_DROP_GAME_MODE_LAYER_LOCKED = "The point was not created because the only GameMode is on a locked layer or inside a locked parent layer and cannot be configured. Create another world with an editable GameMode.";
+	protected const string MESSAGE_DROP_TEST_GAME_FLAGS_UNAVAILABLE = "The point was not created because m_eTestGameFlags is unavailable on the only SCR_BaseGameMode. Use an editable GameMode that exposes Test Game Flags.";
+	protected const string MESSAGE_DROP_SPAWN_VEHICLES_DISABLED = "The point was not created because Spawn Vehicles is disabled in the only GameMode's Test Game Flags / m_eTestGameFlags.";
+	protected const string MESSAGE_CHECK_WORLD_EDITOR_UNAVAILABLE = "The World Editor API is unavailable, so ambient vehicle spawning cannot be checked.";
+	protected const string MESSAGE_CHECK_NO_GAME_MODE = "Ambient vehicle spawning needs a GameMode to apply Test Game Flags. Add or configure a GameMode derived from SCR_BaseGameMode.";
+	protected const string MESSAGE_CHECK_MULTIPLE_GAME_MODES = "Multiple SCR_BaseGameMode entities were found. Ambient vehicle spawning configuration is ambiguous; configure the intended GameMode before using ambient vehicle spawn points.";
+	protected const string MESSAGE_CHECK_GAME_MODE_LAYER_LOCKED = "The only GameMode is on a locked layer or inside a locked parent layer and cannot be configured. Create another world with an editable GameMode.";
+	protected const string MESSAGE_CHECK_TEST_GAME_FLAGS_UNAVAILABLE = "Test Game Flags / m_eTestGameFlags is unavailable on the only SCR_BaseGameMode. Use an editable GameMode that exposes Test Game Flags.";
+	protected const string MESSAGE_CHECK_SPAWN_VEHICLES_DISABLED = "Ambient vehicle spawning is disabled for the current GameMode. Select the GameMode and enable Spawn Vehicles in Test Game Flags / m_eTestGameFlags. EGameFlags.SpawnVehicles = 2; 6 also enables SpawnAI.";
 
 	//------------------------------------------------------------------------------------------------
 	//! Runs the prerequisite check for the open world.
@@ -75,7 +75,7 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 		{
 			LogCheck(check);
 			PrintFormat("[ME_DEBUG_AVSP_WB] Ambient spawn point drop blocked: result=%1", GetResultCode(check.m_eResult));
-			ShowLocalizedDialog(GetDropMessageId(check.m_eResult));
+			Workbench.Dialog(MESSAGE_TITLE, GetDropMessage(check.m_eResult));
 			return true;
 		}
 
@@ -197,17 +197,7 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 			return;
 
 		if (check.m_eResult != EME_AmbientSpawnPointCheckResult.ALLOWED)
-			ShowLocalizedDialog(GetCheckMessageId(check.m_eResult));
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Displays a localized warning dialog for the supplied message identifier.
-	private void ShowLocalizedDialog(string messageId)
-	{
-		string language;
-		WidgetManager.GetLanguage(language);
-		PrintFormat("[ME_DEBUG_AVSP_WB] Workbench language=%1", language);
-		Workbench.Dialog(WidgetManager.Translate(STRING_TITLE), WidgetManager.Translate(messageId));
+			Workbench.Dialog(MESSAGE_TITLE, GetCheckMessage(check.m_eResult));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -240,45 +230,43 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 		return "allowed";
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Selects the localized dialog shown when native placement is blocked.
-	private string GetDropMessageId(EME_AmbientSpawnPointCheckResult result)
+	private string GetDropMessage(EME_AmbientSpawnPointCheckResult result)
 	{
 		switch (result)
 		{
 			case EME_AmbientSpawnPointCheckResult.NO_GAME_MODE:
-				return STRING_DROP_NO_GAME_MODE;
+				return MESSAGE_DROP_NO_GAME_MODE;
 			case EME_AmbientSpawnPointCheckResult.MULTIPLE_GAME_MODES:
-				return STRING_DROP_MULTIPLE_GAME_MODES;
+				return MESSAGE_DROP_MULTIPLE_GAME_MODES;
 			case EME_AmbientSpawnPointCheckResult.GAME_MODE_LAYER_LOCKED:
-				return STRING_DROP_GAME_MODE_LAYER_LOCKED;
+				return MESSAGE_DROP_GAME_MODE_LAYER_LOCKED;
 			case EME_AmbientSpawnPointCheckResult.TEST_GAME_FLAGS_UNAVAILABLE:
-				return STRING_DROP_TEST_GAME_FLAGS_UNAVAILABLE;
+				return MESSAGE_DROP_TEST_GAME_FLAGS_UNAVAILABLE;
 			case EME_AmbientSpawnPointCheckResult.SPAWN_VEHICLES_DISABLED:
-				return STRING_DROP_SPAWN_VEHICLES_DISABLED;
+				return MESSAGE_DROP_SPAWN_VEHICLES_DISABLED;
 		}
 
-		return STRING_CHECK_WORLD_EDITOR_UNAVAILABLE;
+		return MESSAGE_CHECK_WORLD_EDITOR_UNAVAILABLE;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Selects the localized dialog shown by the explicit world check.
-	private string GetCheckMessageId(EME_AmbientSpawnPointCheckResult result)
+	//! Selects the warning shown by the explicit world check.
+	private string GetCheckMessage(EME_AmbientSpawnPointCheckResult result)
 	{
 		switch (result)
 		{
 			case EME_AmbientSpawnPointCheckResult.NO_GAME_MODE:
-				return STRING_CHECK_NO_GAME_MODE;
+				return MESSAGE_CHECK_NO_GAME_MODE;
 			case EME_AmbientSpawnPointCheckResult.MULTIPLE_GAME_MODES:
-				return STRING_CHECK_MULTIPLE_GAME_MODES;
+				return MESSAGE_CHECK_MULTIPLE_GAME_MODES;
 			case EME_AmbientSpawnPointCheckResult.GAME_MODE_LAYER_LOCKED:
-				return STRING_CHECK_GAME_MODE_LAYER_LOCKED;
+				return MESSAGE_CHECK_GAME_MODE_LAYER_LOCKED;
 			case EME_AmbientSpawnPointCheckResult.TEST_GAME_FLAGS_UNAVAILABLE:
-				return STRING_CHECK_TEST_GAME_FLAGS_UNAVAILABLE;
+				return MESSAGE_CHECK_TEST_GAME_FLAGS_UNAVAILABLE;
 			case EME_AmbientSpawnPointCheckResult.SPAWN_VEHICLES_DISABLED:
-				return STRING_CHECK_SPAWN_VEHICLES_DISABLED;
+				return MESSAGE_CHECK_SPAWN_VEHICLES_DISABLED;
 		}
 
-		return STRING_CHECK_WORLD_EDITOR_UNAVAILABLE;
+		return MESSAGE_CHECK_WORLD_EDITOR_UNAVAILABLE;
 	}
 }
