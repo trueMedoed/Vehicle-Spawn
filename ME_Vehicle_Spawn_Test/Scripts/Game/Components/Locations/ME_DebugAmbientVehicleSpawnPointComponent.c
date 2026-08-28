@@ -214,10 +214,11 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
+	ref Shape m_ME_EditorSpawnAreaShape;
 	//------------------------------------------------------------------------------------------------
-    //! Formats editable entity labels as a readable comma-separated list for log output.
-    //! \param[in] labels Labels to format, may be null or empty
-    //! \return Enum names joined by ", ", or "<none>" when there is nothing to list	
+	//! Formats editable entity labels as a readable comma-separated list for log output.
+	//! \param[in] labels Labels to format, may be null or empty
+	//! \return Enum names joined by ", ", or "<none>" when there is nothing to list
 	protected string ME_EditableEntityLabelsToString(array<EEditableEntityLabel> labels)
 	{
 		if (!labels || labels.IsEmpty())
@@ -335,6 +336,81 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			return;
 		}
 
-		m_sPrefab = data.GetRandomElement().GetPrefab();
+		// No prefab is selected here: super.Update(faction) already performed the vanilla selection.
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Removes the previous editor-only shape for this spawn point.
+	void ME_ClearEditorDebugShape()
+	{
+		m_ME_EditorSpawnAreaShape = null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Probes the vanilla empty-terrain search area and displays its result in the editor.
+	//! \param[in] owner Spawn point entity whose origin and world are tested
+	void ME_RefreshEditorDebugShape(IEntity owner)
+	{
+		ME_ClearEditorDebugShape();
+
+		vector origin = owner.GetOrigin();
+		BaseWorld world = owner.GetWorld();
+		vector candidate;
+		bool found = SCR_WorldTools.FindEmptyTerrainPosition(candidate, origin, SPAWNING_RADIUS, SPAWNING_RADIUS, 2, TraceFlags.ENTS | TraceFlags.OCEAN, world);
+
+		int color = Color.RED;
+		if (found)
+			color = Color.GREEN;
+
+		Color colorValue = Color.FromInt(color);
+		colorValue.SetA(0.375);
+		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
+		m_ME_EditorSpawnAreaShape = Shape.CreateSphere(colorValue.PackToInt(), flags, origin, SPAWNING_RADIUS);
+
+		if (found)
+			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=1 candidate=%5", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, candidate);
+		else
+			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=0", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Refreshes the editor probe when a spawn point is initialized.
+	//! \param[in] owner Spawn point entity
+	//! \param[in,out] mat Spawn point transform matrix
+	//! \param[in] src Spawn point entity source
+	override void _WB_OnInit(IEntity owner, inout vector mat[4], IEntitySource src)
+	{
+		super._WB_OnInit(owner, mat, src);
+		ME_RefreshEditorDebugShape(owner);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Refreshes the editor probe after a spawn point is moved.
+	//! \param[in] owner Spawn point entity
+	//! \param[in,out] mat Spawn point transform matrix
+	//! \param[in] src Spawn point entity source
+	override void _WB_SetTransform(IEntity owner, inout vector mat[4], IEntitySource src)
+	{
+		super._WB_SetTransform(owner, mat, src);
+		ME_RefreshEditorDebugShape(owner);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Releases the editor probe shape when the spawn point is deleted.
+	//! \param[in] owner Spawn point entity
+	override void OnDelete(IEntity owner)
+	{
+		ME_ClearEditorDebugShape();
+		super.OnDelete(owner);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Releases the editor probe shape before the spawn point is removed from Workbench.
+	//! \param[in] owner Spawn point entity
+	//! \param[in] src Spawn point entity source
+	override void _WB_OnDelete(IEntity owner, IEntitySource src)
+	{
+		ME_ClearEditorDebugShape();
+		super._WB_OnDelete(owner, src);
 	}
 }
