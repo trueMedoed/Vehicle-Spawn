@@ -216,6 +216,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 {
 	ref Shape m_ME_EditorSpawnAreaShape;
 	static ref array<SCR_AmbientVehicleSpawnPointComponent> s_ME_EditorSpawnPoints = {};
+	static ref array<IEntity> s_ME_EditorStaticObjectMarkerEntities = {};
+	static ref array<ref Shape> s_ME_EditorStaticObjectMarkerShapes = {};
+	protected int m_iME_EditorStaticObjectConflictCount;
 
 	//------------------------------------------------------------------------------------------------
 	//! Formats editable entity labels as a readable comma-separated list for log output.
@@ -361,9 +364,102 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Rebuilds all registered editor shapes so every point reflects current overlaps.
+	//! Releases every shared editor-only marker for static physics/bounds conflicts.
+	static void ME_ClearEditorStaticObjectMarkers()
+	{
+		s_ME_EditorStaticObjectMarkerShapes.Clear();
+		s_ME_EditorStaticObjectMarkerEntities.Clear();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Tests whether an entity's world-space AABB intersects an editor spawn-area sphere.
+	//!
+	//! This is a broad-phase editor warning and is not a guaranteed runtime spawn failure.
+	protected bool ME_DoBoundsIntersectEditorSpawnArea(vector mins, vector maxs, vector origin)
+	{
+		vector closestPoint;
+		for (int i = 0; i < 3; i++)
+		{
+			closestPoint[i] = origin[i];
+			if (closestPoint[i] < mins[i])
+				closestPoint[i] = mins[i];
+			else if (closestPoint[i] > maxs[i])
+				closestPoint[i] = maxs[i];
+		}
+
+		vector delta = closestPoint - origin;
+		float distanceSquared = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2];
+		return distanceSquared <= SPAWNING_RADIUS * SPAWNING_RADIUS;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Creates one shared marker for an object, even when several spawn areas intersect its bounds.
+	//!
+	//! The marker size follows the object's bounds but remains visible for small objects and bounded
+	//! for large objects so it remains an editor warning rather than a second spawn-area visualization.
+	static void ME_AddEditorStaticObjectMarker(IEntity entity, vector mins, vector maxs)
+	{
+		if (s_ME_EditorStaticObjectMarkerEntities.Contains(entity))
+			return;
+
+		vector center = (mins + maxs) * 0.5;
+		vector extents = (maxs - mins) * 0.5;
+		float radius = Math.Max(extents[0], Math.Max(extents[1], extents[2]));
+		radius = Math.Max(radius, 0.5);
+		radius = Math.Min(radius, SPAWNING_RADIUS);
+
+		Color color = Color.FromInt(Color.RED);
+		color.SetA(0.375);
+		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
+		s_ME_EditorStaticObjectMarkerEntities.Insert(entity);
+		s_ME_EditorStaticObjectMarkerShapes.Insert(Shape.CreateSphere(color.PackToInt(), flags, center, radius));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Evaluates a broad-phase query result as a static physics/bounds editor-warning candidate.
+	//!
+	//! \return True to continue querying further entities
+	protected bool ME_CollectEditorStaticObjectConflict(IEntity entity)
+	{
+		IEntity owner = GetOwner();
+		if (!entity || entity == owner || entity.GetWorld() != owner.GetWorld())
+			return true;
+
+		if (SCR_AmbientVehicleSpawnPointComponent.Cast(entity.FindComponent(SCR_AmbientVehicleSpawnPointComponent)))
+			return true;
+
+		Physics physics = entity.GetPhysics();
+		if (!physics || physics.IsDynamic())
+			return true;
+
+		vector mins;
+		vector maxs;
+		entity.GetWorldBounds(mins, maxs);
+		vector origin = owner.GetOrigin();
+		if (!ME_DoBoundsIntersectEditorSpawnArea(mins, maxs, origin))
+			return true;
+
+		m_iME_EditorStaticObjectConflictCount++;
+		ME_AddEditorStaticObjectMarker(entity, mins, maxs);
+		PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 staticCandidate=%3 candidateType=%4 candidateOrigin=%5 boundsMin=%6 boundsMax=%7 editorWarning=static_object_conflict", owner.GetName(), origin, entity.GetName(), entity.Type().ToString(), entity.GetOrigin(), mins, maxs);
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Scans this point's area for static physics/bounds editor warnings.
+	protected void ME_RefreshEditorStaticObjectConflicts(IEntity owner)
+	{
+		m_iME_EditorStaticObjectConflictCount = 0;
+		BaseWorld world = owner.GetWorld();
+		if (world)
+			world.QueryEntitiesBySphere(owner.GetOrigin(), SPAWNING_RADIUS, ME_CollectEditorStaticObjectConflict);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Rebuilds all registered editor shapes so every point reflects current overlaps and static objects.
 	void ME_RefreshAllEditorDebugShapes()
 	{
+		ME_ClearEditorStaticObjectMarkers();
 		foreach (SCR_AmbientVehicleSpawnPointComponent spawnPoint: s_ME_EditorSpawnPoints)
 		{
 			if (!spawnPoint)
@@ -414,6 +510,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Probes the vanilla empty-terrain search and displays its result and area-overlap warning.
+	//!
+	//! Static physics/bounds markers are an editor advisory and do not alter the vanilla probe result.
 	//! \param[in] owner Spawn point entity whose origin and world are tested
 	void ME_RefreshEditorDebugShape(IEntity owner)
 	{
@@ -434,6 +532,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		colorValue.SetA(0.375);
 		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
 		m_ME_EditorSpawnAreaShape = Shape.CreateSphere(colorValue.PackToInt(), flags, origin, SPAWNING_RADIUS);
+		ME_RefreshEditorStaticObjectConflicts(owner);
 
 		string reason = "none";
 		if (!found)
@@ -441,18 +540,25 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		else if (overlap)
 			reason = "overlapping_spawn_area";
 
+		string editorWarning = "none";
+		if (m_iME_EditorStaticObjectConflictCount > 0)
+			editorWarning = "static_object_conflict";
+
 		if (overlap)
 		{
 			IEntity overlappingOwner = overlappingPoint.GetOwner();
 			if (found)
-				PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=1 candidate=%5 overlap=1 overlappingEntity=%6 overlappingOrigin=%7 reason=%8", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, candidate, overlappingOwner.GetName(), overlappingOwner.GetOrigin(), reason);
+			{
+				string editorWarningAndReason = string.Format("editorWarning=%1 reason=%2", editorWarning, reason);
+				PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=1 candidate=%5 overlap=1 overlappingEntity=%6 overlappingOrigin=%7 staticConflictCount=%8 %9", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, candidate, overlappingOwner.GetName(), overlappingOwner.GetOrigin(), m_iME_EditorStaticObjectConflictCount, editorWarningAndReason);
+			}
 			else
-				PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=0 overlap=1 overlappingEntity=%5 overlappingOrigin=%6 reason=%7", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, overlappingOwner.GetName(), overlappingOwner.GetOrigin(), reason);
+				PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=0 overlap=1 overlappingEntity=%5 overlappingOrigin=%6 staticConflictCount=%7 editorWarning=%8 reason=%9", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, overlappingOwner.GetName(), overlappingOwner.GetOrigin(), m_iME_EditorStaticObjectConflictCount, editorWarning, reason);
 		}
 		else if (found)
-			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=1 candidate=%5 overlap=0 reason=%6", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, candidate, reason);
+			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=1 candidate=%5 overlap=0 staticConflictCount=%6 editorWarning=%7 reason=%8", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, candidate, m_iME_EditorStaticObjectConflictCount, editorWarning, reason);
 		else
-			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=0 overlap=0 reason=%5", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, reason);
+			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=0 overlap=0 staticConflictCount=%5 editorWarning=%6 reason=%7", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, m_iME_EditorStaticObjectConflictCount, editorWarning, reason);
 	}
 
 	//------------------------------------------------------------------------------------------------
