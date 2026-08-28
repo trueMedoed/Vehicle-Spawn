@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{0DEF5E037B7656E2}worlds/GameMode_Without_Spawn_Vehicles_Locked_Layer.ent"
+ Configurations {
+  ENTResourceClass PC {
+  }
+  ENTResourceClass XBOX_ONE : PC {
+  }
+  ENTResourceClass XBOX_SERIES : PC {
+  }
+  ENTResourceClass PS4 : PC {
+  }
+  ENTResourceClass PS5 : PC {
+  }
+  ENTResourceClass HEADLESS : PC {
+  }
+ }
+}

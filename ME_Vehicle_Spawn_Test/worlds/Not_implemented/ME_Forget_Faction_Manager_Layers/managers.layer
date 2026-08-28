@@ -1,0 +1,4 @@
+SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" {
+ coords 4.157 0.999 4.754
+ m_eTestGameFlags SpawnVehicles
+}
