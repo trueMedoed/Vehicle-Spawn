@@ -151,16 +151,18 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 		LogCheck(check);
 		if (check.m_eResult != EME_AmbientSpawnPointCheckResult.ALLOWED)
 		{
-			PrintFormat("[ME_DEBUG_AVSP_WB] Ambient spawn point drop blocked: result=%1", GetResultCode(check.m_eResult));
-			Workbench.Dialog(MESSAGE_TITLE, GetDropMessage(check.m_eResult));
+			string dropMessage = GetDropMessage(check.m_eResult);
+			PrintFormat("[ME_DEBUG_AVSP_WB] Ambient spawn point drop blocked: result=%1 message=%2", GetResultCode(check.m_eResult), dropMessage);
+			Workbench.Dialog(MESSAGE_TITLE, dropMessage);
 			return true;
 		}
 
 		if (!ValidateIncomingAmbientSpawnPointFactions(data, factionManager, check))
 		{
 			LogCheck(check);
-			PrintFormat("[ME_DEBUG_AVSP_WB] Ambient spawn point drop blocked: result=%1", GetResultCode(check.m_eResult));
-			Workbench.Dialog(MESSAGE_TITLE, GetDropMessage(check.m_eResult));
+			string dropMessage = GetDropMessage(check.m_eResult);
+			PrintFormat("[ME_DEBUG_AVSP_WB] Ambient spawn point drop blocked: result=%1 message=%2", GetResultCode(check.m_eResult), dropMessage);
+			Workbench.Dialog(MESSAGE_TITLE, dropMessage);
 			return true;
 		}
 
@@ -555,7 +557,11 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 			return;
 
 		if (check.m_eResult != EME_AmbientSpawnPointCheckResult.ALLOWED)
-			Workbench.Dialog(MESSAGE_TITLE, GetCheckMessage(check.m_eResult));
+		{
+			string checkMessage = GetCheckMessage(check.m_eResult);
+			PrintFormat("[ME_DEBUG_AVSP_WB] Ambient vehicle spawning check warning: result=%1 message=%2", GetResultCode(check.m_eResult), checkMessage);
+			Workbench.Dialog(MESSAGE_TITLE, checkMessage);
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
