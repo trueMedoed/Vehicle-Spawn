@@ -1,5 +1,5 @@
 MetaFileClass {
- Name "{1B835789967DCC57}worlds/MP/MpTest/ME_MpTest_BasicSpawnVehicles.ent"
+ Name "{23803C71B6C22046}worlds/ME_Without_GameMode.ent"
  Configurations {
   ENTResourceClass PC {
   }

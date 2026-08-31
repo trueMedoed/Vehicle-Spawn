@@ -1,0 +1,24 @@
+$grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
+ Huey_2 {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aIncludedEditableEntityLabels {
+     VEHICLE_HELICOPTER
+    }
+   }
+  }
+  coords 90 1 190
+  angles 0 90 0
+ }
+ Huey_1 {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aIncludedEditableEntityLabels {
+     VEHICLE_HELICOPTER
+    }
+   }
+  }
+  coords 110 1 190
+  angles 0 90 0
+ }
+}
