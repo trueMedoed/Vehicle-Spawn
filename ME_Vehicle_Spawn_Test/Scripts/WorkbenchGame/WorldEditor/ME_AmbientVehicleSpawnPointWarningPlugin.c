@@ -10,6 +10,7 @@ enum EME_AmbientSpawnPointCheckResult
 	GAME_MODE_LAYER_LOCKED,
 	TEST_GAME_FLAGS_UNAVAILABLE,
 	SPAWN_VEHICLES_DISABLED,
+	NO_FACTION_MANAGER,
 	ALLOWED
 }
 
@@ -20,6 +21,7 @@ class ME_AmbientSpawnPointCheck
 {
 	EME_AmbientSpawnPointCheckResult m_eResult;
 	int m_iGameModeCount;
+	int m_iFactionManagerCount;
 	EGameFlags m_eTestGameFlags;
 	bool m_bHasTestGameFlags;
 	bool m_bSpawnVehiclesEnabled;
@@ -41,24 +43,22 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	private const string MESSAGE_DROP_GAME_MODE_LAYER_LOCKED = "The point was not created because the only GameMode is on a locked layer or inside a locked parent layer and cannot be configured. Create another world with an editable GameMode.";
 	private const string MESSAGE_DROP_TEST_GAME_FLAGS_UNAVAILABLE = "The point was not created because m_eTestGameFlags is unavailable on the only SCR_BaseGameMode. Use an editable GameMode that exposes Test Game Flags.";
 	private const string MESSAGE_DROP_SPAWN_VEHICLES_DISABLED = "The point was not created because Spawn Vehicles is disabled in the only GameMode's Test Game Flags / m_eTestGameFlags.";
+	private const string MESSAGE_DROP_NO_FACTION_MANAGER = "The point was not created because this world has no FactionManager. Add the vanilla Prefabs/MP/Managers/Factions/FactionManager_Editor.et prefab.";
 	private const string MESSAGE_CHECK_WORLD_EDITOR_UNAVAILABLE = "The World Editor API is unavailable, so ambient vehicle spawning cannot be checked.";
 	private const string MESSAGE_CHECK_NO_GAME_MODE = "Ambient vehicle spawning needs a GameMode to apply Test Game Flags. Add or configure a GameMode derived from SCR_BaseGameMode.";
 	private const string MESSAGE_CHECK_MULTIPLE_GAME_MODES = "Multiple SCR_BaseGameMode entities were found. Ambient vehicle spawning configuration is ambiguous; configure the intended GameMode before using ambient vehicle spawn points.";
 	private const string MESSAGE_CHECK_GAME_MODE_LAYER_LOCKED = "The only GameMode is on a locked layer or inside a locked parent layer and cannot be configured. Create another world with an editable GameMode.";
 	private const string MESSAGE_CHECK_TEST_GAME_FLAGS_UNAVAILABLE = "Test Game Flags / m_eTestGameFlags is unavailable on the only SCR_BaseGameMode. Use an editable GameMode that exposes Test Game Flags.";
 	private const string MESSAGE_CHECK_SPAWN_VEHICLES_DISABLED = "Ambient vehicle spawning is disabled for the current GameMode. Select the GameMode and enable Spawn Vehicles in Test Game Flags / m_eTestGameFlags. EGameFlags.SpawnVehicles = 2; 6 also enables SpawnAI.";
+	private const string MESSAGE_CHECK_NO_FACTION_MANAGER = "Running a world with ambient vehicle spawn points requires a FactionManager. Add a FactionManager to this world.";
 
 	//------------------------------------------------------------------------------------------------
-	//! Runs the prerequisite check for the open world.
-	//! Выполняет проверку предварительных условий открытого мира.
-	
-	/*
+	//! Runs the explicit ambient vehicle spawning check for the open world.
+	//! Выполняет явную проверку создания ambient-техники для открытого мира.
 	override void Run()
 	{
-		ME_AmbientVehicleSpawnPointPreviewController.Activate();
 		CheckOpenWorld();
 	}
-	*/
 
 	//------------------------------------------------------------------------------------------------
 	//! Validates a dropped ambient vehicle spawn-point prefab before native placement.
@@ -130,11 +130,20 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 				continue;
 
 			IEntity entity = api.SourceToEntity(entitySource);
-			if (entity && SCR_BaseGameMode.Cast(entity))
+			if (!entity)
+				continue;
+
+			if (SCR_BaseGameMode.Cast(entity))
 			{
 				check.m_iGameModeCount++;
 				gameModeSource = entitySource;
 				PrintFormat("[ME_DEBUG_AVSP_WB] Ambient spawn point check: GameMode found source=%1 name=%2", entitySource, entity.GetName());
+			}
+
+			if (FactionManager.Cast(entity))
+			{
+				check.m_iFactionManagerCount++;
+				PrintFormat("[ME_DEBUG_AVSP_WB] Ambient spawn point check: FactionManager found source=%1 name=%2", entitySource, entity.GetName());
 			}
 		}
 
@@ -147,6 +156,12 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 		if (check.m_iGameModeCount > 1)
 		{
 			check.m_eResult = EME_AmbientSpawnPointCheckResult.MULTIPLE_GAME_MODES;
+			return check;
+		}
+
+		if (check.m_iFactionManagerCount == 0)
+		{
+			check.m_eResult = EME_AmbientSpawnPointCheckResult.NO_FACTION_MANAGER;
 			return check;
 		}
 
@@ -255,8 +270,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	//! Записывает результат проверки предварительных условий и состояние найденных сущностей.
 	private void LogCheck(ME_AmbientSpawnPointCheck check, int spawnPointCount = -1)
 	{
-		PrintFormat("[ME_DEBUG_AVSP_WB] editor scan result=%1 spawnpoints=%2 gameModes=%3 m_eTestGameFlags=%4 available=%5 spawnVehicles=%6 subscene=%7 layerId=%8 layerPath=%9", GetResultCode(check.m_eResult), spawnPointCount, check.m_iGameModeCount, check.m_eTestGameFlags, check.m_bHasTestGameFlags, check.m_bSpawnVehiclesEnabled, check.m_iGameModeSubscene, check.m_iGameModeLayerId, check.m_sGameModeLayerPath);
-		PrintFormat("[ME_DEBUG_AVSP_WB] editor scan lockedHierarchy=%1", check.m_bLockedHierarchy);
+		PrintFormat("[ME_DEBUG_AVSP_WB] editor scan result=%1 spawnpoints=%2 gameModes=%3 factionManagers=%4 m_eTestGameFlags=%5 available=%6 spawnVehicles=%7 subscene=%8 layerId=%9", GetResultCode(check.m_eResult), spawnPointCount, check.m_iGameModeCount, check.m_iFactionManagerCount, check.m_eTestGameFlags, check.m_bHasTestGameFlags, check.m_bSpawnVehiclesEnabled, check.m_iGameModeSubscene, check.m_iGameModeLayerId);
+		PrintFormat("[ME_DEBUG_AVSP_WB] editor scan layerPath=%1 lockedHierarchy=%2", check.m_sGameModeLayerPath, check.m_bLockedHierarchy);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -278,6 +293,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 				return "test_game_flags_unavailable";
 			case EME_AmbientSpawnPointCheckResult.SPAWN_VEHICLES_DISABLED:
 				return "spawn_vehicles_disabled";
+			case EME_AmbientSpawnPointCheckResult.NO_FACTION_MANAGER:
+				return "no_faction_manager";
 		}
 
 		return "allowed";
@@ -297,6 +314,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 				return MESSAGE_DROP_TEST_GAME_FLAGS_UNAVAILABLE;
 			case EME_AmbientSpawnPointCheckResult.SPAWN_VEHICLES_DISABLED:
 				return MESSAGE_DROP_SPAWN_VEHICLES_DISABLED;
+			case EME_AmbientSpawnPointCheckResult.NO_FACTION_MANAGER:
+				return MESSAGE_DROP_NO_FACTION_MANAGER;
 		}
 
 		return MESSAGE_CHECK_WORLD_EDITOR_UNAVAILABLE;
@@ -318,6 +337,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 				return MESSAGE_CHECK_TEST_GAME_FLAGS_UNAVAILABLE;
 			case EME_AmbientSpawnPointCheckResult.SPAWN_VEHICLES_DISABLED:
 				return MESSAGE_CHECK_SPAWN_VEHICLES_DISABLED;
+			case EME_AmbientSpawnPointCheckResult.NO_FACTION_MANAGER:
+				return MESSAGE_CHECK_NO_FACTION_MANAGER;
 		}
 
 		return MESSAGE_CHECK_WORLD_EDITOR_UNAVAILABLE;

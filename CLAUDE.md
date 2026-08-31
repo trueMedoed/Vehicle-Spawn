@@ -23,6 +23,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is an Arma Reforger / Enfusion addon. The project root contains `addon.gproj` (addon ID `MEVehicleSpawn`) and has a base-game dependency. Runtime code is Enforce Script under `Scripts/Game/`; resources are authored for Arma Reforger Workbench.
 
+For the required workflow for transferring verified changes from the test addon to production, see [TEST_TO_PROD_TRANSFER.md](TEST_TO_PROD_TRANSFER.md).
+
 ## Commands and validation
 
 This repository has no package manager, command-line build wrapper, linter, automated test suite, or single-test command.
