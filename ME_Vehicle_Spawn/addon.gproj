@@ -6,7 +6,6 @@ GameProject {
   "58D0FB3206B6F859"
  }
  Configurations {
-  GameProjectConfig PC {
-  }
+  GameProjectConfig PC {}
  }
 }
