@@ -1,7 +1,13 @@
-//! Diagnostic World Editor plugin that validates ambient vehicle spawn-point prerequisites.
-//! Диагностический плагин редактора мира, проверяющий предварительные условия точек появления техники.
+//! World Editor plugin that prevents invalid ambient vehicle spawn-point placement and checks prerequisites for existing points.
+//! It validates the world GameMode, its Spawn Vehicles test flag, editable GameMode layer state, and FactionManager presence.
+//! Плагин редактора мира, предотвращающий некорректное размещение точек появления ambient-техники и проверяющий предварительные условия для существующих точек.
+//! Он проверяет GameMode мира, его тестовый флаг Spawn Vehicles, состояние редактируемости слоя GameMode и наличие FactionManager.
 
 //------------------------------------------------------------------------------------------------
+//! Editor diagnostic states returned while checking ambient vehicle spawn-point prerequisites.
+//! These values describe editor observations and do not replace runtime spawning validation.
+//! Диагностические состояния редактора, возвращаемые при проверке предпосылок точек появления ambient-техники.
+//! Эти значения описывают наблюдения редактора и не заменяют проверку runtime-появления.
 enum EME_AmbientSpawnPointCheckResult
 {
 	WORLD_EDITOR_UNAVAILABLE,
@@ -15,8 +21,10 @@ enum EME_AmbientSpawnPointCheckResult
 }
 
 //------------------------------------------------------------------------------------------------
-//! Stores the result of checking the current world's ambient vehicle prerequisites.
-//! Хранит результат проверки предварительных условий появления техники в текущем мире.
+//! Stores the editor diagnostic result and observations collected for one ambient spawn-point prerequisite check.
+//! It records GameMode and FactionManager counts, GameMode layer state, Test Game Flags, and SpawnVehicles state.
+//! Хранит диагностический результат редактора и наблюдения одной проверки предпосылок точки появления ambient-техники.
+//! Он сохраняет количество GameMode и FactionManager, состояние слоя GameMode, Test Game Flags и состояние SpawnVehicles.
 class ME_AmbientSpawnPointCheck
 {
 	EME_AmbientSpawnPointCheckResult m_eResult;
@@ -32,8 +40,10 @@ class ME_AmbientSpawnPointCheck
 }
 
 //------------------------------------------------------------------------------------------------
-//! Checks GameMode, layer, and Spawn Vehicles prerequisites in the World Editor.
-//! Проверяет в редакторе мира GameMode, слой и предварительное условие Spawn Vehicles.
+//! Validates ambient vehicle spawn-point prerequisites in the World Editor before placement and through an explicit command.
+//! It examines the GameMode count, GameMode layer state, Test Game Flags, and FactionManager presence without changing the world.
+//! Проверяет предварительные условия точек появления ambient-техники в редакторе мира до размещения и по явной команде.
+//! Он анализирует количество GameMode, состояние слоя GameMode, Test Game Flags и наличие FactionManager, не изменяя мир.
 [WorkbenchPluginAttribute(name: "Check ambient vehicle spawning", description: "Checks the open world's ambient vehicle spawn points and GameMode test flags.", wbModules: { "WorldEditor" })]
 class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 {
@@ -53,8 +63,10 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	private const string MESSAGE_CHECK_NO_FACTION_MANAGER = "Running a world with ambient vehicle spawn points requires a FactionManager. Add a FactionManager to this world.";
 
 	//------------------------------------------------------------------------------------------------
-	//! Runs the explicit ambient vehicle spawning check for the open world.
-	//! Выполняет явную проверку создания ambient-техники для открытого мира.
+	//! Runs the explicit diagnostic for ambient spawn-point prerequisites in the open world.
+	//! The check observes GameMode, its layer and Test Game Flags, SpawnVehicles, and FactionManager.
+	//! Запускает явную диагностику предпосылок точек появления ambient-техники в открытом мире.
+	//! Проверка наблюдает GameMode, его слой и Test Game Flags, SpawnVehicles и FactionManager.
 	override void Run()
 	{
 		CheckOpenWorld();
@@ -62,7 +74,25 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 
 	//------------------------------------------------------------------------------------------------
 	//! Validates a dropped ambient vehicle spawn-point prefab before native placement.
-	//! Проверяет сброшенный префаб точки появления техники перед встроенным размещением.
+	//! On a failed prerequisite check, it consumes the drop; otherwise it forwards the event to super
+	//! so Workbench performs normal placement.
+	//!
+	//! \param[in] windowType Workbench window receiving the drop
+	//! \param[in] posX Horizontal drop position in the window
+	//! \param[in] posY Vertical drop position in the window
+	//! \param[in] dataType Type identifier for the dropped data
+	//! \param[in] data Dropped resource paths
+	//! \return True when the plugin consumes an invalid ambient-point drop; otherwise super's result
+	//! Проверяет сброшенный префаб точки появления ambient-техники до встроенного размещения.
+	//! При неуспешной проверке предпосылок метод поглощает drop; иначе передаёт событие super,
+	//! чтобы Workbench выполнил обычное размещение.
+	//!
+	//! \param[in] windowType Окно Workbench, принимающее drop
+	//! \param[in] posX Горизонтальная позиция drop в окне
+	//! \param[in] posY Вертикальная позиция drop в окне
+	//! \param[in] dataType Идентификатор типа сброшенных данных
+	//! \param[in] data Пути к сброшенным ресурсам
+	//! \return True, когда плагин поглощает недопустимый drop ambient-точки; иначе результат super
 	override bool OnWorldEditWindowDataDropped(int windowType, int posX, int posY, string dataType, array<string> data)
 	{
 		PrintFormat("[ME_DEBUG_AVSP_WB] Ambient spawn point drop callback entered: dataType=%1 dataCount=%2", dataType, data.Count());
@@ -97,8 +127,14 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Determines whether an ambient vehicle spawn point can be created in the current world.
-	//! Определяет, можно ли создать точку появления техники в текущем мире.
+	//! Collects editor diagnostic state to decide whether an ambient vehicle spawn point may be placed.
+	//! It checks GameMode count and editable layer, m_eTestGameFlags including SpawnVehicles, and FactionManager.
+	//!
+	//! \return Populated prerequisite-check result for the current World Editor state
+	//! Собирает диагностическое состояние редактора, чтобы определить, можно ли разместить точку появления ambient-техники.
+	//! Метод проверяет количество GameMode и редактируемость слоя, m_eTestGameFlags включая SpawnVehicles и FactionManager.
+	//!
+	//! \return Заполненный результат проверки предпосылок для текущего состояния World Editor
 	private ME_AmbientSpawnPointCheck CanCreateAmbientSpawnPoint()
 	{
 		ME_AmbientSpawnPointCheck check = new ME_AmbientSpawnPointCheck();
@@ -198,7 +234,14 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Logs default-layer lock state for every subscene currently loaded in the editor.
+	//! Logs the lock state of every loaded subscene's default layer for Workbench diagnostics.
+	//! This supplements the discovered GameMode layer check and does not modify layers.
+	//!
+	//! \param[in] api World Editor API used to enumerate subscenes and layers
+	//! Записывает состояние блокировки default-слоя каждой загруженной subscene для диагностики Workbench.
+	//! Это дополняет проверку слоя найденного GameMode и не изменяет слои.
+	//!
+	//! \param[in] api API World Editor для перечисления subscene и слоёв
 	private void LogLoadedSubsceneDefaultLayerLocks(WorldEditorAPI api)
 	{
 		int subsceneCount = api.GetNumSubScenes();
@@ -224,8 +267,12 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Checks the open world and shows a warning when ambient vehicle prerequisites are not met.
-	//! Проверяет открытый мир и показывает предупреждение, если предварительные условия не выполнены.
+	//! Checks the open world, logs diagnostic state, and displays a warning only when existing or incoming points need it.
+	//!
+	//! \param[in] hasIncomingSpawnPoint True when the check accompanies an incoming ambient spawn point
+	//! Проверяет открытый мир, записывает диагностическое состояние и показывает предупреждение только при необходимости для существующих или входящих точек.
+	//!
+	//! \param[in] hasIncomingSpawnPoint True, когда проверка сопровождает входящую ambient-точку
 	private void CheckOpenWorld(bool hasIncomingSpawnPoint = false)
 	{
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);
@@ -266,8 +313,14 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Logs the current ambient vehicle prerequisite result and discovered entity state.
-	//! Записывает результат проверки предварительных условий и состояние найденных сущностей.
+	//! Logs a prerequisite-check result together with discovered entity, GameMode layer, flag, and FactionManager state.
+	//!
+	//! \param[in] check Collected prerequisite-check result to log
+	//! \param[in] spawnPointCount Number of existing points, or -1 when not counted
+	//! Записывает результат проверки предпосылок вместе с состоянием найденных сущностей, слоя GameMode, флагов и FactionManager.
+	//!
+	//! \param[in] check Собранный результат проверки предпосылок для журнала
+	//! \param[in] spawnPointCount Количество существующих точек либо -1, когда подсчёт не выполнялся
 	private void LogCheck(ME_AmbientSpawnPointCheck check, int spawnPointCount = -1)
 	{
 		PrintFormat("[ME_DEBUG_AVSP_WB] editor scan result=%1 spawnpoints=%2 gameModes=%3 factionManagers=%4 m_eTestGameFlags=%5 available=%6 spawnVehicles=%7 subscene=%8 layerId=%9", GetResultCode(check.m_eResult), spawnPointCount, check.m_iGameModeCount, check.m_iFactionManagerCount, check.m_eTestGameFlags, check.m_bHasTestGameFlags, check.m_bSpawnVehiclesEnabled, check.m_iGameModeSubscene, check.m_iGameModeLayerId);
@@ -275,8 +328,14 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Converts a prerequisite check result to a diagnostic log code.
-	//! Преобразует результат проверки предварительных условий в диагностический код журнала.
+	//! Converts a prerequisite-check state into a stable diagnostic log code.
+	//!
+	//! \param[in] result Editor diagnostic state to convert
+	//! \return Stable lowercase code used in diagnostic log output
+	//! Преобразует состояние проверки предпосылок в стабильный диагностический код журнала.
+	//!
+	//! \param[in] result Диагностическое состояние редактора для преобразования
+	//! \return Стабильный строчный код, используемый в диагностическом выводе
 	private string GetResultCode(EME_AmbientSpawnPointCheckResult result)
 	{
 		switch (result)
@@ -300,6 +359,15 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 		return "allowed";
 	}
 
+	//------------------------------------------------------------------------------------------------
+	//! Selects the placement-blocking message for a failed prerequisite-check state.
+	//!
+	//! \param[in] result Editor diagnostic state that blocked placement
+	//! \return Corresponding placement-blocking message
+	//! Выбирает сообщение, блокирующее размещение, для состояния неуспешной проверки предпосылок.
+	//!
+	//! \param[in] result Диагностическое состояние редактора, заблокировавшее размещение
+	//! \return Соответствующее сообщение о блокировке размещения
 	private string GetDropMessage(EME_AmbientSpawnPointCheckResult result)
 	{
 		switch (result)
@@ -323,6 +391,13 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 
 	//------------------------------------------------------------------------------------------------
 	//! Selects the warning shown by the explicit world check.
+	//!
+	//! \param[in] result Editor diagnostic state to describe
+	//! \return Corresponding explicit-check warning message
+	//! Выбирает предупреждение, отображаемое явной проверкой мира.
+	//!
+	//! \param[in] result Диагностическое состояние редактора для описания
+	//! \return Соответствующее сообщение предупреждения явной проверки
 	private string GetCheckMessage(EME_AmbientSpawnPointCheckResult result)
 	{
 		switch (result)

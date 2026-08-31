@@ -205,15 +205,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 }
 */
 
-//! Diagnostics for ambient vehicle spawn points that are configured so that no vehicle can ever
-//! be selected. The vanilla component returns silently when the label filter yields no candidates,
-//! which leaves an empty spawn point and no trace in the log. This mod repeats the vanilla filter
-//! after the base call and reports the empty result as an error, separating a self-contradictory
-//! label setup from a filter that simply found nothing in the catalog.
-//! Диагностика точек появления техники, настроенных так, что выбор техники невозможен.
-//! Встроенный компонент молча возвращает пустой результат фильтра меток; этот мод повторяет
-//! фильтрацию после базового вызова и сообщает об ошибке, различая противоречивую настройку меток
-//! и обычное отсутствие подходящих записей в каталоге.
+//! Diagnostics for ambient vehicle spawn points whose label configuration cannot select a vehicle.
+//! The override preserves vanilla spawning: super.Update(faction) selects the prefab, then this code
+//! repeats the catalog filter only to diagnose an empty result during the spawn-time callback.
+//! Editor-only registry, overlap, static-object, and Shape checks are advisory visual diagnostics;
+//! they neither replace nor guarantee the result of runtime spawning.
+//! Диагностика точек появления ambient-техники, конфигурация меток которых не может выбрать технику.
+//! Override сохраняет ванильное появление: super.Update(faction) выбирает префаб, после чего этот код
+//! повторяет фильтрацию каталога только для диагностики пустого результата при callback во время появления.
+//! Реестр редактора, проверки пересечений и статических объектов, а также Shape-визуализация —
+//! рекомендательные визуальные диагностики; они не заменяют и не гарантируют результат runtime-появления.
 
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
@@ -224,10 +225,14 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	protected int m_iME_EditorStaticObjectConflictCount;
 
 	//------------------------------------------------------------------------------------------------
-	//! Formats editable entity labels as a readable comma-separated list for log output.
-//! Форматирует метки редактируемых сущностей в удобный для журнала список через запятую.
-	//! \param[in] labels Labels to format, may be null or empty
-	//! \return Enum names joined by ", ", or "<none>" when there is nothing to list
+	//! Formats editable entity labels as a readable comma-separated list for diagnostic output.
+	//!
+	//! \param[in] labels Labels to format; may be null or empty
+	//! \return Enum names joined by ", ", or "<none>" when no labels are present
+	//! Форматирует метки редактируемых сущностей в читаемый список через запятую для диагностики.
+	//!
+	//! \param[in] labels Метки для форматирования; могут быть null или пустыми
+	//! \return Имена enum через ", " либо "<none>", когда меток нет
 	protected string ME_EditableEntityLabelsToString(array<EEditableEntityLabel> labels)
 	{
 		if (!labels || labels.IsEmpty())
@@ -246,11 +251,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-    //! Collects labels requested in IncludedEditableEntityLabels that are at the same time rejected
-    //! by ExcludedEditableEntityLabels. Such a label can never be satisfied, so a non-empty result
-    //! means the spawn point contradicts itself. Note that the exclusion may be inherited: the base
-    //! prefab AmbientVehicleSpawnpoint_Base.et already excludes TRAIT_ARMED.
-    //! \return Labels present in both lists, empty when the configuration is consistent
+	//! Collects labels requested in IncludedEditableEntityLabels that are also rejected by
+	//! ExcludedEditableEntityLabels. An overlap is a configuration contradiction; it proves an empty
+	//! filter result only when all included labels are required.
+	//!
+	//! \return Labels present in both lists, or an empty array when no overlap exists
+	//! Собирает метки из IncludedEditableEntityLabels, одновременно отклоняемые
+	//! ExcludedEditableEntityLabels. Пересечение является противоречием конфигурации; оно доказывает
+	//! пустой результат фильтра только когда требуются все включённые метки.
+	//!
+	//! \return Метки из обоих списков либо пустой массив при отсутствии пересечений
 	protected array<EEditableEntityLabel> ME_GetConflictingEditableEntityLabels()
 	{
 		array<EEditableEntityLabel> conflictingLabels = {};
@@ -264,16 +274,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 	
 	//------------------------------------------------------------------------------------------------
-    //! Picks the vehicle prefab for this spawn point and reports a configuration that can never
-    //! produce one. Called from SpawnVehicle() when the affiliated faction changed or when there is
-    //! no faction and no prefab has been chosen yet, so this runs at spawn time rather than on init.
-    //! After the base call the vanilla label filter is repeated: an empty result is logged as an
-    //! error, naming the conflicting labels when the include and exclude lists overlap and listing
-    //! both lists otherwise. The conflicting-labels diagnosis is only conclusive while
-    //! m_bRequireAllIncludedLabels is set, because then a single unsatisfiable label empties the
-    //! result on its own; with the default "any included label" matching the empty result may have
-    //! an unrelated cause.
-    //! \param[in] faction Faction whose vehicle catalog is filtered, null falls back to the global catalog
+	//! Lets super.Update(faction) select the vanilla vehicle prefab, then repeats the catalog filter
+	//! solely to log an empty candidate set. SpawnVehicle() invokes this at spawn time when faction
+	//! state changes or no faction has selected a prefab; this override does not select a prefab.
+	//!
+	//! \param[in] faction Faction whose vehicle catalog vanilla selection uses; null uses the global catalog
+	//! Выполняет выбор ванильного префаба через super.Update(faction), затем повторяет фильтрацию каталога
+	//! исключительно для журнала при пустом наборе кандидатов. SpawnVehicle() вызывает метод во время
+	//! появления при изменении фракции либо когда для отсутствующей фракции ещё не выбран префаб.
+	//!
+	//! \param[in] faction Фракция, чей каталог использует ванильный выбор; null использует общий каталог
 	override protected void Update(SCR_Faction faction)
 	{
 		super.Update(faction);
@@ -349,7 +359,10 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Adds this spawn point to the editor-only registry once.
+	//! Adds this spawn point to the editor-only registry if it is not already registered.
+	//! The registry exists only for advisory Shape, overlap, and static-object scans.
+	//! Добавляет эту точку в реестр только для редактора, если она ещё не зарегистрирована.
+	//! Реестр существует только для рекомендательных проверок Shape, пересечений и статических объектов.
 	void ME_RegisterEditorDebugSpawnPoint()
 	{
 		if (!s_ME_EditorSpawnPoints.Contains(this))
@@ -378,10 +391,20 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Tests whether an entity's world-space AABB intersects an editor spawn-area sphere.
-	//! Проверяет, пересекается ли мировая AABB сущности со сферой области появления в редакторе.
+	//! Tests whether an entity's world-space AABB intersects this point's editor spawn-area sphere.
+	//! This broad-phase advisory test does not predict or replace the runtime free-space search.
 	//!
-	//! This is a broad-phase editor warning and is not a guaranteed runtime spawn failure.
+	//! \param[in] mins Minimum corner of the entity's world-space AABB
+	//! \param[in] maxs Maximum corner of the entity's world-space AABB
+	//! \param[in] origin Center of this spawn point's editor spawn area
+	//! \return True when the AABB touches or intersects the spawn-area sphere
+	//! Проверяет пересечение мировой AABB сущности со сферой области появления этой точки в редакторе.
+	//! Эта рекомендательная broad-phase-проверка не предсказывает и не заменяет runtime-поиск свободного места.
+	//!
+	//! \param[in] mins Минимальный угол мировой AABB сущности
+	//! \param[in] maxs Максимальный угол мировой AABB сущности
+	//! \param[in] origin Центр области появления этой точки в редакторе
+	//! \return True, когда AABB касается или пересекает сферу области появления
 	protected bool ME_DoBoundsIntersectEditorSpawnArea(vector mins, vector maxs, vector origin)
 	{
 		vector closestPoint;
@@ -400,10 +423,18 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Creates one shared marker for an object, even when several spawn areas intersect its bounds.
+	//! Creates one shared editor-only marker for a static object, even if several spawn areas intersect it.
+	//! Marker size follows object bounds while remaining a visual advisory rather than another spawn-area probe.
 	//!
-	//! The marker size follows the object's bounds but remains visible for small objects and bounded
-	//! for large objects so it remains an editor warning rather than a second spawn-area visualization.
+	//! \param[in] entity Static entity represented by the marker
+	//! \param[in] mins Minimum corner of its world-space AABB
+	//! \param[in] maxs Maximum corner of its world-space AABB
+	//! Создаёт один общий marker только для редактора для статического объекта, даже если его пересекают несколько областей появления.
+	//! Размер marker следует границам объекта, оставаясь визуальной рекомендацией, а не второй проверкой области появления.
+	//!
+	//! \param[in] entity Статическая сущность, представленная marker
+	//! \param[in] mins Минимальный угол её мировой AABB
+	//! \param[in] maxs Максимальный угол её мировой AABB
 	static void ME_AddEditorStaticObjectMarker(IEntity entity, vector mins, vector maxs)
 	{
 		if (s_ME_EditorStaticObjectMarkerEntities.Contains(entity))
@@ -423,9 +454,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Evaluates a broad-phase query result as a static physics/bounds editor-warning candidate.
+	//! Evaluates a broad-phase query entity as a possible static physics/bounds conflict for editor display.
+	//! The callback always continues scanning and does not affect runtime spawning.
 	//!
-	//! \return True to continue querying further entities
+	//! \param[in] entity Queried entity to evaluate
+	//! \return True to continue querying subsequent entities
+	//! Оценивает сущность из broad-phase-запроса как возможный конфликт статической физики/границ для отображения в редакторе.
+	//! Callback всегда продолжает сканирование и не влияет на runtime-появление.
+	//!
+	//! \param[in] entity Проверяемая сущность из запроса
+	//! \return True, чтобы продолжить запрос следующих сущностей
 	protected bool ME_CollectEditorStaticObjectConflict(IEntity entity)
 	{
 		IEntity owner = GetOwner();
@@ -453,7 +491,14 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Scans this point's area for static physics/bounds editor warnings.
+	//! Scans this point's editor spawn area for static physics/bounds advisory conflicts.
+	//! The scan updates diagnostic markers and does not alter vanilla runtime spawning.
+	//!
+	//! \param[in] owner Spawn point entity whose world and origin are scanned
+	//! Сканирует область появления этой точки в редакторе на рекомендательные конфликты статической физики/границ.
+	//! Сканирование обновляет диагностические markers и не изменяет ванильное runtime-появление.
+	//!
+	//! \param[in] owner Сущность точки появления, чьи мир и позиция сканируются
 	protected void ME_RefreshEditorStaticObjectConflicts(IEntity owner)
 	{
 		m_iME_EditorStaticObjectConflictCount = 0;
@@ -463,8 +508,10 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Rebuilds all registered editor shapes so every point reflects current overlaps and static objects.
-	//! Перестраивает все зарегистрированные формы редактора, чтобы точки отражали текущие пересечения и статические объекты.
+	//! Rebuilds every registered editor-only shape after clearing shared static-object markers.
+	//! This visual refresh is advisory and does not invoke or replace runtime spawning.
+	//! Перестраивает каждую зарегистрированную форму только для редактора после очистки общих marker статических объектов.
+	//! Это визуальное обновление рекомендательное и не вызывает и не заменяет runtime-появление.
 	void ME_RefreshAllEditorDebugShapes()
 	{
 		ME_ClearEditorStaticObjectMarkers();
@@ -480,11 +527,20 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Finds the first registered spawn point whose editor area touches this point's area.
-	//! \param[in] origin Origin to compare against
-	//! \param[in] world World in which the origin exists
-	//! \param[out] overlappingPoint First touching or intersecting point, if any
+	//! Finds the first registered spawn point whose editor spawn area touches this point's area.
+	//! This is an editor-only overlap advisory and is not a runtime spawn decision.
+	//!
+	//! \param[in] origin Origin to compare against registered points
+	//! \param[in] world World containing the origin
+	//! \param[out] overlappingPoint First touching or intersecting point, if one exists
 	//! \return True when another point is within two spawning radii
+	//! Находит первую зарегистрированную точку появления, чья область в редакторе касается области этой точки.
+	//! Это рекомендательная проверка пересечения только для редактора, а не решение runtime-появления.
+	//!
+	//! \param[in] origin Позиция для сравнения с зарегистрированными точками
+	//! \param[in] world Мир, содержащий эту позицию
+	//! \param[out] overlappingPoint Первая касающаяся или пересекающаяся точка, если она найдена
+	//! \return True, когда другая точка находится в пределах двух радиусов появления
 	bool ME_FindOverlappingEditorSpawnPoint(vector origin, BaseWorld world, out SCR_AmbientVehicleSpawnPointComponent overlappingPoint)
 	{
 		float maxDistance = 2 * SPAWNING_RADIUS;
@@ -511,16 +567,23 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		return false;
 	}
 
+	//------------------------------------------------------------------------------------------------
+	//! Releases this point's editor-only spawn-area Shape.
+	//! Освобождает Shape области появления этой точки, используемую только редактором.
 	void ME_ClearEditorDebugShape()
 	{
 		m_ME_EditorSpawnAreaShape = null;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Probes the vanilla empty-terrain search and displays its result and area-overlap warning.
+	//! Probes the vanilla empty-terrain search and refreshes advisory editor Shapes for area overlaps and static objects.
+	//! These visual checks do not alter or guarantee the result of the vanilla runtime spawning probe.
 	//!
-	//! Static physics/bounds markers are an editor advisory and do not alter the vanilla probe result.
-	//! \param[in] owner Spawn point entity whose origin and world are tested
+	//! \param[in] owner Spawn point entity whose origin and world are inspected
+	//! Проверяет ванильный поиск свободного места и обновляет рекомендательные Shape редактора для пересечений областей и статических объектов.
+	//! Эти визуальные проверки не изменяют и не гарантируют результат ванильной runtime-проверки появления.
+	//!
+	//! \param[in] owner Сущность точки появления, чьи позиция и мир проверяются
 	void ME_RefreshEditorDebugShape(IEntity owner)
 	{
 		ME_ClearEditorDebugShape();
@@ -570,11 +633,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Registers and refreshes the editor probe when a spawn point is initialized.
-	//! Регистрирует и обновляет проверочную область редактора при инициализации точки появления.
-	//! \param[in] owner Spawn point entity
+	//! Registers the point and refreshes editor-only advisory Shapes when Workbench initializes it.
+	//!
+	//! \param[in] owner Spawn point entity being initialized
 	//! \param[in,out] mat Spawn point transform matrix
 	//! \param[in] src Spawn point entity source
+	//! Регистрирует точку и обновляет рекомендательные Shape только для редактора при её инициализации Workbench.
+	//!
+	//! \param[in] owner Инициализируемая сущность точки появления
+	//! \param[in,out] mat Матрица преобразования точки появления
+	//! \param[in] src Источник сущности точки появления
 	override void _WB_OnInit(IEntity owner, inout vector mat[4], IEntitySource src)
 	{
 		super._WB_OnInit(owner, mat, src);
@@ -583,10 +651,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Refreshes every editor probe after a spawn point is moved.
-	//! \param[in] owner Spawn point entity
-	//! \param[in,out] mat Spawn point transform matrix
+	//! Refreshes every editor-only advisory Shape after Workbench changes a spawn point transform.
+	//!
+	//! \param[in] owner Moved spawn point entity
+	//! \param[in,out] mat Updated spawn point transform matrix
 	//! \param[in] src Spawn point entity source
+	//! Обновляет каждую рекомендательную Shape только для редактора после изменения Workbench преобразования точки появления.
+	//!
+	//! \param[in] owner Перемещённая сущность точки появления
+	//! \param[in,out] mat Обновлённая матрица преобразования точки появления
+	//! \param[in] src Источник сущности точки появления
 	override void _WB_SetTransform(IEntity owner, inout vector mat[4], IEntitySource src)
 	{
 		super._WB_SetTransform(owner, mat, src);
@@ -594,8 +668,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Unregisters the point, clears its shape, and refreshes remaining points on deletion.
-	//! \param[in] owner Spawn point entity
+	//! Unregisters the point, releases its editor-only Shape, and refreshes the remaining advisory Shapes during entity deletion.
+	//!
+	//! \param[in] owner Spawn point entity being deleted
+	//! Удаляет точку из реестра, освобождает её Shape только для редактора и обновляет оставшиеся рекомендательные Shape при удалении сущности.
+	//!
+	//! \param[in] owner Удаляемая сущность точки появления
 	override void OnDelete(IEntity owner)
 	{
 		ME_UnregisterEditorDebugSpawnPoint();
@@ -605,9 +683,14 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Unregisters the point before Workbench removes it and refreshes remaining points.
-	//! \param[in] owner Spawn point entity
+	//! Unregisters the point before Workbench removes it, releases its editor-only Shape, and refreshes remaining advisory Shapes.
+	//!
+	//! \param[in] owner Spawn point entity being removed
 	//! \param[in] src Spawn point entity source
+	//! Удаляет точку из реестра до её удаления Workbench, освобождает её Shape только для редактора и обновляет оставшиеся рекомендательные Shape.
+	//!
+	//! \param[in] owner Удаляемая сущность точки появления
+	//! \param[in] src Источник сущности точки появления
 	override void _WB_OnDelete(IEntity owner, IEntitySource src)
 	{
 		ME_UnregisterEditorDebugSpawnPoint();

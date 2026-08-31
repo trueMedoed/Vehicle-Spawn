@@ -171,19 +171,21 @@ modded class SCR_AmbientVehicleSystem
 
 
 //------------------------------------------------------------------------------------------------
-//! Logs the outcome of ambient vehicle spawning: which vehicle was created at which spawn point.
-//! Записывает результат появления техники: какая техника создана в какой точке появления.
-//! Subscribes to the system's OnVehicleSpawned invoker, which the spawn point component raises only
-//! after the vehicle entity exists. A logged line therefore means the spawn actually succeeded,
-//! unlike m_sPrefab, which only records the prefab that was selected before the free-space check.
-//! Подписывается на invoker OnVehicleSpawned, который компонент точки вызывает только после
-//! создания сущности техники. Поэтому такая строка означает успешное появление, в отличие от
-//! m_sPrefab, который лишь хранит выбранный префаб до проверки свободного места.
+//! Reports completed ambient-vehicle creation without replacing the vanilla spawning flow.
+//! The callback is invoked only after the spawn point has created a vehicle entity. Consequently,
+//! a log entry confirms a completed spawn, unlike m_sPrefab, which is only the prefab selected
+//! before the vanilla free-space check.
+//! Сообщает о завершённом создании ambient-техники, не заменяя ванильный процесс её появления.
+//! Callback вызывается только после создания сущности техники точкой появления. Поэтому запись
+//! в журнале подтверждает завершённое появление, в отличие от m_sPrefab, который содержит лишь
+//! префаб, выбранный до ванильной проверки свободного места.
 modded class SCR_AmbientVehicleSystem
 {
 	//------------------------------------------------------------------------------------------------
-    //! Subscribes the spawn reporter once the system is initialised.
-    //! Однократно подписывает обработчик отчёта о появлении после инициализации системы.
+	//! Subscribes the reporter to the ambient system's completed-spawn invoker after base initialization.
+	//! The subscription observes vanilla behavior only and does not initiate or alter spawning.
+	//! Подписывает обработчик отчёта на invoker завершённого появления ambient-системы после базовой инициализации.
+	//! Подписка только наблюдает ванильное поведение и не запускает и не изменяет появление техники.
     override void OnInit()
     {
             super.OnInit();
@@ -192,12 +194,14 @@ modded class SCR_AmbientVehicleSystem
     }
 
 	//------------------------------------------------------------------------------------------------
-	//! Reports a completed ambient vehicle spawn.
-    //! Сообщает о завершённом появлении техники.
-    //! \param[in] spawnpoint Spawn point that produced the vehicle
-    //! \param[in] vehicle Vehicle entity that was created
-    //! \param[in] spawnpoint Точка появления, создавшая технику
-    //! \param[in] vehicle Созданная сущность техники
+	//! Logs a vehicle that the vanilla spawn point has successfully created.
+	//!
+	//! \param[in] spawnpoint Spawn point that raised the completed-spawn callback
+	//! \param[in] vehicle Created vehicle entity; its prefab is read for the diagnostic entry
+	//! Сообщает о технике, успешно созданной ванильной точкой появления.
+	//!
+	//! \param[in] spawnpoint Точка появления, вызвавшая callback завершённого появления
+	//! \param[in] vehicle Созданная сущность техники; её префаб считывается для диагностической записи
     protected void ME_ReportVehicleSpawned(SCR_AmbientVehicleSpawnPointComponent spawnpoint, Vehicle vehicle)
     {
             IEntity point = spawnpoint.GetOwner();
