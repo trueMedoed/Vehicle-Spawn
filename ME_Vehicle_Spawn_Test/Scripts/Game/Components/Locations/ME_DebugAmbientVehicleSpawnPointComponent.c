@@ -225,6 +225,95 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	protected int m_iME_EditorStaticObjectConflictCount;
 
 	//------------------------------------------------------------------------------------------------
+	//! Suppresses repeated runtime faction-manager mismatch messages for this spawn point until its required key resolves again.
+	//! Подавляет повторяющиеся runtime-сообщения о несовпадении с FactionManager для этой точки, пока её требуемый ключ снова не разрешится.
+	protected bool m_bME_FactionManagerMismatchLogged;
+
+	//------------------------------------------------------------------------------------------------
+	//! Formats the factions currently available from a FactionManager for diagnostic output.
+	//!
+	//! \param[in] factionManager Active faction manager to inspect
+	//! \return Comma-separated faction keys, or "<none>" when the manager has no factions
+	//! Форматирует фракции, доступные в текущем FactionManager, для диагностического вывода.
+	//!
+	//! \param[in] factionManager Активный менеджер фракций для проверки
+	//! \return Ключи фракций через запятую либо "<none>", если в менеджере нет фракций
+	protected string ME_GetFactionManagerKeys(FactionManager factionManager)
+	{
+		array<Faction> factions = {};
+		factionManager.GetFactionsList(factions);
+
+		string result;
+		foreach (Faction managerFaction: factions)
+		{
+			if (!managerFaction)
+				continue;
+
+			if (!result.IsEmpty())
+				result += ", ";
+
+			result += managerFaction.GetFactionKey();
+		}
+
+		if (result.IsEmpty())
+			return "<none>";
+
+		return result;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Logs a faction key that the active FactionManager cannot resolve for this spawn point once per unresolved period.
+	//! This is diagnostic-only and does not alter vanilla faction, catalog, prefab, or spawning decisions.
+	//!
+	//! \param[in] faction Vanilla faction passed to Update
+	//! Диагностически записывает ключ фракции этой точки, который активный FactionManager не может разрешить, один раз за период отсутствия.
+	//! Это только диагностика и она не меняет ванильные решения о фракции, каталоге, префабе или появлении.
+	//!
+	//! \param[in] faction Ванильная фракция, переданная в Update
+	protected void ME_LogFactionManagerMismatch(SCR_Faction faction)
+	{
+		IEntity owner = GetOwner();
+		SCR_FactionAffiliationComponent affiliation = SCR_FactionAffiliationComponent.Cast(owner.FindComponent(SCR_FactionAffiliationComponent));
+		if (!affiliation)
+		{
+			m_bME_FactionManagerMismatchLogged = false;
+			return;
+		}
+
+		FactionKey defaultKey = affiliation.GetDefaultFactionKey();
+		FactionKey currentKey = affiliation.GetAffiliatedFactionKey();
+		FactionKey requiredKey = defaultKey;
+		if (requiredKey.IsEmpty())
+			requiredKey = currentKey;
+
+		if (requiredKey.IsEmpty())
+		{
+			m_bME_FactionManagerMismatchLogged = false;
+			return;
+		}
+
+		FactionManager factionManager = GetGame().GetFactionManager();
+		if (!factionManager)
+			return;
+
+		if (factionManager.GetFactionByKey(requiredKey))
+		{
+			m_bME_FactionManagerMismatchLogged = false;
+			return;
+		}
+
+		if (m_bME_FactionManagerMismatchLogged)
+			return;
+
+		string passedKey = "<none>";
+		if (faction)
+			passedKey = faction.GetFactionKey();
+
+		PrintFormat("[ME_DEBUG_AVSP_FACTION] entity=%1 coords=%2 requiredKey=%3 defaultKey=%4 currentKey=%5 passedKey=%6 availableKeys=%7", owner.GetName(), owner.GetOrigin(), requiredKey, defaultKey, currentKey, passedKey, ME_GetFactionManagerKeys(factionManager));
+		m_bME_FactionManagerMismatchLogged = true;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Formats editable entity labels as a readable comma-separated list for diagnostic output.
 	//!
 	//! \param[in] labels Labels to format; may be null or empty
@@ -286,6 +375,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	//! \param[in] faction Фракция, чей каталог использует ванильный выбор; null использует общий каталог
 	override protected void Update(SCR_Faction faction)
 	{
+		ME_LogFactionManagerMismatch(faction);
 		super.Update(faction);
 
 		//Print("[ME_DEBUG] SCR_AmbientVehicleSpawnPointComponent::Update");
