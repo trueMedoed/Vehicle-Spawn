@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------------------------------
 //! Logs the outcome of ambient vehicle spawning: which vehicle was created at which spawn point.
-//! Записывает результат появления техники: какая техника создана в какой точке появления.
 //! Subscribes to the system's OnVehicleSpawned invoker, which the spawn point component raises only
 //! after the vehicle entity exists. A logged line therefore means the spawn actually succeeded,
 //! unlike m_sPrefab, which only records the prefab that was selected before the free-space check.

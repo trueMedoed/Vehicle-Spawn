@@ -7,23 +7,6 @@ GameProject {
  }
  Configurations {
   GameProjectConfig PC {
-   WidgetManagerSettings WidgetManagerSettings "{57E578E68953C7BE}" {
-    StringTables {
-     StringTableDefinition "{8F014DF1D1754FC9}" {
-      StringTableSource "{8FF7A697113FCCAF}Strings/ME_AmbientVehicleSpawnPointWarning.st"
-      Languages {
-       LanguageDefinition "{6A4DD321A98178F8}" {
-        Code "en_us"
-        StringTableRuntime "{8A01A519B3B52559}Strings/ME_AmbientVehicleSpawnPointWarning.en_us.conf"
-       }
-       LanguageDefinition "{60386A8107D58454}" {
-        Code "ru_ru"
-        StringTableRuntime "{297011F7D380D0E4}Strings/ME_AmbientVehicleSpawnPointWarning.ru_ru.conf"
-       }
-      }
-     }
-    }
-   }
   }
  }
 }
