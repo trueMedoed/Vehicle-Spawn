@@ -1,0 +1,10 @@
+SCR_BaseGameMode GameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" {
+ coords 4.157 0.999 4.754
+ m_eTestGameFlags SpawnVehicles
+}
+SCR_FactionManager FactionManager : "{589540B35EBA8CDC}Prefabs/MP/Managers/Factions/FactionManager_USxUSSR.et" {
+ coords 2.105 0.999 1.502
+}
+GenericEntity AmbientVehicleSpawnPoint : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
+ coords 100 1 150
+}
