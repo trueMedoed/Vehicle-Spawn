@@ -51,11 +51,14 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	//------------------------------------------------------------------------------------------------
 	//! Runs the prerequisite check for the open world.
 	//! Выполняет проверку предварительных условий открытого мира.
+	
+	/*
 	override void Run()
 	{
 		ME_AmbientVehicleSpawnPointPreviewController.Activate();
 		CheckOpenWorld();
 	}
+	*/
 
 	//------------------------------------------------------------------------------------------------
 	//! Validates a dropped ambient vehicle spawn-point prefab before native placement.
@@ -87,8 +90,9 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 			return true;
 		}
 
-		ME_AmbientVehicleSpawnPointPreviewController.Activate();
+		//ME_AmbientVehicleSpawnPointPreviewController.Activate();
 		Print("[ME_DEBUG_AVSP_WB] Ambient spawn point drop allowed: forwarding native placement");
+		
 		return super.OnWorldEditWindowDataDropped(windowType, posX, posY, dataType, data);
 	}
 

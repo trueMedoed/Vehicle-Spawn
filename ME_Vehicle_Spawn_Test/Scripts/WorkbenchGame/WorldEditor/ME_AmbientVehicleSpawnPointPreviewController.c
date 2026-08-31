@@ -1,5 +1,7 @@
 //! Diagnostic controller for reporting the lifecycle of the native ambient vehicle spawn-point preview.
 //! Диагностический контроллер для регистрации жизненного цикла встроенного предпросмотра точки появления техники.
+
+/*
 class ME_AmbientVehicleSpawnPointPreviewController
 {
 	protected static ref ME_AmbientVehicleSpawnPointPreviewController s_Instance;
@@ -36,3 +38,4 @@ class ME_AmbientVehicleSpawnPointPreviewController
 		Print("[ME_DEBUG_AVSP_WB] preview lifecycle status=UNVERIFIABLE reason=world_editor_has_no_confirmed_native_preview_owner");
 	}
 }
+*/
