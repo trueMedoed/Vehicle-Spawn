@@ -205,12 +205,15 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 }
 */
 
-//------------------------------------------------------------------------------------------------
 //! Diagnostics for ambient vehicle spawn points that are configured so that no vehicle can ever
 //! be selected. The vanilla component returns silently when the label filter yields no candidates,
 //! which leaves an empty spawn point and no trace in the log. This mod repeats the vanilla filter
 //! after the base call and reports the empty result as an error, separating a self-contradictory
 //! label setup from a filter that simply found nothing in the catalog.
+//! Диагностика точек появления техники, настроенных так, что выбор техники невозможен.
+//! Встроенный компонент молча возвращает пустой результат фильтра меток; этот мод повторяет
+//! фильтрацию после базового вызова и сообщает об ошибке, различая противоречивую настройку меток
+//! и обычное отсутствие подходящих записей в каталоге.
 
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
@@ -222,6 +225,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Formats editable entity labels as a readable comma-separated list for log output.
+//! Форматирует метки редактируемых сущностей в удобный для журнала список через запятую.
 	//! \param[in] labels Labels to format, may be null or empty
 	//! \return Enum names joined by ", ", or "<none>" when there is nothing to list
 	protected string ME_EditableEntityLabelsToString(array<EEditableEntityLabel> labels)
@@ -354,6 +358,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Removes this spawn point from the editor-only registry.
+	//! Удаляет эту точку появления из реестра, используемого только редактором.
 	void ME_UnregisterEditorDebugSpawnPoint()
 	{
 		for (int i = s_ME_EditorSpawnPoints.Count() - 1; i >= 0; i--)
@@ -365,6 +370,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Releases every shared editor-only marker for static physics/bounds conflicts.
+	//! Освобождает все общие маркеры редактора для конфликтов со статической физикой и границами.
 	static void ME_ClearEditorStaticObjectMarkers()
 	{
 		s_ME_EditorStaticObjectMarkerShapes.Clear();
@@ -373,6 +379,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Tests whether an entity's world-space AABB intersects an editor spawn-area sphere.
+	//! Проверяет, пересекается ли мировая AABB сущности со сферой области появления в редакторе.
 	//!
 	//! This is a broad-phase editor warning and is not a guaranteed runtime spawn failure.
 	protected bool ME_DoBoundsIntersectEditorSpawnArea(vector mins, vector maxs, vector origin)
@@ -457,6 +464,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Rebuilds all registered editor shapes so every point reflects current overlaps and static objects.
+	//! Перестраивает все зарегистрированные формы редактора, чтобы точки отражали текущие пересечения и статические объекты.
 	void ME_RefreshAllEditorDebugShapes()
 	{
 		ME_ClearEditorStaticObjectMarkers();
@@ -563,6 +571,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Registers and refreshes the editor probe when a spawn point is initialized.
+	//! Регистрирует и обновляет проверочную область редактора при инициализации точки появления.
 	//! \param[in] owner Spawn point entity
 	//! \param[in,out] mat Spawn point transform matrix
 	//! \param[in] src Spawn point entity source

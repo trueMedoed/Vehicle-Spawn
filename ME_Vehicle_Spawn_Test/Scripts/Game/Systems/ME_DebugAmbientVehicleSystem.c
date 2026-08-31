@@ -172,13 +172,18 @@ modded class SCR_AmbientVehicleSystem
 
 //------------------------------------------------------------------------------------------------
 //! Logs the outcome of ambient vehicle spawning: which vehicle was created at which spawn point.
+//! Записывает результат появления техники: какая техника создана в какой точке появления.
 //! Subscribes to the system's OnVehicleSpawned invoker, which the spawn point component raises only
 //! after the vehicle entity exists. A logged line therefore means the spawn actually succeeded,
 //! unlike m_sPrefab, which only records the prefab that was selected before the free-space check.
+//! Подписывается на invoker OnVehicleSpawned, который компонент точки вызывает только после
+//! создания сущности техники. Поэтому такая строка означает успешное появление, в отличие от
+//! m_sPrefab, который лишь хранит выбранный префаб до проверки свободного места.
 modded class SCR_AmbientVehicleSystem
 {
 	//------------------------------------------------------------------------------------------------
     //! Subscribes the spawn reporter once the system is initialised.
+    //! Однократно подписывает обработчик отчёта о появлении после инициализации системы.
     override void OnInit()
     {
             super.OnInit();
@@ -188,8 +193,11 @@ modded class SCR_AmbientVehicleSystem
 
 	//------------------------------------------------------------------------------------------------
 	//! Reports a completed ambient vehicle spawn.
+    //! Сообщает о завершённом появлении техники.
     //! \param[in] spawnpoint Spawn point that produced the vehicle
     //! \param[in] vehicle Vehicle entity that was created
+    //! \param[in] spawnpoint Точка появления, создавшая технику
+    //! \param[in] vehicle Созданная сущность техники
     protected void ME_ReportVehicleSpawned(SCR_AmbientVehicleSpawnPointComponent spawnpoint, Vehicle vehicle)
     {
             IEntity point = spawnpoint.GetOwner();

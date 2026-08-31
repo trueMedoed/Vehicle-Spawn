@@ -1,3 +1,6 @@
+//------------------------------------------------------------------------------------------------
+//! Describes the result of validating ambient vehicle spawn-point prerequisites.
+//! Описывает результат проверки предварительных условий точки появления техники.
 enum EME_AmbientSpawnPointCheckResult
 {
 	WORLD_EDITOR_UNAVAILABLE,
@@ -9,6 +12,9 @@ enum EME_AmbientSpawnPointCheckResult
 	ALLOWED
 }
 
+//------------------------------------------------------------------------------------------------
+//! Stores the result of checking the current world's ambient vehicle prerequisites.
+//! Хранит результат проверки предварительных условий появления техники в текущем мире.
 class ME_AmbientSpawnPointCheck
 {
 	EME_AmbientSpawnPointCheckResult m_eResult;
@@ -22,6 +28,9 @@ class ME_AmbientSpawnPointCheck
 	bool m_bLockedHierarchy;
 }
 
+//------------------------------------------------------------------------------------------------
+//! Checks GameMode, layer, and Spawn Vehicles prerequisites in the World Editor.
+//! Проверяет в редакторе мира GameMode, слой и предварительное условие Spawn Vehicles.
 [WorkbenchPluginAttribute(name: "Check ambient vehicle spawning", description: "Checks the open world's ambient vehicle spawn points and GameMode test flags.", wbModules: { "WorldEditor" })]
 class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 {
@@ -39,6 +48,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	protected const string STRING_CHECK_SPAWN_VEHICLES_DISABLED = "#MEVehicleSpawn_WB_AmbientSpawnWarning_CheckSpawnVehiclesDisabled";
 
 	//------------------------------------------------------------------------------------------------
+	//! Runs the prerequisite check for the open world.
+	//! Выполняет проверку предварительных условий открытого мира.
 	override void Run()
 	{
 		ME_AmbientVehicleSpawnPointPreviewController.Activate();
@@ -46,6 +57,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Validates a dropped ambient vehicle spawn-point prefab before native placement.
+	//! Проверяет сброшенный префаб точки появления техники перед встроенным размещением.
 	override bool OnWorldEditWindowDataDropped(int windowType, int posX, int posY, string dataType, array<string> data)
 	{
 		bool hasAmbientSpawnPoint;
@@ -76,6 +89,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Determines whether an ambient vehicle spawn point can be created in the current world.
+	//! Определяет, можно ли создать точку появления техники в текущем мире.
 	private ME_AmbientSpawnPointCheck CanCreateAmbientSpawnPoint()
 	{
 		ME_AmbientSpawnPointCheck check = new ME_AmbientSpawnPointCheck();
@@ -150,6 +165,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Checks the open world and shows a warning when ambient vehicle prerequisites are not met.
+	//! Проверяет открытый мир и показывает предупреждение, если предварительные условия не выполнены.
 	private void CheckOpenWorld(bool hasIncomingSpawnPoint = false)
 	{
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);
@@ -198,12 +215,16 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Logs the current ambient vehicle prerequisite result and discovered entity state.
+	//! Записывает результат проверки предварительных условий и состояние найденных сущностей.
 	private void LogCheck(ME_AmbientSpawnPointCheck check, int spawnPointCount = -1)
 	{
 		PrintFormat("[ME_DEBUG_AVSP_WB] editor scan result=%1 spawnpoints=%2 gameModes=%3 m_eTestGameFlags=%4 available=%5 spawnVehicles=%6 subscene=%7 layerId=%8 layerPath=%9 lockedHierarchy=%10", GetResultCode(check.m_eResult), spawnPointCount, check.m_iGameModeCount, check.m_eTestGameFlags, check.m_bHasTestGameFlags, check.m_bSpawnVehiclesEnabled, check.m_iGameModeSubscene, check.m_iGameModeLayerId, check.m_sGameModeLayerPath, check.m_bLockedHierarchy);
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Converts a prerequisite check result to a diagnostic log code.
+	//! Преобразует результат проверки предварительных условий в диагностический код журнала.
 	private string GetResultCode(EME_AmbientSpawnPointCheckResult result)
 	{
 		switch (result)
