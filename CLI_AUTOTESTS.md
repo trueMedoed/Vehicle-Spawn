@@ -42,7 +42,9 @@ ME_Vehicle_Spawn_Test/Scripts/Game/Autotest/ME_Vehicle_Spawn/ME_AmbientVehicleSp
 
 ## Запуск одного suite
 
-Запускайте каждый suite отдельным **оконным** процессом. Не добавляйте `-headless` или параметры скрытия окна.
+Запускайте каждый suite отдельным **оконным** процессом. Параметры `-window -screenWidth 1024 -screenHeight 578` обязательны: они принудительно создают небольшое окно фиксированного размера. Не добавляйте `-headless` или параметры скрытия окна.
+
+`-screenWidth` и `-screenHeight` задают размер окна, а не внутреннее render-разрешение. Поэтому запуск не зависит от сохранённого режима (например, borderless/fullscreen) или размера окна в video settings профиля Arma Reforger.
 
 В PowerShell:
 
@@ -50,7 +52,7 @@ ME_Vehicle_Spawn_Test/Scripts/Game/Autotest/ME_Vehicle_Spawn/ME_AmbientVehicleSp
 $exe = "D:\SteamLibrary\steamapps\common\Arma Reforger\ArmaReforgerSteamDiag.exe"
 $root = "C:\Users\Phil\Documents\GitHub\Mods\Vehicle Spawn"
 $suite = "ME_TEST_AmbientVehicleSpawnPointConfiguredSuite"
-$args = "-addonsDir `"$root`" -addons ME_Vehicle_Spawn_Test -autotest $suite"
+$args = "-window -screenWidth 1024 -screenHeight 578 -addonsDir `"$root`" -addons ME_Vehicle_Spawn_Test -autotest $suite"
 
 $process = Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe) `
   -ArgumentList $args -Wait -PassThru
@@ -76,7 +78,7 @@ $suites = @(
 )
 
 foreach ($suite in $suites) {
-  $args = "-addonsDir `"$root`" -addons ME_Vehicle_Spawn_Test -autotest $suite"
+  $args = "-window -screenWidth 1024 -screenHeight 578 -addonsDir `"$root`" -addons ME_Vehicle_Spawn_Test -autotest $suite"
   $process = Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe) `
     -ArgumentList $args -Wait -PassThru
   $process.Refresh()
