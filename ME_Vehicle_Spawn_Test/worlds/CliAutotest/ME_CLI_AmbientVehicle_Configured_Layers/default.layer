@@ -1,0 +1,23 @@
+SCR_BaseGameMode GameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" {
+ coords 4.157 0.999 4.754
+ components {
+  SCR_RespawnSystemComponent "{56B2B4793051E7C9}" {
+   m_SpawnLogic SCR_MenuSpawnLogic "{5D44B78DAD98E7F9}" {
+   }
+  }
+  ME_TEST_AmbientVehicleSpawnFlagsComponent "{C1A1C1E000000001}" {
+  }
+ }
+}
+SCR_FactionManager FactionManager : "{589540B35EBA8CDC}Prefabs/MP/Managers/Factions/FactionManager_USxUSSR.et" {
+ coords 2.105 0.999 1.502
+}
+SCR_LoadoutManager LoadoutManager : "{B54D08AEA74A5354}Prefabs/MP/Managers/Loadouts/LoadoutManager_Editor.et" {
+ coords 0 0 0
+}
+SCR_MapEntity MapEntity {
+ coords 0 0 0
+}
+GenericEntity AmbientVehicleSpawnPoint : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
+ coords 100 1 150
+}

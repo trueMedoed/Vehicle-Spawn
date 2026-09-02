@@ -27,7 +27,7 @@ For the required workflow for transferring verified changes from the test addon 
 
 ## Commands and validation
 
-This repository has no package manager, command-line build wrapper, linter, automated test suite, or single-test command.
+This repository has no package manager, command-line build wrapper, linter, or single-test command. The repeatable windowed CLI autotest procedure for `ME_Vehicle_Spawn_Test` is documented in [CLI_AUTOTESTS.md](CLI_AUTOTESTS.md).
 
 - Develop and validate the addon with **Arma Reforger Tools / Workbench**: open `addon.gproj`, open `worlds/MP/MpTest/ME_MpTest.ent`, then enter game mode to compile scripts and exercise the test setup. For the vanilla Eden ambient-vehicle baseline, open `worlds/MP/CTI_Campaign_Eden.ent`; do not use terrain-only `worlds/Eden/Eden.ent`, which has no game mode and initializes the ambient system with `enabled=0` and zero spawn points.
 - To restart Workbench cleanly through EnfusionMCP: stop the existing `ArmaReforgerWorkbenchSteamDiag.exe` process, launch Workbench with `wb_launch` and `addon.gproj`, then verify the bridge using `wb_connect`. Do not assume that a launch or reload completed merely because its call returned.

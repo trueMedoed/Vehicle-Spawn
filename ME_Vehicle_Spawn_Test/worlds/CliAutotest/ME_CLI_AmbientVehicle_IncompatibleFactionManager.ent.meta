@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{AB04B4D6968D78FD}worlds/CliAutotest/ME_CLI_AmbientVehicle_IncompatibleFactionManager.ent"
+ Configurations {
+  ENTResourceClass PC {
+  }
+  ENTResourceClass XBOX_ONE : PC {
+  }
+  ENTResourceClass XBOX_SERIES : PC {
+  }
+  ENTResourceClass PS4 : PC {
+  }
+  ENTResourceClass PS5 : PC {
+  }
+  ENTResourceClass HEADLESS : PC {
+  }
+ }
+}

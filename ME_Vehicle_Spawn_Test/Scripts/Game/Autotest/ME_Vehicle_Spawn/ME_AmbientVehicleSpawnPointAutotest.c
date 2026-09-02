@@ -11,46 +11,49 @@ class ME_TEST_AmbientVehicleSpawnPointWorldCase : SCR_AutotestCaseBase
 	protected int m_iGameModeCount;
 	protected int m_iFactionManagerCount;
 	protected int m_iSpawnPointCount;
+	protected int m_iMainStepCount;
 	protected bool m_bSpawnVehiclesEnabled;
 
 	//------------------------------------------------------------------------------------------------
-	//! Counts relevant entities found by the world query.
-	//! \\param[in] entity Entity returned by the world query
-	//! \\return True to continue querying entities
-	//! Подсчитывает релевантные сущности, найденные запросом мира.
-	//! \\param[in] entity Сущность, возвращённая запросом мира
-	//! \\return True, чтобы продолжить запрос сущностей
-	protected bool CollectWorldEntity(IEntity entity)
-	{
-		if (SCR_BaseGameMode.Cast(entity))
-			m_iGameModeCount++;
-
-		if (FactionManager.Cast(entity))
-			m_iFactionManagerCount++;
-
-		if (SCR_AmbientVehicleSpawnPointComponent.Cast(entity.FindComponent(SCR_AmbientVehicleSpawnPointComponent)))
-			m_iSpawnPointCount++;
-
-		return true;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Queries the loaded world and records entities and the public SpawnVehicles game flag.
-	//! Запрашивает загруженный мир и сохраняет сущности и публичный игровой флаг SpawnVehicles.
+	//! Resets the recorded world state before the scenario has finished loading.
+	//! Сбрасывает сохранённое состояние мира до завершения загрузки сценария.
 	[TestStep(TestStage.Setup)]
-	void Setup_CollectWorldState()
+	void Setup_ResetWorldState()
 	{
 		m_iGameModeCount = 0;
 		m_iFactionManagerCount = 0;
 		m_iSpawnPointCount = 0;
+		m_iMainStepCount = 0;
+	}
 
-		BaseWorld world = GetGame().GetWorld();
-		AssertTrue(world != null, "Autotest world is unavailable");
-		if (!world)
-			return;
+	//------------------------------------------------------------------------------------------------
+	//! Waits one main step, then records game-manager and ambient-system state.
+	//! \return True when the runtime state has been collected
+	//! Ожидает один main-шаг, затем сохраняет состояние игровых managers и ambient-системы.
+	//! \return True, когда runtime-состояние собрано
+	protected bool CollectLoadedWorldState()
+	{
+		if (m_iMainStepCount++ == 0)
+			return false;
 
-		world.QueryEntitiesBySphere(vector.Zero, 1000000, CollectWorldEntity);
+		m_iGameModeCount = 0;
+		if (SCR_BaseGameMode.Cast(GetGame().GetGameMode()))
+			m_iGameModeCount = 1;
+
+		m_iFactionManagerCount = 0;
+		if (FactionManager.Cast(GetGame().GetFactionManager()))
+			m_iFactionManagerCount = 1;
+		m_iSpawnPointCount = 0;
+
+		SCR_AmbientVehicleSystem ambientVehicleSystem = SCR_AmbientVehicleSystem.GetInstance();
+		if (ambientVehicleSystem)
+		{
+			ref array<SCR_AmbientVehicleSpawnPointComponent> spawnPoints = {};
+			m_iSpawnPointCount = ambientVehicleSystem.GetSpawnpoints(spawnPoints);
+		}
+
 		m_bSpawnVehiclesEnabled = GetGame().AreGameFlagsSet(EGameFlags.SpawnVehicles);
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -78,7 +81,7 @@ class ME_TEST_AmbientVehicleSpawnPointConfiguredSuite : SCR_AutotestSuiteBase
 	//! \\return Путь ресурса настроенного тестового мира
 	override ResourceName GetWorldFile()
 	{
-		return "{B7E4D91C6A2F5083}worlds/TestCases/ME_AmbientVehicleSpawnPoint_Configured.ent";
+		return "{2C429031B207EA90}worlds/CliAutotest/ME_CLI_AmbientVehicle_Configured.ent";
 	}
 }
 
@@ -92,9 +95,13 @@ class ME_TEST_AmbientVehicleSpawnPointConfiguredWorld : ME_TEST_AmbientVehicleSp
 	//! Asserts the configured world's runtime entity and game-flag state.
 	//! Проверяет runtime-состояние сущностей и игрового флага настроенного мира.
 	[TestStep(TestStage.Main)]
-	void Main_AssertConfiguredWorld()
+	bool Main_AssertConfiguredWorld()
 	{
+		if (!CollectLoadedWorldState())
+			return false;
+
 		AssertWorldState(1, 1, 1, true);
+		return true;
 	}
 }
 
@@ -111,7 +118,7 @@ class ME_TEST_AmbientVehicleSpawnPointSpawnVehiclesDisabledSuite : SCR_AutotestS
 	//! \\return Путь ресурса тестового мира с отключённым SpawnVehicles
 	override ResourceName GetWorldFile()
 	{
-		return "{B7E4D91C6A2F5083}worlds/TestCases/ME_GameMode_Without_Spawn_Vehicles.ent";
+		return "{7E8CAAE9EF7FCE59}worlds/CliAutotest/ME_CLI_AmbientVehicle_NoSpawnVehicles.ent";
 	}
 }
 
@@ -125,9 +132,13 @@ class ME_TEST_AmbientVehicleSpawnPointSpawnVehiclesDisabledWorld : ME_TEST_Ambie
 	//! Asserts the SpawnVehicles-disabled world's runtime entity and game-flag state.
 	//! Проверяет runtime-состояние сущностей и игрового флага мира с отключённым SpawnVehicles.
 	[TestStep(TestStage.Main)]
-	void Main_AssertSpawnVehiclesDisabledWorld()
+	bool Main_AssertSpawnVehiclesDisabledWorld()
 	{
+		if (!CollectLoadedWorldState())
+			return false;
+
 		AssertWorldState(1, 1, 0, false);
+		return true;
 	}
 }
 
@@ -144,7 +155,7 @@ class ME_TEST_AmbientVehicleSpawnPointMissingGameModeSuite : SCR_AutotestSuiteBa
 	//! \\return Путь ресурса тестового мира без GameMode
 	override ResourceName GetWorldFile()
 	{
-		return "{B7E4D91C6A2F5083}worlds/TestCases/ME_Missed_GameMode.ent";
+		return "{3FA6B77C898290B4}worlds/CliAutotest/ME_CLI_AmbientVehicle_NoGameMode.ent";
 	}
 }
 
@@ -158,9 +169,13 @@ class ME_TEST_AmbientVehicleSpawnPointMissingGameModeWorld : ME_TEST_AmbientVehi
 	//! Asserts the missing-GameMode world's runtime entity and game-flag state.
 	//! Проверяет runtime-состояние сущностей и игрового флага мира без GameMode.
 	[TestStep(TestStage.Main)]
-	void Main_AssertMissingGameModeWorld()
+	bool Main_AssertMissingGameModeWorld()
 	{
+		if (!CollectLoadedWorldState())
+			return false;
+
 		AssertWorldState(0, 0, 0, false);
+		return true;
 	}
 }
 
@@ -177,7 +192,7 @@ class ME_TEST_AmbientVehicleSpawnPointMissingFactionManagerSuite : SCR_AutotestS
 	//! \\return Путь ресурса тестового мира без FactionManager
 	override ResourceName GetWorldFile()
 	{
-		return "{B7E4D91C6A2F5083}worlds/TestCases/ME_Missed_Faction_Manager.ent";
+		return "{EE260C9E10E891CA}worlds/CliAutotest/ME_CLI_AmbientVehicle_NoFactionManager.ent";
 	}
 }
 
@@ -191,9 +206,13 @@ class ME_TEST_AmbientVehicleSpawnPointMissingFactionManagerWorld : ME_TEST_Ambie
 	//! Asserts the missing-FactionManager world's runtime entity and game-flag state.
 	//! Проверяет runtime-состояние сущностей и игрового флага мира без FactionManager.
 	[TestStep(TestStage.Main)]
-	void Main_AssertMissingFactionManagerWorld()
+	bool Main_AssertMissingFactionManagerWorld()
 	{
+		if (!CollectLoadedWorldState())
+			return false;
+
 		AssertWorldState(1, 0, 1, true);
+		return true;
 	}
 }
 
@@ -210,13 +229,13 @@ class ME_TEST_AmbientVehicleSpawnPointIncompatibleFactionManagerSuite : SCR_Auto
 	//! \\return Путь ресурса тестового мира с несовместимым FactionManager
 	override ResourceName GetWorldFile()
 	{
-		return "{B7E4D91C6A2F5083}worlds/TestCases/ME_Incompatible_Faction_Manager.ent";
+		return "{AB04B4D6968D78FD}worlds/CliAutotest/ME_CLI_AmbientVehicle_IncompatibleFactionManager.ent";
 	}
 }
 
 //------------------------------------------------------------------------------------------------
-//! Confirms that the incompatible-manager world still exposes the observable runtime prerequisites.
-//! Подтверждает, что мир с несовместимым manager всё ещё предоставляет наблюдаемые runtime-предпосылки.
+//! Confirms that an incompatible faction does not prevent spawn-point registration.
+//! Подтверждает, что несовместимая faction не предотвращает регистрацию точки появления.
 [Test(suite: ME_TEST_AmbientVehicleSpawnPointIncompatibleFactionManagerSuite, timeoutS: 10)]
 class ME_TEST_AmbientVehicleSpawnPointIncompatibleFactionManagerWorld : ME_TEST_AmbientVehicleSpawnPointWorldCase
 {
@@ -224,8 +243,12 @@ class ME_TEST_AmbientVehicleSpawnPointIncompatibleFactionManagerWorld : ME_TEST_
 	//! Asserts the incompatible-FactionManager world's runtime entity and game-flag state.
 	//! Проверяет runtime-состояние сущностей и игрового флага мира с несовместимым FactionManager.
 	[TestStep(TestStage.Main)]
-	void Main_AssertIncompatibleFactionManagerWorld()
+	bool Main_AssertIncompatibleFactionManagerWorld()
 	{
-		AssertWorldState(1, 1, 0, true);
+		if (!CollectLoadedWorldState())
+			return false;
+
+		AssertWorldState(1, 1, 1, true);
+		return true;
 	}
 }
