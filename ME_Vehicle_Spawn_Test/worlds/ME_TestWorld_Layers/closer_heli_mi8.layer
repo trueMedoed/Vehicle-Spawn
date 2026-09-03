@@ -8,7 +8,7 @@ $grp GenericEntity : "{644AEC5C537E03F0}Prefabs/Systems/AmbientVehicles/AmbientV
    }
   }
   coords 80 1 210
-  angles 0 90 0
+  angles 0 75.937 0
  }
  Mi8_2 {
   components {

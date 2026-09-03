@@ -1,0 +1,2278 @@
+SCR_BaseGameMode GameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" {
+ coords 4.157 0.999 4.754
+ m_eTestGameFlags SpawnVehicles
+}
+SCR_FactionManager FactionManager : "{4A188E44289B9A50}Prefabs/MP/Managers/Factions/FactionManager_Editor.et" {
+ coords 2.105 0.999 1.502
+}
+Vehicle ME_US_M997Ambulance : "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC0E957}" {
+   m_sCatalogPrefab "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et"
+  }
+ }
+ coords 5 1 5
+}
+Vehicle ME_USSR_UAZ452Cargo : "{01F65EFB8D767A91}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC1D05E}" {
+   m_sCatalogPrefab "{01F65EFB8D767A91}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo.et"
+  }
+ }
+ coords 65 1 50
+}
+Vehicle ME_US_M923CoveredMERDC : "{04BDACC0BB83284E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC0D80F}" {
+   m_sCatalogPrefab "{04BDACC0BB83284E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 20 1 5
+}
+Vehicle ME_ARMED_UAZ469PKM : "{0B4DEA8078B78A9B}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45447291F7582F}" {
+   m_sCatalogPrefab "{0B4DEA8078B78A9B}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM.et"
+  }
+ }
+ coords 5 1 230
+}
+GenericEntity AmbientVehicleSpawnPoint_CIV : "{0DDAFCA92FF4451C}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_CIV.et" {
+ coords 180 1 150
+}
+Vehicle ME_ARMED_LAV25 : "{0FBF8F010F81A4E5}Prefabs/Vehicles/Wheeled/LAV25/LAV25.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45447292C65F36}" {
+   m_sCatalogPrefab "{0FBF8F010F81A4E5}Prefabs/Vehicles/Wheeled/LAV25/LAV25.et"
+  }
+ }
+ coords 20 1 230
+}
+Vehicle ME_CIV_S1203TransportRed : "{11A28C90DB40318D}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_red.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305024AA94E2}" {
+   m_sCatalogPrefab "{11A28C90DB40318D}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_red.et"
+  }
+ }
+ coords 140 1 95
+}
+Vehicle ME_CIV_S105Randomized : "{128253A267BE9424}Prefabs/Vehicles/Wheeled/S105/S105_randomized.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050428B44A4}" {
+   m_sCatalogPrefab "{128253A267BE9424}Prefabs/Vehicles/Wheeled/S105/S105_randomized.et"
+  }
+ }
+ coords 20 1 95
+}
+Vehicle ME_CIV_UralTransportForest : "{1449105FD658EDFB}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_CIV_forest.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050428D4F2F}" {
+   m_sCatalogPrefab "{1449105FD658EDFB}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_CIV_forest.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 35 1 95
+}
+Vehicle ME_USSR_UAZ469Uncovered : "{16A674FE31B0921C}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC60702}" {
+   m_sCatalogPrefab "{16A674FE31B0921C}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered.et"
+  }
+ }
+ coords 80 1 50
+}
+Vehicle ME_USSR_UralTransport : "{16C1F16C9B053801}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC64F43}" {
+   m_sCatalogPrefab "{16C1F16C9B053801}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 95 1 50
+}
+Vehicle ME_CIV_UAZ469UncoveredRandomized : "{1B0D46B41C50873D}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_Randomized.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305042735D11}" {
+   m_sCatalogPrefab "{1B0D46B41C50873D}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_Randomized.et"
+  }
+ }
+ coords 50 1 95
+}
+Vehicle ME_USSR_UralCommand : "{1BABF6B33DA0AEB6}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_command.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC64871}" {
+   m_sCatalogPrefab "{1BABF6B33DA0AEB6}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_command.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 110 1 34.625
+}
+Vehicle ME_CIV_UAZ452CargoBlue : "{1D96D899FA313A08}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_blue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305042742003}" {
+   m_sCatalogPrefab "{1D96D899FA313A08}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_blue.et"
+  }
+ }
+ coords 65 1 95
+}
+Vehicle ME_USSR_UAZ452Transport : "{1FBB492E86002BF5}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC64761}" {
+   m_sCatalogPrefab "{1FBB492E86002BF5}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport.et"
+  }
+ }
+ coords 125 1 50
+}
+Vehicle ME_US_M923Arsenal : "{1FF144F8A209239D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC0DA49}" {
+   m_sCatalogPrefab "{1FF144F8A209239D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 35 1 5
+}
+Vehicle ME_ARMED_UH1HE : "{21E9A875C0A3C409}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HE.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472973E9D28}" {
+   m_sCatalogPrefab "{21E9A875C0A3C409}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HE.et"
+  }
+ }
+ coords 35 1 230
+}
+Vehicle ME_CIV_S1203TransportWhite : "{23B8C20ACAEC164B}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_white.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4530504278D2A6}" {
+   m_sCatalogPrefab "{23B8C20ACAEC164B}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_white.et"
+  }
+ }
+ coords 80 1 95
+}
+Vehicle ME_ARMED_BRDM2 : "{254289B9C09904AB}Prefabs/Vehicles/Wheeled/BRDM2/BRDM2.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472E855906E}" {
+   m_sCatalogPrefab "{254289B9C09904AB}Prefabs/Vehicles/Wheeled/BRDM2/BRDM2.et"
+  }
+ }
+ coords 50 1 230
+}
+Vehicle ME_USSR_UAZ469 : "{259EE7B78C51B624}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC641EC}" {
+   m_sCatalogPrefab "{259EE7B78C51B624}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et"
+  }
+ }
+ coords 5 1 65
+}
+Vehicle ME_US_M923TankerMERDC : "{26013123314183EA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC0D49C}" {
+   m_sCatalogPrefab "{26013123314183EA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 50 1 5
+}
+Vehicle ME_CIV_UAZ469UncoveredBrown : "{270F23D61238ABC7}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_brown.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050427DEEE2}" {
+   m_sCatalogPrefab "{270F23D61238ABC7}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_brown.et"
+  }
+ }
+ coords 95 1 95
+}
+Vehicle ME_US_M1025MERDC : "{27E2E58E734A80EC}Prefabs/Vehicles/Wheeled/M998/M1025_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12CD0}" {
+   m_sCatalogPrefab "{27E2E58E734A80EC}Prefabs/Vehicles/Wheeled/M998/M1025_MERDC.et"
+  }
+ }
+ coords 65 1 5
+}
+Vehicle ME_CIV_S1203CargoBrown : "{2A66E3B8B0C61D87}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_brown.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4530504266AF77}" {
+   m_sCatalogPrefab "{2A66E3B8B0C61D87}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_brown.et"
+  }
+ }
+ coords 110 1 95
+}
+Vehicle ME_US_M923Tanker : "{2BE1F8B9299B67C1}Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12F18}" {
+   m_sCatalogPrefab "{2BE1F8B9299B67C1}Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 80 1 5
+}
+Vehicle ME_US_M923Engineer : "{2D74C39A650A3030}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12E8C}" {
+   m_sCatalogPrefab "{2D74C39A650A3030}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 95 1 5
+}
+Vehicle ME_ARMED_UH1HSharkHEDP : "{3133602B406D131C}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP_sharkNose.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472ED249CE7}" {
+   m_sCatalogPrefab "{3133602B406D131C}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP_sharkNose.et"
+  }
+ }
+ coords 65 1 230
+}
+Vehicle ME_CIV_S105LightGreen : "{321016E0F9361A22}Prefabs/Vehicles/Wheeled/S105/S105_lightgreen.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050426B1D12}" {
+   m_sCatalogPrefab "{321016E0F9361A22}Prefabs/Vehicles/Wheeled/S105/S105_lightgreen.et"
+  }
+ }
+ coords 125 1 95
+}
+Vehicle ME_USSR_UralArsenal : "{32E77EC32ED2B6D1}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_Arsenal.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC6421E}" {
+   m_sCatalogPrefab "{32E77EC32ED2B6D1}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_Arsenal.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 20 1 65
+}
+Vehicle ME_USSR_UralAmmo : "{3336BE330C4F355B}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ammo.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC64233}" {
+   m_sCatalogPrefab "{3336BE330C4F355B}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ammo.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 35 1 65
+}
+Vehicle ME_ARMED_UH1HSharkHE : "{350492BE6F09A847}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HE_sharkNose.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472E55B2566}" {
+   m_sCatalogPrefab "{350492BE6F09A847}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HE_sharkNose.et"
+  }
+ }
+ coords 80 1 230
+}
+Vehicle ME_US_M923Command : "{36BDCC88B17B3BFA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_command.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12873}" {
+   m_sCatalogPrefab "{36BDCC88B17B3BFA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_command.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 110 1 5
+}
+Vehicle ME_US_M923EngineerMERDC : "{37A9871AD4CC9610}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12B3E}" {
+   m_sCatalogPrefab "{37A9871AD4CC9610}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 125 1 5
+}
+Vehicle ME_US_M923CommandMERDC : "{38186F12F27A61C6}Prefabs/Vehicles/Wheeled/M923A1/M923A1_command_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12BD4}" {
+   m_sCatalogPrefab "{38186F12F27A61C6}Prefabs/Vehicles/Wheeled/M923A1/M923A1_command_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 5 1 20
+}
+Vehicle ME_US_M997AmbulanceMERDC : "{3B1EB924602C7A07}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12A91}" {
+   m_sCatalogPrefab "{3B1EB924602C7A07}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance_MERDC.et"
+  }
+ }
+ coords 20 1 20
+}
+Vehicle ME_ARMED_Mi8HE : "{3C6B3ED0C3AC30D5}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_gunship_HE.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472E559D53C}" {
+   m_sCatalogPrefab "{3C6B3ED0C3AC30D5}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_gunship_HE.et"
+  }
+ }
+ coords 95 1 230
+}
+Vehicle ME_ARMED_M1025M2HB : "{3EA6F47D95867114}Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472E540A344}" {
+   m_sCatalogPrefab "{3EA6F47D95867114}Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB.et"
+  }
+ }
+ coords 110 1 230
+}
+Vehicle ME_US_M923TransportMERDC : "{3F2AA823B6C65E1E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12533}" {
+   m_sCatalogPrefab "{3F2AA823B6C65E1E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 35 1 20
+}
+Vehicle ME_ARMED_M1025Conflict : "{428B2BC55F1628E0}Prefabs/Vehicles/Wheeled/Conflict_Variants/M1025_armed_M2HB_Conflict.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472E54A0A67}" {
+   m_sCatalogPrefab "{428B2BC55F1628E0}Prefabs/Vehicles/Wheeled/Conflict_Variants/M1025_armed_M2HB_Conflict.et"
+  }
+ }
+ coords 125 1 230
+}
+Vehicle ME_USSR_UAZ452Ambulance : "{43C4AF1EEBD001CE}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC65156}" {
+   m_sCatalogPrefab "{43C4AF1EEBD001CE}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance.et"
+  }
+ }
+ coords 50 1 65
+}
+Vehicle ME_US_M151Transport : "{47D94E1193A88497}Prefabs/Vehicles/Wheeled/M151A2/M151A2_transport.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC17014}" {
+   m_sCatalogPrefab "{47D94E1193A88497}Prefabs/Vehicles/Wheeled/M151A2/M151A2_transport.et"
+  }
+ }
+ coords 50 1 20
+}
+Vehicle ME_CIV_S1203TransportRandomized : "{49C909AFD66E90A1}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_randomized.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050426FBA9B}" {
+   m_sCatalogPrefab "{49C909AFD66E90A1}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_randomized.et"
+  }
+ }
+ coords 140 1 110
+}
+Vehicle ME_CIV_UralTankerOrange : "{4A59DAEFE645E8A0}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_orange.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305042512DD3}" {
+   m_sCatalogPrefab "{4A59DAEFE645E8A0}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_orange.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 20 1 110
+}
+Vehicle ME_US_M1025 : "{4A71F755A4513227}Prefabs/Vehicles/Wheeled/M998/M1025.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC1705A}" {
+   m_sCatalogPrefab "{4A71F755A4513227}Prefabs/Vehicles/Wheeled/M998/M1025.et"
+  }
+ }
+ coords 65 1 20
+}
+Vehicle ME_CIV_S1203TransportYellow : "{4C79EB5FADB89B7A}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_yellow.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305042559C23}" {
+   m_sCatalogPrefab "{4C79EB5FADB89B7A}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_yellow.et"
+  }
+ }
+ coords 35 1 110
+}
+Vehicle ME_USSR_UralTanker : "{4C81D7ED8F8C0D87}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC65366}" {
+   m_sCatalogPrefab "{4C81D7ED8F8C0D87}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 65 1 65
+}
+Vehicle ME_CIV_UAZ469CoveredJZD : "{5070B3749C7782D8}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_JZD.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050425EA5F8}" {
+   m_sCatalogPrefab "{5070B3749C7782D8}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_JZD.et"
+  }
+ }
+ coords 50 1 110
+}
+Vehicle ME_ARMED_M151M2HBMERDC : "{5168FEA3054D6D15}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472E54FA7CE}" {
+   m_sCatalogPrefab "{5168FEA3054D6D15}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB_MERDC.et"
+  }
+ }
+ coords 140 1 230
+}
+Vehicle ME_CIV_S1203TransportBeige : "{543799AC5C52989C}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_beige.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050424336E9}" {
+   m_sCatalogPrefab "{543799AC5C52989C}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_beige.et"
+  }
+ }
+ coords 65 1 110
+}
+Vehicle ME_CIV_S105Beige : "{54C3CC22DEBD57BE}Prefabs/Vehicles/Wheeled/S105/S105_beige.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4530504247D7CD}" {
+   m_sCatalogPrefab "{54C3CC22DEBD57BE}Prefabs/Vehicles/Wheeled/S105/S105_beige.et"
+  }
+ }
+ coords 80 1 110
+}
+Vehicle ME_US_M998Uncovered : "{5674FAEB9AB7BDD0}Prefabs/Vehicles/Wheeled/M998/M998_uncovered.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC1723E}" {
+   m_sCatalogPrefab "{5674FAEB9AB7BDD0}Prefabs/Vehicles/Wheeled/M998/M998_uncovered.et"
+  }
+ }
+ coords 80 1 20
+}
+Vehicle ME_CIV_S1203CargoRandomized : "{5729759DD092B0F7}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_randomized.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305042484312}" {
+   m_sCatalogPrefab "{5729759DD092B0F7}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_randomized.et"
+  }
+ }
+ coords 95 1 110
+}
+Vehicle ME_CIV_UAZ469CoveredRandomized : "{57A441224AC02CF3}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_Randomized.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050424D776E}" {
+   m_sCatalogPrefab "{57A441224AC02CF3}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_Randomized.et"
+  }
+ }
+ coords 110 1 110
+}
+Vehicle ME_ARMED_LAV25Conflict : "{590E677BBCD1D26E}Prefabs/Vehicles/Wheeled/Conflict_Variants/LAV25_Conflict.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472E5316510}" {
+   m_sCatalogPrefab "{590E677BBCD1D26E}Prefabs/Vehicles/Wheeled/Conflict_Variants/LAV25_Conflict.et"
+  }
+ }
+ coords 155 1 230
+}
+Vehicle ME_CIV_UAZ469UncoveredRed : "{599DFCA424399DBF}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_red.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305042361C43}" {
+   m_sCatalogPrefab "{599DFCA424399DBF}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_red.et"
+  }
+ }
+ coords 125 1 110
+}
+Vehicle ME_CIV_S105White : "{63880E311299A016}Prefabs/Vehicles/Wheeled/S105/S105_white.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050423AD38E}" {
+   m_sCatalogPrefab "{63880E311299A016}Prefabs/Vehicles/Wheeled/S105/S105_white.et"
+  }
+ }
+ coords 140 1 125
+}
+$grp GenericEntity : "{644AEC5C537E03F0}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_USSR.et" {
+ AmbientVehicleSpawnPoint_USSR {
+  coords 140 1 150
+ }
+ AmbientVehicleSpawnPoint_USSR_Armed {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aExcludedEditableEntityLabels {
+    }
+   }
+  }
+  coords 20 1 150
+ }
+}
+Vehicle ME_CIV_UralCoveredOrange : "{66241E0CEDFCEDFF}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_orange.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050423C75BA}" {
+   m_sCatalogPrefab "{66241E0CEDFCEDFF}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_orange.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 20 1 125
+}
+$grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
+ AmbientVehicleSpawnPoint_US {
+  coords 100 1 150
+ }
+ AmbientVehicleSpawnPoint_US_Armed {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aExcludedEditableEntityLabels {
+    }
+   }
+  }
+  coords 60 1 150
+ }
+}
+Vehicle ME_CIV_S1203CargoBlue : "{6AF3A89263D26CD8}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_blue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050422138FC}" {
+   m_sCatalogPrefab "{6AF3A89263D26CD8}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_blue.et"
+  }
+ }
+ coords 35 1 125
+}
+Vehicle ME_US_M998UncoveredMERDC : "{6B24D5AFD884D64C}Prefabs/Vehicles/Wheeled/M998/M998_uncovered_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC14D00}" {
+   m_sCatalogPrefab "{6B24D5AFD884D64C}Prefabs/Vehicles/Wheeled/M998/M998_uncovered_MERDC.et"
+  }
+ }
+ coords 95 1 20
+}
+Vehicle ME_CIV_S1203CargoRed : "{6E485048122CEEEE}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_red.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050422A34C3}" {
+   m_sCatalogPrefab "{6E485048122CEEEE}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_red.et"
+  }
+ }
+ coords 50 1 125
+}
+Vehicle ME_USSR_UralEngineer : "{6E9142CD2471741C}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_engineer.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC6AD39}" {
+   m_sCatalogPrefab "{6E9142CD2471741C}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_engineer.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 80 1 65
+}
+Vehicle ME_US_UH1H : "{70BAEEFC2D3FEE64}Prefabs/Vehicles/Helicopters/UH1H/UH1H.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC189F1}" {
+   m_sCatalogPrefab "{70BAEEFC2D3FEE64}Prefabs/Vehicles/Helicopters/UH1H/UH1H.et"
+  }
+ }
+ coords 110 1 65.899
+}
+Vehicle ME_US_M998CoveredLongMERDC : "{751AFEEA19DDFB04}Prefabs/Vehicles/Wheeled/M998/M998_covered_long_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC1821F}" {
+   m_sCatalogPrefab "{751AFEEA19DDFB04}Prefabs/Vehicles/Wheeled/M998/M998_covered_long_MERDC.et"
+  }
+ }
+ coords 125 1 20
+}
+Vehicle ME_CIV_UAZ452CargoRandomized : "{767D49C35F87DC1A}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_randomized.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050422EFDC3}" {
+   m_sCatalogPrefab "{767D49C35F87DC1A}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_randomized.et"
+  }
+ }
+ coords 65 1 125
+}
+Vehicle ME_CIV_UAZ452TransportGrey : "{780FA841BFE4077F}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_grey.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4530504213EF0A}" {
+   m_sCatalogPrefab "{780FA841BFE4077F}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_grey.et"
+  }
+ }
+ coords 80 1 125
+}
+Vehicle ME_CIV_UH1HCivilian : "{7A29940A71EF5F5C}Prefabs/Vehicles/Helicopters/UH1H/UH1H_civ_livery_v1.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050421485B6}" {
+   m_sCatalogPrefab "{7A29940A71EF5F5C}Prefabs/Vehicles/Helicopters/UH1H/UH1H_civ_livery_v1.et"
+  }
+ }
+ coords 95 1 125
+}
+Vehicle ME_ARMED_Mi8 : "{7BD282AF716ED639}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472E53B0FBA}" {
+   m_sCatalogPrefab "{7BD282AF716ED639}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed.et"
+  }
+ }
+ coords 170 1 230
+}
+Vehicle ME_CIV_S105DarkRed : "{8000A0F649FB4B0D}Prefabs/Vehicles/Wheeled/S105/S105_darkred.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4530504219DB48}" {
+   m_sCatalogPrefab "{8000A0F649FB4B0D}Prefabs/Vehicles/Wheeled/S105/S105_darkred.et"
+  }
+ }
+ coords 110 1 125
+}
+Vehicle ME_CIV_Mi8MTRed : "{8175FCADFA2FB904}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_civ_red.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305042034EB9}" {
+   m_sCatalogPrefab "{8175FCADFA2FB904}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_civ_red.et"
+  }
+ }
+ coords 125 1 125
+}
+Vehicle ME_US_M923Covered : "{81FDAD5EB644CC3D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC1825C}" {
+   m_sCatalogPrefab "{81FDAD5EB644CC3D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 5 1 35
+}
+Vehicle ME_CIV_S105Red : "{85F0BD6AF0F42D6D}Prefabs/Vehicles/Wheeled/S105/S105_red.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305042046EDA}" {
+   m_sCatalogPrefab "{85F0BD6AF0F42D6D}Prefabs/Vehicles/Wheeled/S105/S105_red.et"
+  }
+ }
+ coords 140 1 140
+}
+Vehicle ME_US_M151MERDC : "{86D830868F026D54}Prefabs/Vehicles/Wheeled/M151A2/M151A2_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC19D9D}" {
+   m_sCatalogPrefab "{86D830868F026D54}Prefabs/Vehicles/Wheeled/M151A2/M151A2_MERDC.et"
+  }
+ }
+ coords 20 1 35
+}
+Vehicle ME_CIV_UAZ469CoveredTeal : "{870EB660433857D3}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_teal.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050420E07FA}" {
+   m_sCatalogPrefab "{870EB660433857D3}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_teal.et"
+  }
+ }
+ coords 20 1 140
+}
+Vehicle ME_CIV_S105LightBlue : "{8EB38BBD860DA06E}Prefabs/Vehicles/Wheeled/S105/S105_lightblue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A45305045F3C9C4}" {
+   m_sCatalogPrefab "{8EB38BBD860DA06E}Prefabs/Vehicles/Wheeled/S105/S105_lightblue.et"
+  }
+ }
+ coords 35 1 140
+}
+Vehicle ME_US_M923Ammo : "{92264FF932676C13}Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC19DB0}" {
+   m_sCatalogPrefab "{92264FF932676C13}Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 35 1 35
+}
+Vehicle ME_US_M151TransportMERDC : "{94DE32169691AC34}Prefabs/Vehicles/Wheeled/M151A2/M151A2_transport_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC19C75}" {
+   m_sCatalogPrefab "{94DE32169691AC34}Prefabs/Vehicles/Wheeled/M151A2/M151A2_transport_MERDC.et"
+  }
+ }
+ coords 50 1 35
+}
+Vehicle ME_US_M998CoveredLong : "{9B1BF9644E0378D6}Prefabs/Vehicles/Wheeled/M998/M998_covered_long.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC19C92}" {
+   m_sCatalogPrefab "{9B1BF9644E0378D6}Prefabs/Vehicles/Wheeled/M998/M998_covered_long.et"
+  }
+ }
+ coords 65 1 35
+}
+Vehicle ME_CIV_UAZ469UncoveredBlue : "{9B3A89DD33FF0483}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_blue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B7477D00}" {
+   m_sCatalogPrefab "{9B3A89DD33FF0483}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_blue.et"
+  }
+ }
+ coords 50 1 140
+}
+Vehicle ME_CIV_S105DarkBlue : "{9C3269FB43F989A3}Prefabs/Vehicles/Wheeled/S105/S105_darkblue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B7456628}" {
+   m_sCatalogPrefab "{9C3269FB43F989A3}Prefabs/Vehicles/Wheeled/S105/S105_darkblue.et"
+  }
+ }
+ coords 65 1 140
+}
+Vehicle ME_US_M923Repair : "{A042ACE5C2B13206}Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC19EA9}" {
+   m_sCatalogPrefab "{A042ACE5C2B13206}Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 80 1 35
+}
+Vehicle ME_CIV_S105DarkBrown : "{A1CD41DFE0C93CAD}Prefabs/Vehicles/Wheeled/S105/S105_darkbrown.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B74EE19F}" {
+   m_sCatalogPrefab "{A1CD41DFE0C93CAD}Prefabs/Vehicles/Wheeled/S105/S105_darkbrown.et"
+  }
+ }
+ coords 80 1 140
+}
+Vehicle ME_CIV_UAZ452TransportBlue : "{A2C4DBCDDE967600}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_blue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B733BAC8}" {
+   m_sCatalogPrefab "{A2C4DBCDDE967600}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_blue.et"
+  }
+ }
+ coords 95 1 140
+}
+Vehicle ME_CIV_UAZ452CargoOrange : "{A2E8114A16D3F822}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_orange.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B734F4C6}" {
+   m_sCatalogPrefab "{A2E8114A16D3F822}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_orange.et"
+  }
+ }
+ coords 110 1 140
+}
+Vehicle ME_CIV_UAZ469CoveredRed : "{A4D16A62B432451A}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_red.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B73E2F13}" {
+   m_sCatalogPrefab "{A4D16A62B432451A}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_red.et"
+  }
+ }
+ coords 125 1 140
+}
+Vehicle ME_USSR_UralRepair : "{A5647958579A4149}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_repair.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC6AF9B}" {
+   m_sCatalogPrefab "{A5647958579A4149}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_repair.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 95 1 65
+}
+Vehicle ME_ARMED_LAV25MERDCConflict : "{A6AD5417A030CC67}Prefabs/Vehicles/Wheeled/Conflict_Variants/LAV25_MERDC_Conflict.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472E53CF6FF}" {
+   m_sCatalogPrefab "{A6AD5417A030CC67}Prefabs/Vehicles/Wheeled/Conflict_Variants/LAV25_MERDC_Conflict.et"
+  }
+ }
+ coords 185 1 230
+}
+Vehicle ME_CIV_S105Yellow : "{A6B0D2923262E755}Prefabs/Vehicles/Wheeled/S105/S105_yellow.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B720B0D7}" {
+   m_sCatalogPrefab "{A6B0D2923262E755}Prefabs/Vehicles/Wheeled/S105/S105_yellow.et"
+  }
+ }
+ coords 140 1 155
+}
+Vehicle ME_CIV_Mi8MTBlue : "{AB9ED3A33EE1B630}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_civ_blue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B727085C}" {
+   m_sCatalogPrefab "{AB9ED3A33EE1B630}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_civ_blue.et"
+  }
+ }
+ coords 20 1 155
+}
+Vehicle ME_CIV_S1203TransportBrown : "{ACED839A6C5BE657}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_brown.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B72BEF6B}" {
+   m_sCatalogPrefab "{ACED839A6C5BE657}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_brown.et"
+  }
+ }
+ coords 35 1 155
+}
+Vehicle ME_CIV_S105Green : "{AD80FB47D868C775}Prefabs/Vehicles/Wheeled/S105/S105_green.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B72D2867}" {
+   m_sCatalogPrefab "{AD80FB47D868C775}Prefabs/Vehicles/Wheeled/S105/S105_green.et"
+  }
+ }
+ coords 50 1 155
+}
+Vehicle ME_US_M998CoveredMERDC : "{AF0578D66D51946B}Prefabs/Vehicles/Wheeled/M998/M998_covered_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC191C8}" {
+   m_sCatalogPrefab "{AF0578D66D51946B}Prefabs/Vehicles/Wheeled/M998/M998_covered_MERDC.et"
+  }
+ }
+ coords 95 1 35
+}
+Vehicle ME_ARMED_M1025MERDCConflict : "{B0DB416052438E48}Prefabs/Vehicles/Wheeled/Conflict_Variants/M1025_armed_M2HB_MERDC_Conflict.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472FC2D2EED}" {
+   m_sCatalogPrefab "{B0DB416052438E48}Prefabs/Vehicles/Wheeled/Conflict_Variants/M1025_armed_M2HB_MERDC_Conflict.et"
+  }
+ }
+ coords 200 1 230
+}
+Vehicle ME_CIV_UAZ469CoveredVAK : "{B2CC137FE424B129}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_VAK.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B717EA5B}" {
+   m_sCatalogPrefab "{B2CC137FE424B129}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_VAK.et"
+  }
+ }
+ coords 65 1 155
+}
+Vehicle ME_CIV_UralTankerPohona : "{B3C8EC88E7782C78}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_pohona.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B715E3A8}" {
+   m_sCatalogPrefab "{B3C8EC88E7782C78}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_pohona.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 80 1 155
+}
+Vehicle ME_US_M998Covered : "{B55C6990A6A9411B}Prefabs/Vehicles/Wheeled/M998/M998_covered.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC191E5}" {
+   m_sCatalogPrefab "{B55C6990A6A9411B}Prefabs/Vehicles/Wheeled/M998/M998_covered.et"
+  }
+ }
+ coords 110 1 19.625
+}
+Vehicle ME_CIV_UAZ469CoveredForest : "{B6D330E7E40FE7DD}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_forest.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B71EC08E}" {
+   m_sCatalogPrefab "{B6D330E7E40FE7DD}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_forest.et"
+  }
+ }
+ coords 95 1 155
+}
+Vehicle ME_ARMED_LAV25MERDC : "{B7A8BAA37CB0AC2B}Prefabs/Vehicles/Wheeled/LAV25/LAV25_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472FC170C15}" {
+   m_sCatalogPrefab "{B7A8BAA37CB0AC2B}Prefabs/Vehicles/Wheeled/LAV25/LAV25_MERDC.et"
+  }
+ }
+ coords 215 1 230
+}
+Vehicle ME_CIV_UAZ452TransportOrange : "{BB84BDE1707A38EB}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_orange.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B703C4A4}" {
+   m_sCatalogPrefab "{BB84BDE1707A38EB}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_orange.et"
+  }
+ }
+ coords 110 1 155
+}
+Vehicle ME_ARMED_BTR70Conflict : "{BD75A18920BD1278}Prefabs/Vehicles/Wheeled/Conflict_Variants/BTR70_Conflict.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472FC18EE47}" {
+   m_sCatalogPrefab "{BD75A18920BD1278}Prefabs/Vehicles/Wheeled/Conflict_Variants/BTR70_Conflict.et"
+  }
+ }
+ coords 230 1 230
+}
+Vehicle ME_CIV_UAZ469CoveredPTS : "{BDFB2377B6B4ABBB}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_PTS.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B70537B7}" {
+   m_sCatalogPrefab "{BDFB2377B6B4ABBB}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_PTS.et"
+  }
+ }
+ coords 125 1 155
+}
+Vehicle ME_ARMED_BTR70 : "{C012BB3488BEA0C2}Prefabs/Vehicles/Wheeled/BTR70/BTR70.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472FC026232}" {
+   m_sCatalogPrefab "{C012BB3488BEA0C2}Prefabs/Vehicles/Wheeled/BTR70/BTR70.et"
+  }
+ }
+ coords 245 1 230
+}
+Vehicle ME_CIV_UAZ452CargoGrey : "{C75DAB159B434B77}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_grey.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B709DF10}" {
+   m_sCatalogPrefab "{C75DAB159B434B77}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_grey.et"
+  }
+ }
+ coords 140 1 170
+}
+Vehicle ME_CIV_UAZ452TransportRandomized : "{C7CE8044B5E301F5}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_randomized.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6F3E3BD}" {
+   m_sCatalogPrefab "{C7CE8044B5E301F5}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_randomized.et"
+  }
+ }
+ coords 20 1 170
+}
+Vehicle ME_US_M923RepairMERDC : "{C8656AECF5DF41D9}Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC190FB}" {
+   m_sCatalogPrefab "{C8656AECF5DF41D9}Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 125 1 35
+}
+Vehicle ME_CIV_UAZ469CoveredBlue : "{C8B16ABCA57679A2}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_blue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6F48593}" {
+   m_sCatalogPrefab "{C8B16ABCA57679A2}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_blue.et"
+  }
+ }
+ coords 35 1 170
+}
+Vehicle ME_ARMED_UH1HHEDP : "{CB4D4CF7E887B2D0}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454BFB1F56862D}" {
+   m_sCatalogPrefab "{CB4D4CF7E887B2D0}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP.et"
+  }
+ }
+ coords 80 1 245
+}
+Vehicle ME_CIV_S1203CargoBeige : "{D2BCF98E80CF634C}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_beige.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6F9DCD6}" {
+   m_sCatalogPrefab "{D2BCF98E80CF634C}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_beige.et"
+  }
+ }
+ coords 50 1 170
+}
+Vehicle ME_CIV_UAZ469UncoveredTeal : "{D4855501D5B12AF2}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_teal.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6E2E389}" {
+   m_sCatalogPrefab "{D4855501D5B12AF2}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_teal.et"
+  }
+ }
+ coords 65 1 170
+}
+Vehicle ME_CIV_UAZ469CoveredBrown : "{D7C51A961BF675B2}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_brown.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6E7628A}" {
+   m_sCatalogPrefab "{D7C51A961BF675B2}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_brown.et"
+  }
+ }
+ coords 80 1 170
+}
+Vehicle ME_USSR_UralCovered : "{D9B91FAB817A6033}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC6AE7C}" {
+   m_sCatalogPrefab "{D9B91FAB817A6033}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 110 1 49.625
+}
+Vehicle ME_ARMED_Mi8HEDP : "{DBEC63C9DEE4358C}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_gunship_HEDP.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472FC04F1B5}" {
+   m_sCatalogPrefab "{DBEC63C9DEE4358C}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_gunship_HEDP.et"
+  }
+ }
+ coords 5 1 245
+}
+Vehicle ME_CIV_UralTankerRandomized : "{DCAF0585D17B917A}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6E82D51}" {
+   m_sCatalogPrefab "{DCAF0585D17B917A}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 95 1 170
+}
+Vehicle ME_ARMED_M1025M2HBMERDC : "{DD774A8FD0989A78}Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472FC0EDA51}" {
+   m_sCatalogPrefab "{DD774A8FD0989A78}Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB_MERDC.et"
+  }
+ }
+ coords 20 1 245
+}
+Vehicle ME_ARMED_UH1HArmed : "{DDDD9B51F1234DF3}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472FFF095B2}" {
+   m_sCatalogPrefab "{DDDD9B51F1234DF3}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed.et"
+  }
+ }
+ coords 35 1 245
+}
+Vehicle ME_USSR_Mi8MT : "{DF5CCB7C0FF049F4}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_transport.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC69946}" {
+   m_sCatalogPrefab "{DF5CCB7C0FF049F4}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_transport.et"
+  }
+ }
+ coords 125 1 70
+}
+Vehicle ME_CIV_S1203CargoYellow : "{E3AD3E9E60F2E061}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_yellow.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6ED078C}" {
+   m_sCatalogPrefab "{E3AD3E9E60F2E061}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_yellow.et"
+  }
+ }
+ coords 110 1 170
+}
+Vehicle ME_CIV_S1203CargoWhite : "{E5F73B9D4CEB94E4}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_white.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6D1D05C}" {
+   m_sCatalogPrefab "{E5F73B9D4CEB94E4}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_white.et"
+  }
+ }
+ coords 125 1 170
+}
+Vehicle ME_US_M923ArsenalMERDC : "{EA4819E0745DFAEA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC19284}" {
+   m_sCatalogPrefab "{EA4819E0745DFAEA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 5 1 50
+}
+Vehicle ME_US_M923AmmoMERDC : "{EC657C9B3C73E192}Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo_MERDC.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC192A4}" {
+   m_sCatalogPrefab "{EC657C9B3C73E192}Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 20 1 50
+}
+Vehicle ME_CIV_UralTransportRandomized : "{EEAC3A94929A2B55}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_CIV_randomized.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6DB257E}" {
+   m_sCatalogPrefab "{EEAC3A94929A2B55}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_CIV_randomized.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 140 1 185
+}
+Vehicle ME_US_M923Transport : "{F1FBD0972FA5FE09}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC192C4}" {
+   m_sCatalogPrefab "{F1FBD0972FA5FE09}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 35 1 50
+}
+Vehicle ME_US_M151A2 : "{F649585ABB3706C4}Prefabs/Vehicles/Wheeled/M151A2/M151A2.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC192E4}" {
+   m_sCatalogPrefab "{F649585ABB3706C4}Prefabs/Vehicles/Wheeled/M151A2/M151A2.et"
+  }
+ }
+ coords 50 1 50
+}
+Vehicle ME_CIV_UralCoveredBlue : "{F66EAD0D2016B6BA}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_blue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6DCB075}" {
+   m_sCatalogPrefab "{F66EAD0D2016B6BA}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_blue.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 20 1 185
+}
+Vehicle ME_ARMED_M151M2HB : "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472FFFA7F33}" {
+   m_sCatalogPrefab "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et"
+  }
+ }
+ coords 50 1 245
+}
+Vehicle ME_CIV_S1203TransportBlue : "{F77C41245A580FD1}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_blue.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6C1F841}" {
+   m_sCatalogPrefab "{F77C41245A580FD1}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_blue.et"
+  }
+ }
+ coords 35 1 185
+}
+Vehicle ME_ARMED_BRDM2Conflict : "{F7B9B434FCFF00B3}Prefabs/Vehicles/Wheeled/Conflict_Variants/BRDM2_Conflict.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A454472FFFFC311}" {
+   m_sCatalogPrefab "{F7B9B434FCFF00B3}Prefabs/Vehicles/Wheeled/Conflict_Variants/BRDM2_Conflict.et"
+  }
+ }
+ coords 65 1 245
+}
+Vehicle ME_CIV_UralCoveredJZD : "{FB219B49A448A8EA}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_JZD.et" {
+ components {
+  ME_VehicleBoundsFixtureMarkerComponent "{6A453050B6CB6506}" {
+   m_sCatalogPrefab "{FB219B49A448A8EA}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_JZD.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
+ }
+ coords 50 1 185
+}

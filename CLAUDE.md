@@ -8,7 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Claude project data
 
-- Keep all Claude Code project data, settings, and worktrees for this repository under `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn`, not in the repository-local `.claude` directory.
+- Keep all Claude Code project data, settings, worktrees, and implementation plans for this repository under `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn`, not in the repository-local `.claude` directory.
+- Save implementation plans under `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn\plans`.
+- Never create, modify, or restore `C:\Users\Phil\Documents\GitHub\Mods\Vehicle Spawn\.claude\settings.local.json` (or any other repository-local `.claude` content). If required tool permissions are missing, update `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn\settings.local.json` instead.
 
 ## Script documentation
 
@@ -18,6 +20,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Preserve the original English text and add the Russian block immediately beside it, directly after the English documentation block.
 - Apply this bilingual documentation rule to the main addon and to test addon projects.
 - Do not translate runtime strings, diagnostic `Print`/`PrintFormat` messages, localization keys, or historical commented-out code unless explicitly requested.
+
+## Change scope
+
+- The production addon/version must not be modified without the user's explicit instruction. By default, make all changes only in `ME_Vehicle_Spawn_Test`; transfer verified changes to production only when explicitly requested.
 
 ## Project
 

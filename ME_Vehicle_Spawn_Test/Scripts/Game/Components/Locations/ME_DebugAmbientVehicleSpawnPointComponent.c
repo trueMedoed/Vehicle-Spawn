@@ -219,9 +219,15 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
 	ref Shape m_ME_EditorSpawnAreaShape;
+	ref Shape m_ME_EditorVehicleEnvelopeShape;
+	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
 	static ref array<SCR_AmbientVehicleSpawnPointComponent> s_ME_EditorSpawnPoints = {};
 	static ref array<IEntity> s_ME_EditorStaticObjectMarkerEntities = {};
 	static ref array<ref Shape> s_ME_EditorStaticObjectMarkerShapes = {};
+	static SCR_AmbientVehicleSpawnPointComponent s_ME_ActiveEditorVehicleEnvelopePreview;
+	protected vector m_vME_EditorVehicleEnvelopeLocalMins;
+	protected vector m_vME_EditorVehicleEnvelopeLocalMaxs;
+	protected bool m_bME_EditorVehicleEnvelopePreviewActive;
 	protected int m_iME_EditorStaticObjectConflictCount;
 
 	//------------------------------------------------------------------------------------------------
@@ -362,6 +368,123 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		return conflictingLabels;
 	}
 	
+	//------------------------------------------------------------------------------------------------
+	//! Collects the vehicle-catalog candidates that vanilla Update() would filter for this point in the World Editor.
+	//! This diagnostic does not select a prefab, spawn an entity, or change the editable world.
+	//!
+	//! \param[out] entries Filtered vehicle catalog entries
+	//! \param[out] reason Stable reason when candidates cannot be read safely
+	//! \return True when entries contain the complete applicable catalog filter result
+	//! Собирает кандидаты vehicle-каталога, которые ванильный Update() отфильтровал бы для этой точки в World Editor.
+	//! Эта диагностика не выбирает префаб, не создаёт сущность и не изменяет редактируемый мир.
+	//!
+	//! \param[out] entries Отфильтрованные записи vehicle-каталога
+	//! \param[out] reason Стабильная причина, когда кандидаты нельзя безопасно прочитать
+	//! \return True, когда entries содержит полный результат применимого фильтра каталога
+	bool ME_GetEditorVehicleEnvelopeCandidates(out array<SCR_EntityCatalogEntry> entries, out string reason)
+	{
+		entries = {};
+		reason = "";
+
+		IEntity owner = GetOwner();
+		if (!owner)
+		{
+			reason = "owner_unavailable";
+			return false;
+		}
+
+		SCR_Faction faction;
+		SCR_FactionAffiliationComponent affiliation = SCR_FactionAffiliationComponent.Cast(owner.FindComponent(SCR_FactionAffiliationComponent));
+		if (affiliation)
+		{
+			FactionKey factionKey = affiliation.GetDefaultFactionKey();
+			if (factionKey.IsEmpty())
+				factionKey = affiliation.GetAffiliatedFactionKey();
+
+			if (!factionKey.IsEmpty())
+			{
+				FactionManager factionManager = GetGame().GetFactionManager();
+				if (!factionManager)
+				{
+					reason = "faction_manager_unavailable";
+					return false;
+				}
+
+				faction = SCR_Faction.Cast(factionManager.GetFactionByKey(factionKey));
+				if (!faction)
+				{
+					reason = string.Format("faction_unavailable key=%1", factionKey);
+					return false;
+				}
+			}
+		}
+
+		SCR_EntityCatalog entityCatalog;
+		if (faction)
+		{
+			if (!faction.ME_EnsureEditorCatalogsInitialized())
+			{
+				reason = "faction_vehicle_catalog_initialization_unavailable";
+				return false;
+			}
+
+			entityCatalog = faction.GetFactionEntityCatalogOfType(EEntityCatalogType.VEHICLE);
+		}
+		else
+		{
+			SCR_EntityCatalogManagerComponent catalogManager = SCR_EntityCatalogManagerComponent.GetInstance();
+			if (!catalogManager)
+			{
+				reason = "global_catalog_manager_unavailable";
+				return false;
+			}
+
+			entityCatalog = catalogManager.GetEntityCatalogOfType(EEntityCatalogType.VEHICLE);
+		}
+
+		if (!entityCatalog)
+		{
+			reason = "vehicle_catalog_unavailable";
+			return false;
+		}
+
+		entityCatalog.GetFullFilteredEntityListWithLabels(entries, m_aIncludedEditableEntityLabels, m_aExcludedEditableEntityLabels, m_bRequireAllIncludedLabels);
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Converts this point's complete editor catalog result into canonical prefab paths without mutating spawn state.
+	//! Преобразует полный результат editor-каталога этой точки в канонические пути prefab без изменения состояния появления.
+	bool ME_GetEditorVehicleEnvelopeCandidatePaths(out array<string> prefabPaths, out string reason)
+	{
+		prefabPaths = {};
+		array<SCR_EntityCatalogEntry> entries;
+		if (!ME_GetEditorVehicleEnvelopeCandidates(entries, reason))
+			return false;
+
+		foreach (SCR_EntityCatalogEntry entry : entries)
+		{
+			string prefabPath = entry.GetPrefab();
+			if (prefabPath.IsEmpty())
+			{
+				reason = "empty_catalog_prefab";
+				prefabPaths = {};
+				return false;
+			}
+
+			if (prefabPaths.Contains(prefabPath))
+			{
+				reason = string.Format("duplicate_catalog_prefab path=%1", prefabPath);
+				prefabPaths = {};
+				return false;
+			}
+
+			prefabPaths.Insert(prefabPath);
+		}
+
+		return true;
+	}
+
 	//------------------------------------------------------------------------------------------------
 	//! Lets super.Update(faction) select the vanilla vehicle prefab, then repeats the catalog filter
 	//! solely to log an empty candidate set. SpawnVehicle() invokes this at spawn time when faction
@@ -723,7 +846,109 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Registers the point and refreshes editor-only advisory Shapes when Workbench initializes it.
+	//! Releases this point's cached editor-only vehicle-envelope Shape and bounds.
+	//! Освобождает кэшированные Shape и границы vehicle-envelope этой точки только для редактора.
+	void ME_ClearEditorVehicleEnvelopePreview()
+	{
+		m_ME_EditorVehicleEnvelopeShape = null;
+		m_ME_EditorVehicleEnvelopeFillShape = null;
+		m_bME_EditorVehicleEnvelopePreviewActive = false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Releases the one active editor-only vehicle-envelope preview, if any.
+	//! Освобождает единственный активный preview vehicle-envelope только для редактора, если он есть.
+	static void ME_ClearActiveEditorVehicleEnvelopePreview()
+	{
+		if (!s_ME_ActiveEditorVehicleEnvelopePreview)
+			return;
+
+		s_ME_ActiveEditorVehicleEnvelopePreview.ME_ClearEditorVehicleEnvelopePreview();
+		s_ME_ActiveEditorVehicleEnvelopePreview = null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Rebuilds the active conservative vehicle envelope at this point's current editor origin,
+	//! applying only its yaw to local X/Z while preserving local Y, with a translucent fill
+	//! and contrasting outline for Workbench visibility.
+	//! Перестраивает активный консервативный vehicle-envelope в текущей editor-позиции этой точки,
+	//! применяя только её yaw к локальным X/Z и сохраняя локальный Y, с полупрозрачной заливкой
+	//! и контрастной рамкой для видимости в Workbench.
+	void ME_RefreshEditorVehicleEnvelopePreview()
+	{
+		m_ME_EditorVehicleEnvelopeShape = null;
+		m_ME_EditorVehicleEnvelopeFillShape = null;
+		if (!m_bME_EditorVehicleEnvelopePreviewActive)
+			return;
+
+		IEntity owner = GetOwner();
+		if (!owner)
+			return;
+
+		vector origin = owner.GetOrigin();
+		vector transform[4];
+		owner.GetTransform(transform);
+		vector angles = Math3D.MatrixToAngles(transform);
+		float yawRadians = angles[0] * Math.DEG2RAD;
+		float yawSin = Math.Sin(yawRadians);
+		float yawCos = Math.Cos(yawRadians);
+		vector localCorners[8];
+		localCorners[0] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
+		localCorners[1] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
+		localCorners[2] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
+		localCorners[3] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
+		localCorners[4] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
+		localCorners[5] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
+		localCorners[6] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
+		localCorners[7] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
+
+		vector corners[8];
+		for (int cornerIndex = 0; cornerIndex < 8; cornerIndex++)
+		{
+			vector localCorner = localCorners[cornerIndex];
+			corners[cornerIndex] = origin + Vector(
+				localCorner[0] * yawCos + localCorner[2] * yawSin,
+				localCorner[1],
+				localCorner[2] * yawCos - localCorner[0] * yawSin
+			);
+		}
+
+		vector fillPoints[] = {
+			corners[0], corners[1], corners[3], corners[0], corners[3], corners[2],
+			corners[4], corners[6], corners[7], corners[4], corners[7], corners[5],
+			corners[0], corners[2], corners[6], corners[0], corners[6], corners[4],
+			corners[1], corners[5], corners[7], corners[1], corners[7], corners[3],
+			corners[0], corners[4], corners[5], corners[0], corners[5], corners[1],
+			corners[2], corners[3], corners[7], corners[2], corners[7], corners[6]
+		};
+
+		Color fillColor = Color.FromRGBA(255, 215, 0, 48);
+		m_ME_EditorVehicleEnvelopeFillShape = Shape.CreateTris(fillColor.PackToInt(), ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE, fillPoints, 36);
+
+		vector linePoints[] = {
+			corners[0], corners[1], corners[1], corners[3], corners[3], corners[2], corners[2], corners[0],
+			corners[4], corners[5], corners[5], corners[7], corners[7], corners[6], corners[6], corners[4],
+			corners[0], corners[4], corners[1], corners[5], corners[2], corners[6], corners[3], corners[7]
+		};
+
+		Color outlineColor = Color.FromRGBA(255, 48, 48, 255);
+		m_ME_EditorVehicleEnvelopeShape = Shape.CreateLines(outlineColor.PackToInt(), ShapeFlags.DOUBLESIDE, linePoints, 24);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Activates this point as the sole owner of a validated conservative local vehicle envelope.
+	//! Активирует эту точку единственным владельцем проверенного консервативного локального vehicle-envelope.
+	void ME_ShowEditorVehicleEnvelopePreview(vector localMins, vector localMaxs)
+	{
+		ME_ClearActiveEditorVehicleEnvelopePreview();
+		m_vME_EditorVehicleEnvelopeLocalMins = localMins;
+		m_vME_EditorVehicleEnvelopeLocalMaxs = localMaxs;
+		m_bME_EditorVehicleEnvelopePreviewActive = true;
+		s_ME_ActiveEditorVehicleEnvelopePreview = this;
+		ME_RefreshEditorVehicleEnvelopePreview();
+	}
+
+
 	//!
 	//! \param[in] owner Spawn point entity being initialized
 	//! \param[in,out] mat Spawn point transform matrix
@@ -755,6 +980,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	{
 		super._WB_SetTransform(owner, mat, src);
 		ME_RefreshAllEditorDebugShapes();
+		if (s_ME_ActiveEditorVehicleEnvelopePreview == this)
+			ME_RefreshEditorVehicleEnvelopePreview();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -768,6 +995,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	{
 		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
+		ME_ClearEditorVehicleEnvelopePreview();
+		if (s_ME_ActiveEditorVehicleEnvelopePreview == this)
+			s_ME_ActiveEditorVehicleEnvelopePreview = null;
 		super.OnDelete(owner);
 		ME_RefreshAllEditorDebugShapes();
 	}
@@ -785,6 +1015,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	{
 		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
+		ME_ClearEditorVehicleEnvelopePreview();
+		if (s_ME_ActiveEditorVehicleEnvelopePreview == this)
+			s_ME_ActiveEditorVehicleEnvelopePreview = null;
 		super._WB_OnDelete(owner, src);
 		ME_RefreshAllEditorDebugShapes();
 	}
