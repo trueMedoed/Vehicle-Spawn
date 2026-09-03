@@ -224,7 +224,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	static ref array<SCR_AmbientVehicleSpawnPointComponent> s_ME_EditorSpawnPoints = {};
 	static ref array<IEntity> s_ME_EditorStaticObjectMarkerEntities = {};
 	static ref array<ref Shape> s_ME_EditorStaticObjectMarkerShapes = {};
-	static SCR_AmbientVehicleSpawnPointComponent s_ME_ActiveEditorVehicleEnvelopePreview;
 	protected vector m_vME_EditorVehicleEnvelopeLocalMins;
 	protected vector m_vME_EditorVehicleEnvelopeLocalMaxs;
 	protected bool m_bME_EditorVehicleEnvelopePreviewActive;
@@ -856,24 +855,32 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Releases the one active editor-only vehicle-envelope preview, if any.
-	//! Освобождает единственный активный preview vehicle-envelope только для редактора, если он есть.
-	static void ME_ClearActiveEditorVehicleEnvelopePreview()
+	//! Calculates this point's complete filtered catalog envelope and refreshes it only after strict snapshot validation.
+	//! Рассчитывает envelope полного отфильтрованного каталога этой точки и обновляет его только после строгой проверки snapshot.
+	void ME_RefreshValidatedEditorVehicleEnvelopePreview()
 	{
-		if (!s_ME_ActiveEditorVehicleEnvelopePreview)
+		array<string> candidatePaths;
+		string reason;
+		if (!ME_GetEditorVehicleEnvelopeCandidatePaths(candidatePaths, reason))
+		{
+			PrintFormat("[ME_DEBUG_AVSP_WB] status=UNVERIFIABLE operation=ambient_vehicle_envelope_auto_preview reason=%1 entity=%2", reason, GetOwner().GetName());
 			return;
+		}
 
-		s_ME_ActiveEditorVehicleEnvelopePreview.ME_ClearEditorVehicleEnvelopePreview();
-		s_ME_ActiveEditorVehicleEnvelopePreview = null;
+		vector aggregateMins;
+		vector aggregateMaxs;
+		if (!ME_VehicleBoundsSnapshotHelper.ME_GetValidatedAggregateBounds(candidatePaths, aggregateMins, aggregateMaxs, reason))
+		{
+			PrintFormat("[ME_DEBUG_AVSP_WB] status=UNVERIFIABLE operation=ambient_vehicle_envelope_auto_preview reason=%1 entity=%2", reason, GetOwner().GetName());
+			return;
+		}
+
+		ME_ShowEditorVehicleEnvelopePreview(aggregateMins, aggregateMaxs);
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Rebuilds the active conservative vehicle envelope at this point's current editor origin,
-	//! applying only its yaw to local X/Z while preserving local Y, with a translucent fill
-	//! and contrasting outline for Workbench visibility.
-	//! Перестраивает активный консервативный vehicle-envelope в текущей editor-позиции этой точки,
-	//! применяя только её yaw к локальным X/Z и сохраняя локальный Y, с полупрозрачной заливкой
-	//! и контрастной рамкой для видимости в Workbench.
+	//! Rebuilds this conservative vehicle envelope at its current editor origin, applying only yaw to local X/Z while preserving local Y.
+	//! Перестраивает этот консервативный vehicle-envelope в текущей editor-позиции, применяя только yaw к локальным X/Z и сохраняя локальный Y.
 	void ME_RefreshEditorVehicleEnvelopePreview()
 	{
 		m_ME_EditorVehicleEnvelopeShape = null;
@@ -936,24 +943,23 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Activates this point as the sole owner of a validated conservative local vehicle envelope.
-	//! Активирует эту точку единственным владельцем проверенного консервативного локального vehicle-envelope.
+	//! Stores this point's validated conservative local vehicle envelope and refreshes only this point's Shapes.
+	//! Сохраняет проверенный консервативный локальный vehicle-envelope этой точки и обновляет Shape только этой точки.
 	void ME_ShowEditorVehicleEnvelopePreview(vector localMins, vector localMaxs)
 	{
-		ME_ClearActiveEditorVehicleEnvelopePreview();
 		m_vME_EditorVehicleEnvelopeLocalMins = localMins;
 		m_vME_EditorVehicleEnvelopeLocalMaxs = localMaxs;
 		m_bME_EditorVehicleEnvelopePreviewActive = true;
-		s_ME_ActiveEditorVehicleEnvelopePreview = this;
 		ME_RefreshEditorVehicleEnvelopePreview();
 	}
 
 
+	//! Registers the point, refreshes advisory Shapes, and creates its validated envelope during Workbench initialization.
 	//!
 	//! \param[in] owner Spawn point entity being initialized
 	//! \param[in,out] mat Spawn point transform matrix
 	//! \param[in] src Spawn point entity source
-	//! Регистрирует точку и обновляет рекомендательные Shape только для редактора при её инициализации Workbench.
+	//! Регистрирует точку, обновляет рекомендательные Shape и создаёт её проверенный envelope при инициализации Workbench.
 	//!
 	//! \param[in] owner Инициализируемая сущность точки появления
 	//! \param[in,out] mat Матрица преобразования точки появления
@@ -963,6 +969,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		super._WB_OnInit(owner, mat, src);
 		ME_RegisterEditorDebugSpawnPoint();
 		ME_RefreshAllEditorDebugShapes();
+		ME_RefreshValidatedEditorVehicleEnvelopePreview();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -980,7 +987,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	{
 		super._WB_SetTransform(owner, mat, src);
 		ME_RefreshAllEditorDebugShapes();
-		if (s_ME_ActiveEditorVehicleEnvelopePreview == this)
+		if (m_bME_EditorVehicleEnvelopePreviewActive)
 			ME_RefreshEditorVehicleEnvelopePreview();
 	}
 
@@ -996,8 +1003,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
 		ME_ClearEditorVehicleEnvelopePreview();
-		if (s_ME_ActiveEditorVehicleEnvelopePreview == this)
-			s_ME_ActiveEditorVehicleEnvelopePreview = null;
 		super.OnDelete(owner);
 		ME_RefreshAllEditorDebugShapes();
 	}
@@ -1016,8 +1021,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
 		ME_ClearEditorVehicleEnvelopePreview();
-		if (s_ME_ActiveEditorVehicleEnvelopePreview == this)
-			s_ME_ActiveEditorVehicleEnvelopePreview = null;
 		super._WB_OnDelete(owner, src);
 		ME_RefreshAllEditorDebugShapes();
 	}
