@@ -221,9 +221,10 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	ref Shape m_ME_EditorSpawnAreaShape;
 	ref Shape m_ME_EditorVehicleEnvelopeShape;
 	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
-	// Editor-only world-space text label describing wheeled/helicopter catalog categories.
-	// Editor-only текстовая метка в мировом пространстве, описывающая категории каталога wheeled/helicopter.
-	ref DebugTextWorldSpace m_ME_EditorVehicleCategoryLabel;
+	// Editor-only world-space text for excluded and individually colored included vehicle labels.
+	// Editor-only текст в мировом пространстве для исключающих и отдельно окрашенных включающих меток техники.
+	ref DebugTextWorldSpace m_ME_EditorVehicleCategoryExcludedLabel;
+	ref array<ref DebugTextWorldSpace> m_aME_EditorVehicleCategoryIncludedLabels = {};
 	// Bit value for the wheeled vehicle catalog category.
 	// Битовое значение категории колёсной техники в каталоге.
 	static const int ME_EDITOR_VEHICLE_CATEGORY_WHEELED = 1;
@@ -857,13 +858,17 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Releases this point's editor-only category label held by this component.
-	//! Clearing the DebugTextWorldSpace reference removes its advisory world-space text.
-	//! Освобождает editor-only метку категории этой точки, удерживаемую компонентом.
-	//! Очистка ссылки DebugTextWorldSpace удаляет её рекомендательный текст в мировом пространстве.
+	//! Releases this point's editor-only excluded and included category text objects.
+	//! Clearing their DebugTextWorldSpace references removes the advisory world-space text.
+	//! Освобождает editor-only объекты текста исключающих и включающих меток категории этой точки.
+	//! Очистка их ссылок DebugTextWorldSpace удаляет рекомендательный текст в мировом пространстве.
 	void ME_ClearEditorVehicleCategoryLabel()
 	{
-		m_ME_EditorVehicleCategoryLabel = null;
+		m_ME_EditorVehicleCategoryExcludedLabel = null;
+		for (int includedIndex = 0; includedIndex < m_aME_EditorVehicleCategoryIncludedLabels.Count(); includedIndex++)
+			m_aME_EditorVehicleCategoryIncludedLabels[includedIndex] = null;
+
+		m_aME_EditorVehicleCategoryIncludedLabels.Clear();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -914,11 +919,66 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Rebuilds the camera-facing category label eight metres above this point from its cached catalog mask.
+	//! Formats configured editor labels as comma-separated enum names, using ALL when the list is empty.
+	//!
+	//! \param[in] labels Included or excluded labels configured on this spawn point
+	//! \return Comma-separated label names, or ALL when none are configured
+	//! Форматирует настроенные editor-метки как имена enum через запятую, используя ALL для пустого списка.
+	//!
+	//! \param[in] labels Включающие или исключающие метки, настроенные у этой точки появления
+	//! \return Имена меток через запятую либо ALL, когда ни одна не настроена
+	protected string ME_GetEditorVehicleCategoryLabelLabels(array<EEditableEntityLabel> labels)
+	{
+		if (!labels || labels.IsEmpty())
+			return "ALL";
+
+		string result;
+		foreach (EEditableEntityLabel label: labels)
+		{
+			if (!result.IsEmpty())
+				result += ", ";
+
+			result += typename.EnumToString(EEditableEntityLabel, label);
+		}
+
+		return result;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Selects the editor-only color for one included vehicle label by its enum name.
+	//! Name containment keeps this mapping resilient to enum prefixes while preserving ALL in gold.
+	//!
+	//! \param[in] label Included label configured on this spawn point
+	//! \return Color for this included label
+	//! Выбирает editor-only цвет одной включающей метки техники по имени её enum.
+	//! Проверка вхождения имени сохраняет это сопоставление устойчивым к префиксам enum, оставляя ALL золотым.
+	//!
+	//! \param[in] label Включающая метка, настроенная у этой точки появления
+	//! \return Цвет этой включающей метки
+	protected Color ME_GetEditorVehicleCategoryIncludedLabelColor(EEditableEntityLabel label)
+	{
+		string labelName = typename.EnumToString(EEditableEntityLabel, label);
+		if (labelName.Contains("_HELICOPTER"))
+			return Color.FromRGBA(180, 80, 255, 255);
+
+		if (labelName.Contains("_TRUCK"))
+			return Color.FromRGBA(0, 200, 255, 255);
+
+		if (labelName.Contains("_APC"))
+			return Color.FromRGBA(255, 140, 0, 255);
+
+		if (labelName.Contains("_CAR"))
+			return Color.FromRGBA(80, 220, 100, 255);
+
+		return Color.FromRGBA(224, 224, 224, 255);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Rebuilds the camera-facing configured-label display eight metres above this point from its cached catalog mask.
 	//! It creates text only for exact supported masks and does not repeat catalog filtering after transform changes.
 	//!
 	//! \param[in] owner Spawn point entity whose transform anchors the label
-	//! Перестраивает обращённую к камере метку категории в восьми метрах над точкой по кэшированной маске каталога.
+	//! Перестраивает обращённое к камере отображение настроенных меток в восьми метрах над точкой по кэшированной маске каталога.
 	//! Текст создаётся только для точных поддерживаемых масок; после изменения преобразования фильтрация каталога не повторяется.
 	//!
 	//! \param[in] owner Сущность точки появления, чьё преобразование задаёт привязку метки
@@ -928,17 +988,11 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		if (!owner)
 			return;
 
-		string label;
 		switch (m_iME_EditorVehicleCategoryMask)
 		{
 			case ME_EDITOR_VEHICLE_CATEGORY_WHEELED:
-				label = "WHEELED";
-				break;
 			case ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER:
-				label = "HELI";
-				break;
 			case ME_EDITOR_VEHICLE_CATEGORY_WHEELED | ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER:
-				label = "WHEELED + HELI";
 				break;
 			default:
 				return;
@@ -947,17 +1001,66 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		vector transform[4];
 		owner.GetTransform(transform);
 		transform[3] = transform[3] + Vector(0, 8, 0);
-		Color labelColor = Color.FromRGBA(255, 215, 0, 255);
-		m_ME_EditorVehicleCategoryLabel = DebugTextWorldSpace.CreateInWorld(
-			GetGame().GetWorld(),
-			label,
-			DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA,
-			transform,
-			24.0,
-			labelColor.PackToInt(),
-			0x00000000,
-			1000
-		);
+
+		const int backgroundColor = Color.FromRGBA(0, 0, 0, 178).PackToInt();
+		const DebugTextFlags textFlags = DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA;
+		if (m_aExcludedEditableEntityLabels && !m_aExcludedEditableEntityLabels.IsEmpty())
+		{
+			vector excludedTransform[4];
+			for (int transformIndex = 0; transformIndex < 4; transformIndex++)
+				excludedTransform[transformIndex] = transform[transformIndex];
+			excludedTransform[3] = excludedTransform[3] - Vector(0, 0.5, 0);
+			m_ME_EditorVehicleCategoryExcludedLabel = DebugTextWorldSpace.CreateInWorld(
+				GetGame().GetWorld(),
+				ME_GetEditorVehicleCategoryLabelLabels(m_aExcludedEditableEntityLabels),
+				textFlags,
+				excludedTransform,
+				1.0,
+				Color.FromRGBA(255, 48, 48, 255).PackToInt(),
+				backgroundColor,
+				1000
+			);
+		}
+
+		vector includedTransform[4];
+		for (int includedTransformIndex = 0; includedTransformIndex < 4; includedTransformIndex++)
+			includedTransform[includedTransformIndex] = transform[includedTransformIndex];
+		includedTransform[3] = includedTransform[3] + Vector(0, 0.5, 0);
+		if (!m_aIncludedEditableEntityLabels || m_aIncludedEditableEntityLabels.IsEmpty())
+		{
+			m_aME_EditorVehicleCategoryIncludedLabels.Insert(DebugTextWorldSpace.CreateInWorld(
+				GetGame().GetWorld(),
+				ME_GetEditorVehicleCategoryLabelLabels(m_aIncludedEditableEntityLabels),
+				textFlags,
+				includedTransform,
+				1.0,
+				Color.FromRGBA(255, 215, 0, 255).PackToInt(),
+				backgroundColor,
+				1000
+			));
+			return;
+		}
+
+		const float labelSpacing = 2.0;
+		float offset = -0.5 * labelSpacing * (m_aIncludedEditableEntityLabels.Count() - 1);
+		foreach (EEditableEntityLabel includedLabel: m_aIncludedEditableEntityLabels)
+		{
+			vector labelTransform[4];
+			for (int labelTransformIndex = 0; labelTransformIndex < 4; labelTransformIndex++)
+				labelTransform[labelTransformIndex] = includedTransform[labelTransformIndex];
+			labelTransform[3] = labelTransform[3] + transform[0] * offset;
+			m_aME_EditorVehicleCategoryIncludedLabels.Insert(DebugTextWorldSpace.CreateInWorld(
+				GetGame().GetWorld(),
+				typename.EnumToString(EEditableEntityLabel, includedLabel),
+				textFlags,
+				labelTransform,
+				1.0,
+				ME_GetEditorVehicleCategoryIncludedLabelColor(includedLabel).PackToInt(),
+				backgroundColor,
+				1000
+			));
+			offset += labelSpacing;
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
