@@ -221,12 +221,24 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	ref Shape m_ME_EditorSpawnAreaShape;
 	ref Shape m_ME_EditorVehicleEnvelopeShape;
 	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
+	// Editor-only world-space text label describing wheeled/helicopter catalog categories.
+	// Editor-only текстовая метка в мировом пространстве, описывающая категории каталога wheeled/helicopter.
+	ref DebugTextWorldSpace m_ME_EditorVehicleCategoryLabel;
+	// Bit value for the wheeled vehicle catalog category.
+	// Битовое значение категории колёсной техники в каталоге.
+	static const int ME_EDITOR_VEHICLE_CATEGORY_WHEELED = 1;
+	// Bit value for the helicopter vehicle catalog category.
+	// Битовое значение категории вертолётов в каталоге.
+	static const int ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER = 2;
 	static ref array<SCR_AmbientVehicleSpawnPointComponent> s_ME_EditorSpawnPoints = {};
 	static ref array<IEntity> s_ME_EditorStaticObjectMarkerEntities = {};
 	static ref array<ref Shape> s_ME_EditorStaticObjectMarkerShapes = {};
 	protected vector m_vME_EditorVehicleEnvelopeLocalMins;
 	protected vector m_vME_EditorVehicleEnvelopeLocalMaxs;
 	protected bool m_bME_EditorVehicleEnvelopePreviewActive;
+	// Cached editor-only wheeled/helicopter category mask for recreating the label after transform changes.
+	// Кэшированная editor-only битовая маска категорий wheeled/helicopter для пересоздания метки после изменения преобразования.
+	protected int m_iME_EditorVehicleCategoryMask;
 	protected int m_iME_EditorStaticObjectConflictCount;
 
 	//------------------------------------------------------------------------------------------------
@@ -845,6 +857,110 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Releases this point's editor-only category label held by this component.
+	//! Clearing the DebugTextWorldSpace reference removes its advisory world-space text.
+	//! Освобождает editor-only метку категории этой точки, удерживаемую компонентом.
+	//! Очистка ссылки DebugTextWorldSpace удаляет её рекомендательный текст в мировом пространстве.
+	void ME_ClearEditorVehicleCategoryLabel()
+	{
+		m_ME_EditorVehicleCategoryLabel = null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Classifies the complete filtered vehicle catalog using only the known canonical prefab path segments.
+	//! The returned mask contains ME_EDITOR_VEHICLE_CATEGORY_WHEELED and/or
+	//! ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER; unsupported paths deliberately contribute no category.
+	//! This analysis never selects a prefab, creates an entity, or changes runtime spawn state.
+	//!
+	//! \param[out] reason Stable reason when the catalog cannot be read safely
+	//! \return Bit mask containing wheeled and/or helicopter categories; zero means unavailable, empty, or no known category
+	//! Классифицирует полный отфильтрованный vehicle-каталог только по известным каноническим сегментам путей prefab.
+	//! Возвращаемая маска содержит ME_EDITOR_VEHICLE_CATEGORY_WHEELED и/или
+	//! ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER; неподдерживаемые пути намеренно не добавляют категорию.
+	//! Этот анализ не выбирает префаб, не создаёт сущность и не изменяет runtime-состояние появления.
+	//!
+	//! \param[out] reason Стабильная причина, когда каталог нельзя безопасно прочитать
+	//! \return Битовая маска категорий wheeled и/или helicopter; ноль означает недоступный, пустой каталог или отсутствие известной категории
+	protected int ME_GetEditorVehicleCategoryMask(out string reason)
+	{
+		reason = "";
+		array<SCR_EntityCatalogEntry> entries;
+		if (!ME_GetEditorVehicleEnvelopeCandidates(entries, reason))
+			return 0;
+
+		int categoryMask;
+		foreach (SCR_EntityCatalogEntry entry: entries)
+		{
+			string prefabPath = entry.GetPrefab();
+			if (prefabPath.Contains("Prefabs/Vehicles/Wheeled/"))
+				categoryMask = categoryMask | ME_EDITOR_VEHICLE_CATEGORY_WHEELED;
+			else if (prefabPath.Contains("Prefabs/Vehicles/Helicopters/"))
+				categoryMask = categoryMask | ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER;
+		}
+
+		return categoryMask;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Updates the cached category mask from the complete filtered catalog, then rebuilds the editor-only label.
+	//! This analysis never selects a prefab, creates an entity, or changes runtime spawn state.
+	//! Обновляет кэшированную битовую маску категорий из полного отфильтрованного каталога, затем перестраивает editor-only метку.
+	//! Этот анализ не выбирает префаб, не создаёт сущность и не изменяет runtime-состояние появления.
+	void ME_UpdateEditorVehicleCategoryLabel()
+	{
+		string reason;
+		m_iME_EditorVehicleCategoryMask = ME_GetEditorVehicleCategoryMask(reason);
+		ME_RefreshEditorVehicleCategoryLabel(GetOwner());
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Rebuilds the camera-facing category label eight metres above this point from its cached catalog mask.
+	//! It creates text only for exact supported masks and does not repeat catalog filtering after transform changes.
+	//!
+	//! \param[in] owner Spawn point entity whose transform anchors the label
+	//! Перестраивает обращённую к камере метку категории в восьми метрах над точкой по кэшированной маске каталога.
+	//! Текст создаётся только для точных поддерживаемых масок; после изменения преобразования фильтрация каталога не повторяется.
+	//!
+	//! \param[in] owner Сущность точки появления, чьё преобразование задаёт привязку метки
+	void ME_RefreshEditorVehicleCategoryLabel(IEntity owner)
+	{
+		ME_ClearEditorVehicleCategoryLabel();
+		if (!owner)
+			return;
+
+		string label;
+		switch (m_iME_EditorVehicleCategoryMask)
+		{
+			case ME_EDITOR_VEHICLE_CATEGORY_WHEELED:
+				label = "WHEELED";
+				break;
+			case ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER:
+				label = "HELI";
+				break;
+			case ME_EDITOR_VEHICLE_CATEGORY_WHEELED | ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER:
+				label = "WHEELED + HELI";
+				break;
+			default:
+				return;
+		}
+
+		vector transform[4];
+		owner.GetTransform(transform);
+		transform[3] = transform[3] + Vector(0, 8, 0);
+		Color labelColor = Color.FromRGBA(255, 215, 0, 255);
+		m_ME_EditorVehicleCategoryLabel = DebugTextWorldSpace.CreateInWorld(
+			GetGame().GetWorld(),
+			label,
+			DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA,
+			transform,
+			24.0,
+			labelColor.PackToInt(),
+			0x00000000,
+			1000
+		);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Releases this point's cached editor-only vehicle-envelope Shape and bounds.
 	//! Освобождает кэшированные Shape и границы vehicle-envelope этой точки только для редактора.
 	void ME_ClearEditorVehicleEnvelopePreview()
@@ -954,12 +1070,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 
-	//! Registers the point, refreshes advisory Shapes, and creates its validated envelope during Workbench initialization.
+	//! Registers the point, refreshes advisory Shapes, and creates its validated envelope and category label during Workbench initialization.
 	//!
 	//! \param[in] owner Spawn point entity being initialized
 	//! \param[in,out] mat Spawn point transform matrix
 	//! \param[in] src Spawn point entity source
-	//! Регистрирует точку, обновляет рекомендательные Shape и создаёт её проверенный envelope при инициализации Workbench.
+	//! Регистрирует точку, обновляет рекомендательные Shape и создаёт её проверенный envelope и метку категории при инициализации Workbench.
 	//!
 	//! \param[in] owner Инициализируемая сущность точки появления
 	//! \param[in,out] mat Матрица преобразования точки появления
@@ -970,15 +1086,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_RegisterEditorDebugSpawnPoint();
 		ME_RefreshAllEditorDebugShapes();
 		ME_RefreshValidatedEditorVehicleEnvelopePreview();
+		ME_UpdateEditorVehicleCategoryLabel();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Refreshes every editor-only advisory Shape after Workbench changes a spawn point transform.
+	//! Refreshes every editor-only advisory Shape and category label after Workbench changes a spawn point transform.
 	//!
 	//! \param[in] owner Moved spawn point entity
 	//! \param[in,out] mat Updated spawn point transform matrix
 	//! \param[in] src Spawn point entity source
-	//! Обновляет каждую рекомендательную Shape только для редактора после изменения Workbench преобразования точки появления.
+	//! Обновляет каждую рекомендательную Shape и метку категории только для редактора после изменения Workbench преобразования точки появления.
 	//!
 	//! \param[in] owner Перемещённая сущность точки появления
 	//! \param[in,out] mat Обновлённая матрица преобразования точки появления
@@ -989,13 +1106,14 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_RefreshAllEditorDebugShapes();
 		if (m_bME_EditorVehicleEnvelopePreviewActive)
 			ME_RefreshEditorVehicleEnvelopePreview();
+		ME_RefreshEditorVehicleCategoryLabel(owner);
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Unregisters the point, releases its editor-only Shape, and refreshes the remaining advisory Shapes during entity deletion.
+	//! Unregisters the point, releases its editor-only Shapes and category label, and refreshes the remaining advisory Shapes during entity deletion.
 	//!
 	//! \param[in] owner Spawn point entity being deleted
-	//! Удаляет точку из реестра, освобождает её Shape только для редактора и обновляет оставшиеся рекомендательные Shape при удалении сущности.
+	//! Удаляет точку из реестра, освобождает её Shape и метку категории только для редактора и обновляет оставшиеся рекомендательные Shape при удалении сущности.
 	//!
 	//! \param[in] owner Удаляемая сущность точки появления
 	override void OnDelete(IEntity owner)
@@ -1003,16 +1121,17 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
 		ME_ClearEditorVehicleEnvelopePreview();
+		ME_ClearEditorVehicleCategoryLabel();
 		super.OnDelete(owner);
 		ME_RefreshAllEditorDebugShapes();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Unregisters the point before Workbench removes it, releases its editor-only Shape, and refreshes remaining advisory Shapes.
+	//! Unregisters the point before Workbench removes it, releases its editor-only Shapes and category label, and refreshes remaining advisory Shapes.
 	//!
 	//! \param[in] owner Spawn point entity being removed
 	//! \param[in] src Spawn point entity source
-	//! Удаляет точку из реестра до её удаления Workbench, освобождает её Shape только для редактора и обновляет оставшиеся рекомендательные Shape.
+	//! Удаляет точку из реестра до её удаления Workbench, освобождает её Shape и метку категории только для редактора и обновляет оставшиеся рекомендательные Shape.
 	//!
 	//! \param[in] owner Удаляемая сущность точки появления
 	//! \param[in] src Источник сущности точки появления
@@ -1021,6 +1140,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
 		ME_ClearEditorVehicleEnvelopePreview();
+		ME_ClearEditorVehicleCategoryLabel();
 		super._WB_OnDelete(owner, src);
 		ME_RefreshAllEditorDebugShapes();
 	}

@@ -7,7 +7,7 @@ class ME_VehicleBoundsSnapshotHelper
 	protected const int SNAPSHOT_SCHEMA_VERSION = 2;
 	protected const string SNAPSHOT_GENERATOR_VERSION = "fixture-generator-v2";
 	protected const string SNAPSHOT_FIXTURE_IDENTITY = "ME_VehicleBoundsSnapshot";
-	protected static const ResourceName SNAPSHOT_RESOURCE = "{E3738ADB51674DA6}Configs/Generated/ME_VehicleBoundsSnapshot.conf";
+	protected static const ResourceName SNAPSHOT_RESOURCE = "{1C3AE4A8F2630BF7}Configs/Generated/ME_VehicleBoundsSnapshot.conf";
 
 	//------------------------------------------------------------------------------------------------
 	//! Validates the published snapshot and returns conservative union bounds for every candidate prefab.
@@ -43,8 +43,8 @@ class ME_VehicleBoundsSnapshotHelper
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Loads the published typed snapshot resource and validates its schema, identity, and every entry.
-	//! Загружает опубликованный typed snapshot-ресурс и проверяет его schema, identity и каждую запись.
+	//! Loads the published typed snapshot resource and validates its schema, coverage, geometry, and prefab-path uniqueness.
+	//! Загружает опубликованный typed snapshot-ресурс и проверяет его schema, покрытие, геометрию и уникальность путей prefab.
 	protected static bool ME_LoadSnapshot(out ME_VehicleBoundsSnapshot snapshot, out string reason)
 	{
 		snapshot = null;
@@ -103,7 +103,7 @@ class ME_VehicleBoundsSnapshotHelper
 	protected static bool ME_IsValidSnapshotEntry(ME_VehicleBoundsSnapshotEntry entry, inout array<string> registeredPaths, out string reason)
 	{
 		reason = "";
-		if (!entry || entry.m_sPrefab.IsEmpty() || entry.m_sFixtureEntityName.IsEmpty())
+		if (!entry || entry.m_sPrefab.IsEmpty())
 		{
 			reason = "snapshot_entry_identity_invalid";
 			return false;

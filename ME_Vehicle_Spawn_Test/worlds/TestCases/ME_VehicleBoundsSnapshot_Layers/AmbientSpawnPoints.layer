@@ -1,25 +1,25 @@
-GenericEntity AmbientVehicleSpawnPoint_CIV : "{0DDAFCA92FF4451C}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_CIV.et" {
- coords 180 1 150
+GenericEntity AmbientVehicleSpawnPoint_CIV_AllExceptArmed : "{0DDAFCA92FF4451C}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_CIV.et" {
+ coords 84.841 1 99.846
 }
 $grp GenericEntity : "{644AEC5C537E03F0}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_USSR.et" {
- AmbientVehicleSpawnPoint_USSR {
-  coords 140 1 150
+ AmbientVehicleSpawnPoint_USSR_AllExceptArmed {
+  coords 80 1 20
  }
- AmbientVehicleSpawnPoint_USSR_Armed {
+ AmbientVehicleSpawnPoint_USSR_All {
   components {
    SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
     m_aExcludedEditableEntityLabels {
     }
    }
   }
-  coords 78.749 1 30.259
+  coords 55 1 20
  }
 }
 $grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
- AmbientVehicleSpawnPoint_US {
+ AmbientVehicleSpawnPoint_US_AllExceptArmed {
   coords 10 1 10
  }
- AmbientVehicleSpawnPoint_US_Armed {
+ AmbientVehicleSpawnPoint_US_All {
   components {
    SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
     m_aExcludedEditableEntityLabels {
@@ -30,16 +30,16 @@ $grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientV
  }
 }
 $grp GenericEntity : "{D4A604DD154470CD}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_FIA.et" {
- AmbientVehicleSpawnPoint_FIA_Armed {
+ AmbientVehicleSpawnPoint_FIA_All {
   components {
    SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
     m_aExcludedEditableEntityLabels {
     }
    }
   }
-  coords 239.768 1 170.813
+  coords 170 1 185
  }
- AmbientVehicleSpawnPoint_FIA {
-  coords 220 1 150
+ AmbientVehicleSpawnPoint_FIA_AllExceptArmed {
+  coords 170 1 100
  }
 }

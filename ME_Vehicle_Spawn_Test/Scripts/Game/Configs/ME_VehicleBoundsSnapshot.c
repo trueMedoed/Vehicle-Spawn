@@ -21,11 +21,6 @@ class ME_VehicleBoundsSnapshotEntry
 	//! Консервативный ориентированный по осям максимальный локальный угол относительно неповёрнутого корня fixture.
 	[Attribute("0 0 0")]
 	vector m_vLocalMaxs;
-
-	//! Stable fixture entity name used to produce this entry.
-	//! Стабильное имя fixture-сущности, использованной для создания этой записи.
-	[Attribute("")]
-	string m_sFixtureEntityName;
 }
 
 //------------------------------------------------------------------------------------------------

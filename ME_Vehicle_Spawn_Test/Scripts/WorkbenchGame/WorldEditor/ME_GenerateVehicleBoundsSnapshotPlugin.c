@@ -9,16 +9,16 @@
 [WorkbenchPluginAttribute(name: "Generate ambient vehicle bounds snapshot", description: "Measures the dedicated fixture and reload-validates a staged vehicle-bounds snapshot.", wbModules: { "WorldEditor" })]
 class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 {
-	protected const string US_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US";
-	protected const string USSR_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR";
-	protected const string US_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_Armed";
-	protected const string USSR_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR_Armed";
-	protected const string CIV_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_CIV";
-	protected const string FIA_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA";
-	protected const string FIA_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA_Armed";
+	protected const string US_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_AllExceptArmed";
+	protected const string USSR_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR_AllExceptArmed";
+	protected const string US_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_All";
+	protected const string USSR_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR_All";
+	protected const string CIV_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_CIV_AllExceptArmed";
+	protected const string FIA_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA_AllExceptArmed";
+	protected const string FIA_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA_All";
 	protected const string FIXTURE_IDENTITY = "ME_VehicleBoundsSnapshot";
 	protected const string STAGED_PATH = "Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf";
-	protected static const ResourceName STAGED_RESOURCE = "{1C3AE4A8F2630BF7}Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf";
+	protected static const ResourceName STAGED_RESOURCE = "{1C3AE4A8F2630BF8}Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf";
 
 	//------------------------------------------------------------------------------------------------
 	//! Generates and reload-validates a staged snapshot from every marked root in the currently open dedicated fixture.
@@ -102,7 +102,7 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 		}
 
 		foreach (ME_VehicleBoundsSnapshotEntry entry : snapshot.m_aEntries)
-			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot_entry prefab=%1 mins=%2 maxs=%3 fixtureRoot=%4", entry.m_sPrefab, entry.m_vLocalMins, entry.m_vLocalMaxs, entry.m_sFixtureEntityName);
+			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot_entry prefab=%1 mins=%2 maxs=%3", entry.m_sPrefab, entry.m_vLocalMins, entry.m_vLocalMaxs);
 
 		PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot status=PASS stage=%1 count=%2 coverage=%3", STAGED_PATH, snapshot.m_aEntries.Count(), expectedPaths.Count());
 	}
@@ -181,12 +181,6 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 				return false;
 			}
 
-			if (entity.GetName().IsEmpty())
-			{
-				reason = string.Format("empty_marker_root_name path=%1", path);
-				return false;
-			}
-
 			markerRoots.Insert(entity);
 			markerPaths.Insert(path);
 		}
@@ -260,7 +254,6 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 		entry.m_sPrefab = prefabPath;
 		entry.m_vLocalMins = worldMins - origin;
 		entry.m_vLocalMaxs = worldMaxs - origin;
-		entry.m_sFixtureEntityName = root.GetName();
 		if (!ME_IsFiniteOrderedBounds(entry.m_vLocalMins, entry.m_vLocalMaxs))
 		{
 			reason = "invalid_local_bounds";
@@ -370,7 +363,7 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 		{
 			ME_VehicleBoundsSnapshotEntry expectedEntry = expected.m_aEntries[index];
 			ME_VehicleBoundsSnapshotEntry actualEntry = actual.m_aEntries[index];
-			if (!expectedEntry || !actualEntry || actualEntry.m_sPrefab != expectedEntry.m_sPrefab || !ME_AreSerializedVectorsEqual(actualEntry.m_vLocalMins, expectedEntry.m_vLocalMins) || !ME_AreSerializedVectorsEqual(actualEntry.m_vLocalMaxs, expectedEntry.m_vLocalMaxs) || actualEntry.m_sFixtureEntityName != expectedEntry.m_sFixtureEntityName)
+			if (!expectedEntry || !actualEntry || actualEntry.m_sPrefab != expectedEntry.m_sPrefab || !ME_AreSerializedVectorsEqual(actualEntry.m_vLocalMins, expectedEntry.m_vLocalMins) || !ME_AreSerializedVectorsEqual(actualEntry.m_vLocalMaxs, expectedEntry.m_vLocalMaxs))
 				return false;
 		}
 

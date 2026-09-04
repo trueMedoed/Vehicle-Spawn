@@ -7,13 +7,13 @@
 [WorkbenchPluginAttribute(name: "Diagnose vehicle bounds fixture candidates", description: "Lists canonical vehicle candidates for the dedicated bounds fixture.", wbModules: { "WorldEditor" })]
 class ME_VehicleBoundsFixtureCandidatesDiagnosticPlugin : WorldEditorPlugin
 {
-	protected const string US_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US";
-	protected const string USSR_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR";
-	protected const string US_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_Armed";
-	protected const string USSR_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR_Armed";
-	protected const string CIV_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_CIV";
-	protected const string FIA_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA";
-	protected const string FIA_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA_Armed";
+	protected const string US_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_AllExceptArmed";
+	protected const string USSR_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR_AllExceptArmed";
+	protected const string US_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_All";
+	protected const string USSR_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR_All";
+	protected const string CIV_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_CIV_AllExceptArmed";
+	protected const string FIA_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA_AllExceptArmed";
+	protected const string FIA_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA_All";
 
 	//------------------------------------------------------------------------------------------------
 	//! Reports candidates for every required faction fixture spawn point.
