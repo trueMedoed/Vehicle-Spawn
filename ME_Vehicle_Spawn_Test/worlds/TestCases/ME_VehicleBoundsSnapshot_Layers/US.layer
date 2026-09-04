@@ -88,6 +88,13 @@ Vehicle : "{04BDACC0BB83284E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_co
    }
    m_fDustTopSpeed 60
   }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
  }
  coords 15 1 105
  {
@@ -109,6 +116,13 @@ Vehicle : "{1FF144F8A209239D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal.et" 
  components {
   ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC0DA49}" {
    m_sCatalogPrefab "{1FF144F8A209239D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
   }
   SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
    m_aWheels +{
@@ -286,6 +300,13 @@ Vehicle : "{26013123314183EA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker_MERDC
    }
    m_fDustTopSpeed 60
   }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
  }
  coords 15 1 155
  {
@@ -385,6 +406,13 @@ Vehicle : "{2BE1F8B9299B67C1}Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker.et" {
    }
    m_fDustTopSpeed 60
   }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
  }
  coords 10 1 155
  {
@@ -398,6 +426,13 @@ Vehicle : "{2D74C39A650A3030}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer.et"
  components {
   ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12E8C}" {
    m_sCatalogPrefab "{2D74C39A650A3030}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
   }
   SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
    m_aWheels +{
@@ -583,6 +618,13 @@ Vehicle : "{36BDCC88B17B3BFA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_command.et" 
    }
    m_fDustTopSpeed 60
   }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
  }
  coords 10 1 165
  {
@@ -596,6 +638,13 @@ Vehicle : "{37A9871AD4CC9610}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer_MER
  components {
   ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12B3E}" {
    m_sCatalogPrefab "{37A9871AD4CC9610}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
   }
   SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
    m_aWheels +{
@@ -765,6 +814,13 @@ Vehicle : "{38186F12F27A61C6}Prefabs/Vehicles/Wheeled/M923A1/M923A1_command_MERD
    }
    m_fDustTopSpeed 60
   }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
  }
  coords 15 1 165
  {
@@ -794,6 +850,13 @@ Vehicle : "{3F2AA823B6C65E1E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_ME
  components {
   ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC12533}" {
    m_sCatalogPrefab "{3F2AA823B6C65E1E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
   }
   SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
    m_aWheels +{
@@ -1035,6 +1098,13 @@ Vehicle : "{81FDAD5EB644CC3D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_co
    }
    m_fDustTopSpeed 60
   }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
  }
  coords 10 1 105
  {
@@ -1056,6 +1126,13 @@ Vehicle : "{92264FF932676C13}Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo.et" {
  components {
   ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC19DB0}" {
    m_sCatalogPrefab "{92264FF932676C13}Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
   }
   SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
    m_aWheels +{
@@ -1163,6 +1240,13 @@ Vehicle : "{A042ACE5C2B13206}Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair.et" {
  components {
   ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC19EA9}" {
    m_sCatalogPrefab "{A042ACE5C2B13206}Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
   }
   SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
    m_aWheels +{
@@ -1372,6 +1456,13 @@ Vehicle : "{C8656AECF5DF41D9}Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair_MERDC
    }
    m_fDustTopSpeed 60
   }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
  }
  coords 15 1 125
  {
@@ -1409,6 +1500,13 @@ Vehicle : "{EA4819E0745DFAEA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal_MERD
  components {
   ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC19284}" {
    m_sCatalogPrefab "{EA4819E0745DFAEA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal_MERDC.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
   }
   SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
    m_aWheels +{
@@ -1578,6 +1676,13 @@ Vehicle : "{EC657C9B3C73E192}Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo_MERDC.e
    }
    m_fDustTopSpeed 60
   }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
+  }
  }
  coords 15 1 145
  {
@@ -1591,6 +1696,13 @@ Vehicle : "{F1FBD0972FA5FE09}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport.et
  components {
   ME_VehicleBoundsFixtureMarkerComponent "{6A4525CB2EC192C4}" {
    m_sCatalogPrefab "{F1FBD0972FA5FE09}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport.et"
+  }
+  SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
+   m_aWheels +{
+    4
+    5
+   }
+   m_fDustTopSpeed 60
   }
   SCR_VehicleDustPerWheel "{5476BC43E4910F64}" {
    m_aWheels +{
