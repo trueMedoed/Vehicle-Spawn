@@ -14,15 +14,15 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 	protected const string US_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_Armed";
 	protected const string USSR_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR_Armed";
 	protected const string CIV_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_CIV";
+	protected const string FIA_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA";
+	protected const string FIA_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA_Armed";
 	protected const string FIXTURE_IDENTITY = "ME_VehicleBoundsSnapshot";
 	protected const string STAGED_PATH = "Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf";
 	protected static const ResourceName STAGED_RESOURCE = "{1C3AE4A8F2630BF7}Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf";
 
 	//------------------------------------------------------------------------------------------------
 	//! Generates and reload-validates a staged snapshot from every marked root in the currently open dedicated fixture.
-	//! Requires exactly one selected marked root solely as an explicit confirmation before measuring the complete fixture.
 	//! Генерирует и reload-валидирует staged snapshot по каждому помеченному корню в открытой выделенной fixture.
-	//! Требует ровно один выбранный помеченный корень исключительно как явное подтверждение перед измерением полной fixture.
 	override void Run()
 	{
 		WorldEditor worldEditor = Workbench.GetModule(WorldEditor);
@@ -39,20 +39,16 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 			return;
 		}
 
-		IEntity selectedRoot;
 		string reason;
-		if (!ME_GetSelectedFixtureRoot(api, selectedRoot, reason))
-		{
-			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot status=FAIL reason=%1", reason);
-			return;
-		}
 
 		array<string> expectedPaths = {};
 		if (!ME_CollectCandidatePaths(api, US_SPAWN_POINT_NAME, expectedPaths, reason)
 			|| !ME_CollectCandidatePaths(api, USSR_SPAWN_POINT_NAME, expectedPaths, reason)
 			|| !ME_CollectCandidatePaths(api, US_ARMED_SPAWN_POINT_NAME, expectedPaths, reason)
 			|| !ME_CollectCandidatePaths(api, USSR_ARMED_SPAWN_POINT_NAME, expectedPaths, reason)
-			|| !ME_CollectCandidatePaths(api, CIV_SPAWN_POINT_NAME, expectedPaths, reason))
+			|| !ME_CollectCandidatePaths(api, CIV_SPAWN_POINT_NAME, expectedPaths, reason)
+			|| !ME_CollectCandidatePaths(api, FIA_SPAWN_POINT_NAME, expectedPaths, reason)
+			|| !ME_CollectCandidatePaths(api, FIA_ARMED_SPAWN_POINT_NAME, expectedPaths, reason))
 		{
 			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot status=FAIL reason=%1", reason);
 			return;
@@ -108,36 +104,7 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 		foreach (ME_VehicleBoundsSnapshotEntry entry : snapshot.m_aEntries)
 			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot_entry prefab=%1 mins=%2 maxs=%3 fixtureRoot=%4", entry.m_sPrefab, entry.m_vLocalMins, entry.m_vLocalMaxs, entry.m_sFixtureEntityName);
 
-		PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot status=PASS stage=%1 count=%2 coverage=%3 selectedRoot=%4", STAGED_PATH, snapshot.m_aEntries.Count(), expectedPaths.Count(), selectedRoot.GetName());
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Confirms that exactly one marked vehicle root is selected before generation begins.
-	//! Подтверждает, что перед генерацией выбран ровно один помеченный корень техники.
-	protected bool ME_GetSelectedFixtureRoot(WorldEditorAPI api, out IEntity selectedRoot, out string reason)
-	{
-		reason = "";
-		if (api.GetSelectedEntitiesCount() != 1)
-		{
-			reason = "expected_exactly_one_selected_fixture_root";
-			return false;
-		}
-
-		IEntitySource source = api.GetSelectedEntity();
-		if (!source)
-		{
-			reason = "selected_fixture_root_unavailable";
-			return false;
-		}
-
-		selectedRoot = api.SourceToEntity(source);
-		if (!selectedRoot || !ME_VehicleBoundsFixtureMarkerComponent.Cast(selectedRoot.FindComponent(ME_VehicleBoundsFixtureMarkerComponent)))
-		{
-			reason = "selected_entity_is_not_fixture_marker_root";
-			return false;
-		}
-
-		return true;
+		PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot status=PASS stage=%1 count=%2 coverage=%3", STAGED_PATH, snapshot.m_aEntries.Count(), expectedPaths.Count());
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -334,17 +301,17 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 			return false;
 		}
 
-		BaseContainer container = containerResource.GetResource().ToBaseContainer();
-		if (!container || !BaseContainerTools.SaveContainer(container, STAGED_RESOURCE))
-		{
-			reason = "save_container_failed";
-			return false;
-		}
-
 		string absolutePath;
 		if (!Workbench.GetAbsolutePath(STAGED_PATH, absolutePath, false))
 		{
 			reason = "absolute_path_failed";
+			return false;
+		}
+
+		BaseContainer container = containerResource.GetResource().ToBaseContainer();
+		if (!container || !BaseContainerTools.SaveContainer(container, STAGED_RESOURCE, absolutePath))
+		{
+			reason = "save_container_failed";
 			return false;
 		}
 

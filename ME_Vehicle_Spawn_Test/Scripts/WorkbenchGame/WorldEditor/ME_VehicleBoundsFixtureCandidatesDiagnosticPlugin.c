@@ -12,6 +12,8 @@ class ME_VehicleBoundsFixtureCandidatesDiagnosticPlugin : WorldEditorPlugin
 	protected const string US_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_Armed";
 	protected const string USSR_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR_Armed";
 	protected const string CIV_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_CIV";
+	protected const string FIA_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA";
+	protected const string FIA_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA_Armed";
 
 	//------------------------------------------------------------------------------------------------
 	//! Reports candidates for every required faction fixture spawn point.
@@ -32,7 +34,7 @@ class ME_VehicleBoundsFixtureCandidatesDiagnosticPlugin : WorldEditorPlugin
 			return;
 		}
 
-		if (!ME_ReportCandidates(api, US_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, USSR_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, US_ARMED_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, USSR_ARMED_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, CIV_SPAWN_POINT_NAME))
+		if (!ME_ReportCandidates(api, US_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, USSR_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, US_ARMED_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, USSR_ARMED_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, CIV_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, FIA_SPAWN_POINT_NAME) || !ME_ReportCandidates(api, FIA_ARMED_SPAWN_POINT_NAME))
 			return;
 
 		Print("[ME_DEBUG_AVSP_WB] bounds_fixture_candidates status=PASS");
@@ -70,6 +72,37 @@ class ME_VehicleBoundsFixtureCandidatesDiagnosticPlugin : WorldEditorPlugin
 		{
 			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_fixture_candidates status=FAIL reason=empty_filtered_catalog entity=%1", entityName);
 			return false;
+		}
+
+		if (entityName == FIA_SPAWN_POINT_NAME || entityName == FIA_ARMED_SPAWN_POINT_NAME)
+		{
+			array<SCR_EntityCatalogEntry> entries;
+			if (!spawnPoint.ME_GetEditorVehicleEnvelopeCandidates(entries, reason))
+			{
+				PrintFormat("[ME_DEBUG_AVSP_WB] bounds_fixture_candidates status=FAIL reason=%1 entity=%2", reason, entityName);
+				return false;
+			}
+
+			bool hasArmedCandidate;
+			foreach (SCR_EntityCatalogEntry entry : entries)
+			{
+				bool armed = entry.HasEditableEntityLabel(EEditableEntityLabel.TRAIT_ARMED);
+				PrintFormat("[ME_DEBUG_AVSP_WB] bounds_fixture_candidate_labels entity=%1 prefab=%2 traitArmed=%3", entityName, entry.GetPrefab(), armed);
+				if (armed)
+					hasArmedCandidate = true;
+
+				if (entityName == FIA_SPAWN_POINT_NAME && armed)
+				{
+					PrintFormat("[ME_DEBUG_AVSP_WB] bounds_fixture_candidates status=FAIL reason=armed_candidate entity=%1 prefab=%2", entityName, entry.GetPrefab());
+					return false;
+				}
+			}
+
+			if (entityName == FIA_ARMED_SPAWN_POINT_NAME && !hasArmedCandidate)
+			{
+				PrintFormat("[ME_DEBUG_AVSP_WB] bounds_fixture_candidates status=FAIL reason=no_armed_candidate entity=%1", entityName);
+				return false;
+			}
 		}
 
 		paths.Sort();

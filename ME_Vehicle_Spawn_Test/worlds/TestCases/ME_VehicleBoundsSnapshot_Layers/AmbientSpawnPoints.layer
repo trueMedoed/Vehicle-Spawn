@@ -1,0 +1,45 @@
+GenericEntity AmbientVehicleSpawnPoint_CIV : "{0DDAFCA92FF4451C}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_CIV.et" {
+ coords 180 1 150
+}
+$grp GenericEntity : "{644AEC5C537E03F0}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_USSR.et" {
+ AmbientVehicleSpawnPoint_USSR {
+  coords 140 1 150
+ }
+ AmbientVehicleSpawnPoint_USSR_Armed {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aExcludedEditableEntityLabels {
+    }
+   }
+  }
+  coords 78.749 1 30.259
+ }
+}
+$grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
+ AmbientVehicleSpawnPoint_US {
+  coords 10 1 10
+ }
+ AmbientVehicleSpawnPoint_US_Armed {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aExcludedEditableEntityLabels {
+    }
+   }
+  }
+  coords 30 1 10
+ }
+}
+$grp GenericEntity : "{D4A604DD154470CD}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_FIA.et" {
+ AmbientVehicleSpawnPoint_FIA_Armed {
+  components {
+   SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+    m_aExcludedEditableEntityLabels {
+    }
+   }
+  }
+  coords 239.768 1 170.813
+ }
+ AmbientVehicleSpawnPoint_FIA {
+  coords 220 1 150
+ }
+}

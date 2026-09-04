@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{1C3AE4A8F2630BF8}Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf"
+ Configurations {
+  CONFResourceClass PC {
+  }
+  CONFResourceClass XBOX_ONE : PC {
+  }
+  CONFResourceClass XBOX_SERIES : PC {
+  }
+  CONFResourceClass PS4 : PC {
+  }
+  CONFResourceClass PS5 : PC {
+  }
+  CONFResourceClass HEADLESS : PC {
+  }
+ }
+}

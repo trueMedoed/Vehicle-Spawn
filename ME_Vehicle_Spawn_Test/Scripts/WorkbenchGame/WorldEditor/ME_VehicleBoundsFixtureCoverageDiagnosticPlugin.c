@@ -12,6 +12,8 @@ class ME_VehicleBoundsFixtureCoverageDiagnosticPlugin : WorldEditorPlugin
 	protected const string US_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_Armed";
 	protected const string USSR_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_USSR_Armed";
 	protected const string CIV_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_CIV";
+	protected const string FIA_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA";
+	protected const string FIA_ARMED_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_FIA_Armed";
 
 	//------------------------------------------------------------------------------------------------
 	//! Validates candidate and marker coverage without changing the world or spawning a prefab.
@@ -38,7 +40,9 @@ class ME_VehicleBoundsFixtureCoverageDiagnosticPlugin : WorldEditorPlugin
 			|| !ME_CollectCandidatePaths(api, USSR_SPAWN_POINT_NAME, expectedPaths, reason)
 			|| !ME_CollectCandidatePaths(api, US_ARMED_SPAWN_POINT_NAME, expectedPaths, reason)
 			|| !ME_CollectCandidatePaths(api, USSR_ARMED_SPAWN_POINT_NAME, expectedPaths, reason)
-			|| !ME_CollectCandidatePaths(api, CIV_SPAWN_POINT_NAME, expectedPaths, reason))
+			|| !ME_CollectCandidatePaths(api, CIV_SPAWN_POINT_NAME, expectedPaths, reason)
+			|| !ME_CollectCandidatePaths(api, FIA_SPAWN_POINT_NAME, expectedPaths, reason)
+			|| !ME_CollectCandidatePaths(api, FIA_ARMED_SPAWN_POINT_NAME, expectedPaths, reason))
 		{
 			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_fixture_coverage status=FAIL reason=%1", reason);
 			return;
