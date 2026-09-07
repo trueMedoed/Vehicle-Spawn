@@ -219,7 +219,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
 	ref Shape m_ME_EditorSpawnAreaShape;
-	ref Shape m_ME_EditorVehicleEnvelopeShape;
 	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
 	// Editor-only world-space text for excluded and individually colored included vehicle labels.
 	// Editor-only текст в мировом пространстве для исключающих и отдельно окрашенных включающих меток техники.
@@ -237,6 +236,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	protected vector m_vME_EditorVehicleEnvelopeLocalMins;
 	protected vector m_vME_EditorVehicleEnvelopeLocalMaxs;
 	protected bool m_bME_EditorVehicleEnvelopePreviewActive;
+	protected int m_iME_EditorVehicleEnvelopeFillColor;
 	// Cached editor-only wheeled/helicopter category mask for recreating the label after transform changes.
 	// Кэшированная editor-only битовая маска категорий wheeled/helicopter для пересоздания метки после изменения преобразования.
 	protected int m_iME_EditorVehicleCategoryMask;
@@ -381,6 +381,47 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 	
 	//------------------------------------------------------------------------------------------------
+	//! Resolves the spawn point faction color used by the editor-only vehicle envelope fill.
+	//! The fallback uses a neutral diagnostic yellow when no faction is assigned to this point.
+	//! Получает цвет фракции точки появления для editor-only заливки vehicle-envelope.
+	//! Fallback использует нейтральный диагностический жёлтый цвет, когда точке не назначена фракция.
+	protected int ME_GetEditorVehicleEnvelopeFillColor()
+	{
+		const int fallbackColor = Color.FromRGBA(255, 215, 0, 255).PackToInt();
+		IEntity owner = GetOwner();
+		if (!owner)
+			return fallbackColor;
+
+		SCR_FactionAffiliationComponent affiliation = SCR_FactionAffiliationComponent.Cast(owner.FindComponent(SCR_FactionAffiliationComponent));
+		if (!affiliation)
+			return fallbackColor;
+
+		FactionKey factionKey = affiliation.GetDefaultFactionKey();
+		if (factionKey.IsEmpty())
+			factionKey = affiliation.GetAffiliatedFactionKey();
+		if (factionKey.IsEmpty())
+			return fallbackColor;
+
+		FactionManager factionManager = GetGame().GetFactionManager();
+		if (!factionManager)
+			return fallbackColor;
+
+		SCR_Faction faction = SCR_Faction.Cast(factionManager.GetFactionByKey(factionKey));
+		if (!faction)
+			return fallbackColor;
+
+		return faction.GetFactionColor().PackToInt();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Stores the resolved faction color before rebuilding the validated envelope.
+	//! Сохраняет разрешённый цвет фракции перед перестроением проверенного envelope.
+	void ME_SetEditorVehicleEnvelopeFillColor()
+	{
+		m_iME_EditorVehicleEnvelopeFillColor = ME_GetEditorVehicleEnvelopeFillColor();
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Collects the vehicle-catalog candidates that vanilla Update() would filter for this point in the World Editor.
 	//! This diagnostic does not select a prefab, spawn an entity, or change the editable world.
 	//!
@@ -444,14 +485,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		}
 		else
 		{
-			SCR_EntityCatalogManagerComponent catalogManager = SCR_EntityCatalogManagerComponent.GetInstance();
-			if (!catalogManager)
-			{
-				reason = "global_catalog_manager_unavailable";
+			entityCatalog = SCR_EntityCatalogManagerComponent.ME_GetEditorGlobalVehicleCatalog(reason);
+			if (!entityCatalog)
 				return false;
-			}
-
-			entityCatalog = catalogManager.GetEntityCatalogOfType(EEntityCatalogType.VEHICLE);
 		}
 
 		if (!entityCatalog)
@@ -465,7 +501,42 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Converts this point's complete editor catalog result into canonical prefab paths without mutating spawn state.
+	//! Collects the resolved faction key, filtered entries, and unique VEHICLE_* labels for aggregate bounds.
+	//! Собирает разрешённый ключ фракции, отфильтрованные записи и уникальные метки VEHICLE_* для aggregate-границ.
+	bool ME_GetEditorVehicleAggregateSelection(out string factionKey, out array<string> vehicleTypeNames, out array<SCR_EntityCatalogEntry> entries, out string reason)
+	{
+		factionKey = "";
+		vehicleTypeNames = {};
+		if (!ME_GetEditorVehicleEnvelopeCandidates(entries, reason))
+			return false;
+
+		SCR_FactionAffiliationComponent affiliation = SCR_FactionAffiliationComponent.Cast(GetOwner().FindComponent(SCR_FactionAffiliationComponent));
+		if (affiliation)
+		{
+			FactionKey resolvedFactionKey = affiliation.GetDefaultFactionKey();
+			if (resolvedFactionKey.IsEmpty())
+				resolvedFactionKey = affiliation.GetAffiliatedFactionKey();
+			if (!resolvedFactionKey.IsEmpty())
+				factionKey = resolvedFactionKey;
+		}
+
+		if (factionKey.IsEmpty())
+			factionKey = ME_VehicleBoundsSnapshotHelper.ME_GLOBAL_VEHICLE_CATALOG_SCOPE;
+
+		foreach (SCR_EntityCatalogEntry entry : entries)
+		{
+			array<EEditableEntityLabel> labels = {};
+			entry.GetEditableEntityLabels(labels);
+			foreach (EEditableEntityLabel label : labels)
+			{
+				string labelName = typename.EnumToString(EEditableEntityLabel, label);
+				if (labelName.Contains("VEHICLE_") && !vehicleTypeNames.Contains(labelName))
+					vehicleTypeNames.Insert(labelName);
+			}
+		}
+		return true;
+	}
+
 	//! Преобразует полный результат editor-каталога этой точки в канонические пути prefab без изменения состояния появления.
 	bool ME_GetEditorVehicleEnvelopeCandidatePaths(out array<string> prefabPaths, out string reason)
 	{
@@ -1064,23 +1135,24 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Releases this point's cached editor-only vehicle-envelope Shape and bounds.
-	//! Освобождает кэшированные Shape и границы vehicle-envelope этой точки только для редактора.
+	//! Releases this point's cached editor-only vehicle-envelope fill Shape and bounds.
+	//! Освобождает кэшированные fill Shape и границы vehicle-envelope этой точки только для редактора.
 	void ME_ClearEditorVehicleEnvelopePreview()
 	{
-		m_ME_EditorVehicleEnvelopeShape = null;
 		m_ME_EditorVehicleEnvelopeFillShape = null;
 		m_bME_EditorVehicleEnvelopePreviewActive = false;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Calculates this point's complete filtered catalog envelope and refreshes it only after strict snapshot validation.
-	//! Рассчитывает envelope полного отфильтрованного каталога этой точки и обновляет его только после строгой проверки snapshot.
+	//! Calculates this point's selected faction and vehicle-type aggregate envelope and refreshes it only after strict snapshot validation.
+	//! Рассчитывает aggregate-envelope выбранных фракции и типов техники этой точки и обновляет его только после строгой проверки snapshot.
 	void ME_RefreshValidatedEditorVehicleEnvelopePreview()
 	{
-		array<string> candidatePaths;
+		string factionKey;
+		array<string> vehicleTypeNames;
+		array<SCR_EntityCatalogEntry> entries;
 		string reason;
-		if (!ME_GetEditorVehicleEnvelopeCandidatePaths(candidatePaths, reason))
+		if (!ME_GetEditorVehicleAggregateSelection(factionKey, vehicleTypeNames, entries, reason))
 		{
 			PrintFormat("[ME_DEBUG_AVSP_WB] status=UNVERIFIABLE operation=ambient_vehicle_envelope_auto_preview reason=%1 entity=%2", reason, GetOwner().GetName());
 			return;
@@ -1088,7 +1160,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 		vector aggregateMins;
 		vector aggregateMaxs;
-		if (!ME_VehicleBoundsSnapshotHelper.ME_GetValidatedAggregateBounds(candidatePaths, aggregateMins, aggregateMaxs, reason))
+		if (!ME_VehicleBoundsSnapshotHelper.ME_GetValidatedAggregateBounds(factionKey, vehicleTypeNames, aggregateMins, aggregateMaxs, reason))
 		{
 			PrintFormat("[ME_DEBUG_AVSP_WB] status=UNVERIFIABLE operation=ambient_vehicle_envelope_auto_preview reason=%1 entity=%2", reason, GetOwner().GetName());
 			return;
@@ -1102,7 +1174,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	//! Перестраивает этот консервативный vehicle-envelope в текущей editor-позиции, применяя только yaw к локальным X/Z и сохраняя локальный Y.
 	void ME_RefreshEditorVehicleEnvelopePreview()
 	{
-		m_ME_EditorVehicleEnvelopeShape = null;
 		m_ME_EditorVehicleEnvelopeFillShape = null;
 		if (!m_bME_EditorVehicleEnvelopePreviewActive)
 			return;
@@ -1148,17 +1219,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			corners[2], corners[3], corners[7], corners[2], corners[7], corners[6]
 		};
 
-		Color fillColor = Color.FromRGBA(255, 215, 0, 48);
+		Color fillColor = Color.FromInt(m_iME_EditorVehicleEnvelopeFillColor);
+		fillColor.SetA(48.0 / 255.0);
 		m_ME_EditorVehicleEnvelopeFillShape = Shape.CreateTris(fillColor.PackToInt(), ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE, fillPoints, 36);
-
-		vector linePoints[] = {
-			corners[0], corners[1], corners[1], corners[3], corners[3], corners[2], corners[2], corners[0],
-			corners[4], corners[5], corners[5], corners[7], corners[7], corners[6], corners[6], corners[4],
-			corners[0], corners[4], corners[1], corners[5], corners[2], corners[6], corners[3], corners[7]
-		};
-
-		Color outlineColor = Color.FromRGBA(255, 48, 48, 255);
-		m_ME_EditorVehicleEnvelopeShape = Shape.CreateLines(outlineColor.PackToInt(), ShapeFlags.DOUBLESIDE, linePoints, 24);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1168,6 +1231,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	{
 		m_vME_EditorVehicleEnvelopeLocalMins = localMins;
 		m_vME_EditorVehicleEnvelopeLocalMaxs = localMaxs;
+		ME_SetEditorVehicleEnvelopeFillColor();
 		m_bME_EditorVehicleEnvelopePreviewActive = true;
 		ME_RefreshEditorVehicleEnvelopePreview();
 	}

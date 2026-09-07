@@ -174,7 +174,7 @@ class ME_VehicleBoundsFixtureCanonicalNames
 //------------------------------------------------------------------------------------------------
 //! Reports the canonical rename mapping for the dedicated vehicle-bounds fixture without mutating it.
 //! Выводит каноническое сопоставление переименования выделенного fixture границ техники без его изменения.
-[WorkbenchPluginAttribute(name: "Preflight vehicle bounds fixture names", description: "Reports and validates canonical fixture-root names without changing the world.", wbModules: { "WorldEditor" })]
+[WorkbenchPluginAttribute(name: "Preflight fixture names", description: "Reports and validates canonical fixture-root names without changing the world.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Vehicle Bounds")]
 class ME_VehicleBoundsFixtureCanonicalNamesPlugin : WorldEditorPlugin
 {
 	//------------------------------------------------------------------------------------------------

@@ -27,14 +27,16 @@ class ME_AmbientVehicleEnvelopePreviewHelper
 			return false;
 
 		entityName = selectedEntity.GetName();
-		array<string> candidatePaths;
-		if (!spawnPoint.ME_GetEditorVehicleEnvelopeCandidatePaths(candidatePaths, reason))
+		string factionKey;
+		array<string> vehicleTypeNames;
+		array<SCR_EntityCatalogEntry> entries;
+		if (!spawnPoint.ME_GetEditorVehicleAggregateSelection(factionKey, vehicleTypeNames, entries, reason))
 			return false;
 
-		if (!ME_VehicleBoundsSnapshotHelper.ME_GetValidatedAggregateBounds(candidatePaths, aggregateMins, aggregateMaxs, reason))
+		if (!ME_VehicleBoundsSnapshotHelper.ME_GetValidatedAggregateBounds(factionKey, vehicleTypeNames, aggregateMins, aggregateMaxs, reason))
 			return false;
 
-		candidateCount = candidatePaths.Count();
+		candidateCount = entries.Count();
 		spawnPoint.ME_ShowEditorVehicleEnvelopePreview(aggregateMins, aggregateMaxs);
 		return true;
 	}

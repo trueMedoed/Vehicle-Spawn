@@ -6,7 +6,7 @@
 //! Draws nothing when snapshot coverage is incomplete, so a partial envelope is never presented as verified.
 //! Отрисовывает один ориентированный по осям worst-case snapshot-box, покрывающий каждого кандидата каталога выбранной spawn-point.
 //! Ничего не рисует при неполном покрытии snapshot, поэтому частичный envelope никогда не выдаётся за проверенный.
-[WorkbenchPluginAttribute(name: "Preview ambient vehicle envelope", description: "Shows the conservative snapshot envelope for one selected ambient vehicle spawn point.", wbModules: { "WorldEditor" })]
+[WorkbenchPluginAttribute(name: "Preview ambient vehicle envelope", description: "Shows the conservative snapshot envelope for one selected ambient vehicle spawn point.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Vehicle Bounds")]
 class ME_AmbientVehicleEnvelopePreviewPlugin : WorldEditorPlugin
 {
 	//------------------------------------------------------------------------------------------------

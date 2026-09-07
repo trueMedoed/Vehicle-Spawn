@@ -16,9 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - When creating a script, add a brief description of what the script does.
 - Add comments describing the purpose of each function.
-- Keep script, class, and enum descriptions, as well as comments for every supported method, in English and duplicate them in Russian.
-- Preserve the original English text and add the Russian block immediately beside it, directly after the English documentation block.
-- Apply this bilingual documentation rule to the main addon and to test addon projects.
+- Keep script, class, and enum descriptions, as well as comments for every supported method, in English in the production addon; do not add Russian translation duplicates to production scripts.
+- In test addon projects, duplicate those English documentation blocks in Russian, placing each Russian block immediately after its corresponding English block.
 - Do not translate runtime strings, diagnostic `Print`/`PrintFormat` messages, localization keys, or historical commented-out code unless explicitly requested.
 
 ## Change scope

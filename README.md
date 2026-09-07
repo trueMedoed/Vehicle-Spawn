@@ -25,3 +25,5 @@
 ## Test
 
 Открывайте `ME_Vehicle_Spawn_Test` отдельно от production. Диагностические значения, log prefixes и сравнение с campaign baseline описаны в `docs/TEST_DIAGNOSTICS.md`.
+
+Ручной процесс генерации, проверки и принятия per-prefab vehicle-bounds Baseline описан в `ME_Vehicle_Spawn_Test/VEHICLE_BOUNDS_REGRESSION.md`.

@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{8897392635304AE5}Configs/Generated/ME_VehicleBoundsPerPrefabBaseline.conf"
+ Configurations {
+  CONFResourceClass PC {
+  }
+  CONFResourceClass XBOX_ONE : PC {
+  }
+  CONFResourceClass XBOX_SERIES : PC {
+  }
+  CONFResourceClass PS4 : PC {
+  }
+  CONFResourceClass PS5 : PC {
+  }
+  CONFResourceClass HEADLESS : PC {
+  }
+ }
+}

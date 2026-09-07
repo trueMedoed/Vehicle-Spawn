@@ -10,7 +10,7 @@
 //! Сообщает статус безопасного API границ prefab для ровно одной выбранной точки появления ambient-техники.
 //! Текущий API движка предоставляет границы только через созданные сущности; этот harness намеренно не создаёт
 //! кандидаты в редактируемом мире, так как это запустило бы инициализацию техники и не может быть изолировано.
-[WorkbenchPluginAttribute(name: "Diagnose ambient vehicle prefab bounds", description: "Lists selected ambient spawn-point catalog candidates without creating vehicle entities.", wbModules: { "WorldEditor" })]
+[WorkbenchPluginAttribute(name: "Diagnose ambient vehicle prefab bounds", description: "Lists selected ambient spawn-point catalog candidates without creating vehicle entities.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Vehicle Bounds")]
 class ME_AmbientVehiclePrefabBoundsDiagnosticPlugin : WorldEditorPlugin
 {
 	//------------------------------------------------------------------------------------------------

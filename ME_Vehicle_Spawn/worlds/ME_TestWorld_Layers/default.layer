@@ -1,3 +1,6 @@
+GenericEntity : "{0DDAFCA92FF4451C}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_CIV.et" {
+ coords 160.25 1 101.711
+}
 $grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
  Standart {
   coords 110.56 1 142.825
@@ -23,4 +26,10 @@ $grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientV
   }
   coords 123.925 1 148.254
  }
+}
+GenericEntity : "{D4A604DD154470CD}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_FIA.et" {
+ coords 162.593 1 61.569
+}
+GenericEntity : "{DD346352F0F30A7C}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_Base.et" {
+ coords 240.678 1 122.901
 }

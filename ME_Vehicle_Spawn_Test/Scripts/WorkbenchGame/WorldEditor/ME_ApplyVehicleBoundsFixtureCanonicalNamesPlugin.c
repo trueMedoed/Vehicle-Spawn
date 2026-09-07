@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------------------------
 //! Applies canonical filename-stem editor names to validated vehicle-bounds fixture roots.
 //! Применяет канонические editor-имена stem файлов к проверенным корням fixture границ техники.
-[WorkbenchPluginAttribute(name: "Apply vehicle bounds fixture names", description: "Renames validated marked fixture roots in one undoable batch.", wbModules: { "WorldEditor" })]
+[WorkbenchPluginAttribute(name: "Apply fixture names", description: "Renames validated marked fixture roots in one undoable batch.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Vehicle Bounds")]
 class ME_ApplyVehicleBoundsFixtureCanonicalNamesPlugin : WorldEditorPlugin
 {
 	//------------------------------------------------------------------------------------------------

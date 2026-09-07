@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------------------------
 //! Enumerates the faction-filtered catalog candidates of the named fixture spawn points without changing the world.
 //! Перечисляет отфильтрованные по faction кандидаты каталога именованных fixture spawn-point без изменения мира.
-[WorkbenchPluginAttribute(name: "Diagnose vehicle bounds fixture candidates", description: "Lists canonical vehicle candidates for the dedicated bounds fixture.", wbModules: { "WorldEditor" })]
+[WorkbenchPluginAttribute(name: "Diagnose fixture candidates", description: "Lists canonical vehicle candidates for the dedicated bounds fixture.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Vehicle Bounds")]
 class ME_VehicleBoundsFixtureCandidatesDiagnosticPlugin : WorldEditorPlugin
 {
 	protected const string US_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_AllExceptArmed";

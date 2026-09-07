@@ -1,16 +1,13 @@
-//! Test-only editor entity catalog initialization used by read-only spawn-point diagnostics.
-//! Инициализация editor-каталогов сущностей только для Test, используемая диагностикой только на чтение.
+//! Editor-only entity catalog initialization used by read-only spawn-point diagnostics.
 
 //------------------------------------------------------------------------------------------------
 //! Exposes the configured factionless catalog manager only while the World Editor is active.
-//! Предоставляет настроенный factionless catalog manager только в активном World Editor.
 modded class SCR_EntityCatalogManagerComponent
 {
 	protected static SCR_EntityCatalogManagerComponent s_ME_EditorInstance;
 
 	//------------------------------------------------------------------------------------------------
 	//! Registers the configured manager for editor-only catalog diagnostics.
-	//! Регистрирует настроенный manager для editor-only диагностики каталогов.
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
@@ -22,9 +19,6 @@ modded class SCR_EntityCatalogManagerComponent
 	//! Returns the vanilla runtime singleton or the configured World Editor manager.
 	//!
 	//! \return The active catalog manager, or null when none is available
-	//! Возвращает ванильный runtime singleton либо настроенный manager World Editor.
-	//!
-	//! \return Активный catalog manager либо null, когда он недоступен
 	static SCR_EntityCatalogManagerComponent ME_GetEditorInstance()
 	{
 		SCR_EntityCatalogManagerComponent instance = GetInstance();
@@ -39,10 +33,6 @@ modded class SCR_EntityCatalogManagerComponent
 	//!
 	//! \param[out] reason Stable reason when the manager or catalog is unavailable
 	//! \return The configured global VEHICLE catalog, or null when it cannot be read
-	//! Возвращает настроенный factionless-каталог VEHICLE без инициализации или объединения каталогов фракций.
-	//!
-	//! \param[out] reason Стабильная причина, когда manager или catalog недоступен
-	//! \return Настроенный глобальный VEHICLE-каталог либо null, когда его нельзя прочитать
 	static SCR_EntityCatalog ME_GetEditorGlobalVehicleCatalog(out string reason)
 	{
 		reason = "";
@@ -62,7 +52,6 @@ modded class SCR_EntityCatalogManagerComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Clears the editor-only manager reference when its entity is deleted.
-	//! Очищает editor-only ссылку на manager при удалении его сущности.
 	override void OnDelete(IEntity owner)
 	{
 		if (s_ME_EditorInstance == this)
@@ -73,19 +62,15 @@ modded class SCR_EntityCatalogManagerComponent
 }
 
 //------------------------------------------------------------------------------------------------
-//! Extends faction data with an explicit editor-only catalog initialization step used by diagnostics.
-//! Расширяет данные фракции явным шагом инициализации editor-каталогов для диагностики.
+//! Extends faction data with an explicit editor-only catalog initialization step.
 modded class SCR_Faction
 {
 	//------------------------------------------------------------------------------------------------
 	//! Initializes this faction's catalog map only while the World Editor is active.
-	//! This changes no editable entities and never creates or probes a vehicle prefab.
+	//! This changes no editable entities and does not create or probe a vehicle prefab.
 	//!
 	//! \return True when the catalog map is ready for read-only candidate filtering
-	//! Инициализирует map каталога этой фракции только в активном World Editor.
-	//! Это не изменяет редактируемые сущности и никогда не создаёт либо не проверяет prefab техники.
 	//!
-	//! \return True, когда map каталога готов для фильтрации кандидатов только на чтение
 	bool ME_EnsureEditorCatalogsInitialized()
 	{
 		if (m_bCatalogInitDone)

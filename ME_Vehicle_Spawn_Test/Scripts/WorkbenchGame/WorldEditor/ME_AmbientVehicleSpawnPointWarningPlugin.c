@@ -1,7 +1,7 @@
 //! World Editor plugin that prevents invalid ambient vehicle spawn-point placement and checks prerequisites for existing points.
-//! It validates the world GameMode, its Spawn Vehicles test flag, editable GameMode layer state, and FactionManager presence.
+//! It validates the world GameMode, Spawn Vehicles test flag, editable GameMode layer state, FactionManager, and factionless global VEHICLE catalog.
 //! Плагин редактора мира, предотвращающий некорректное размещение точек появления ambient-техники и проверяющий предварительные условия для существующих точек.
-//! Он проверяет GameMode мира, его тестовый флаг Spawn Vehicles, состояние редактируемости слоя GameMode и наличие FactionManager.
+//! Он проверяет GameMode мира, тестовый флаг Spawn Vehicles, состояние редактируемости слоя GameMode, FactionManager и глобальный VEHICLE-каталог для точек без фракции.
 
 //------------------------------------------------------------------------------------------------
 //! Editor diagnostic states returned while checking ambient vehicle spawn-point prerequisites.
@@ -18,6 +18,14 @@ enum EME_AmbientSpawnPointCheckResult
 	SPAWN_VEHICLES_DISABLED,
 	NO_FACTION_MANAGER,
 	//------------------------------------------------------------------------------------------------
+	//! The configured global VEHICLE catalog cannot be read for a factionless ambient spawn point.
+	//! Настроенный глобальный VEHICLE-каталог нельзя прочитать для ambient-точки без фракции.
+	GLOBAL_VEHICLE_CATALOG_UNAVAILABLE,
+	//------------------------------------------------------------------------------------------------
+	//! The configured global VEHICLE catalog contains no entries for factionless ambient spawn points.
+	//! Настроенный глобальный VEHICLE-каталог не содержит записей для ambient-точек без фракции.
+	EMPTY_GLOBAL_VEHICLE_CATALOG,
+	//------------------------------------------------------------------------------------------------
 	//! An incoming ambient spawn-point prefab requires an unavailable faction or cannot be read safely.
 	//! Входящий префаб ambient-точки требует недоступную фракцию или не может быть безопасно прочитан.
 	DROPPED_SPAWNPOINT_FACTION_UNAVAILABLE,
@@ -30,9 +38,9 @@ enum EME_AmbientSpawnPointCheckResult
 
 //------------------------------------------------------------------------------------------------
 //! Stores the editor diagnostic result and observations collected for one ambient spawn-point prerequisite check.
-//! It records GameMode and FactionManager counts, GameMode layer state, Test Game Flags, and SpawnVehicles state.
+//! It records world prerequisites, faction diagnostics, and the configured global VEHICLE catalog state.
 //! Хранит диагностический результат редактора и наблюдения одной проверки предпосылок точки появления ambient-техники.
-//! Он сохраняет количество GameMode и FactionManager, состояние слоя GameMode, Test Game Flags и состояние SpawnVehicles.
+//! Он сохраняет предпосылки мира, диагностику фракций и состояние настроенного глобального VEHICLE-каталога.
 class ME_AmbientSpawnPointCheck
 {
 	EME_AmbientSpawnPointCheckResult m_eResult;
@@ -57,6 +65,26 @@ class ME_AmbientSpawnPointCheck
 	ref array<string> m_aMissingSpawnPointFactions = {};
 
 	//------------------------------------------------------------------------------------------------
+	//! Names and coordinates of existing factionless ambient spawn points affected by global catalog diagnostics.
+	//! Имена и координаты существующих ambient-точек без фракции, затронутых диагностикой глобального каталога.
+	ref array<string> m_aFactionlessSpawnPoints = {};
+
+	//------------------------------------------------------------------------------------------------
+	//! Stable diagnostic reason reported while reading the configured global VEHICLE catalog.
+	//! Стабильная диагностическая причина, полученная при чтении настроенного глобального VEHICLE-каталога.
+	string m_sGlobalVehicleCatalogDiagnosticReason;
+
+	//------------------------------------------------------------------------------------------------
+	//! Number of entries in the complete configured global VEHICLE catalog, or -1 when unavailable.
+	//! Число записей в полном настроенном глобальном VEHICLE-каталоге либо -1, когда он недоступен.
+	int m_iGlobalVehicleCatalogEntryCount = -1;
+
+	//------------------------------------------------------------------------------------------------
+	//! Whether the configured global VEHICLE catalog has already been checked during this operation.
+	//! Был ли настроенный глобальный VEHICLE-каталог уже проверен во время этой операции.
+	bool m_bGlobalVehicleCatalogChecked;
+
+	//------------------------------------------------------------------------------------------------
 	//! Incoming prefab paths rejected before native placement.
 	//! Пути входящих префабов, отклонённых до встроенного размещения.
 	ref array<string> m_aRejectedIncomingPrefabs = {};
@@ -77,7 +105,7 @@ class ME_AmbientSpawnPointCheck
 //! It examines the GameMode count, GameMode layer state, Test Game Flags, and FactionManager presence without changing the world.
 //! Проверяет предварительные условия точек появления ambient-техники в редакторе мира до размещения и по явной команде.
 //! Он анализирует количество GameMode, состояние слоя GameMode, Test Game Flags и наличие FactionManager, не изменяя мир.
-[WorkbenchPluginAttribute(name: "Check ambient vehicle spawning", description: "Checks the open world's ambient vehicle spawn points and GameMode test flags.", wbModules: { "WorldEditor" })]
+[WorkbenchPluginAttribute(name: "Check ambient vehicle spawning", description: "Checks the open world's ambient vehicle spawn points and GameMode test flags.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn")]
 class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 {
 	private const string MESSAGE_TITLE = "Ambient vehicle spawn points";
@@ -87,6 +115,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	private const string MESSAGE_DROP_TEST_GAME_FLAGS_UNAVAILABLE = "The point was not created because m_eTestGameFlags is unavailable on the only SCR_BaseGameMode. Use an editable GameMode that exposes Test Game Flags.";
 	private const string MESSAGE_DROP_SPAWN_VEHICLES_DISABLED = "The point was not created because Spawn Vehicles is disabled in the only GameMode's Test Game Flags / m_eTestGameFlags.";
 	private const string MESSAGE_DROP_NO_FACTION_MANAGER = "The point was not created because this world has no FactionManager. Add the vanilla Prefabs/MP/Managers/Factions/FactionManager_Editor.et prefab.";
+	private const string MESSAGE_DROP_GLOBAL_VEHICLE_CATALOG_UNAVAILABLE = "The point was not created because the configured global VEHICLE catalog for factionless ambient vehicle spawn points is unavailable. The editor blocks factionless placement until the active GameMode provides a readable global vehicle catalog.";
+	private const string MESSAGE_DROP_EMPTY_GLOBAL_VEHICLE_CATALOG = "The point was not created because the active GameMode provides no entries in the global VEHICLE catalog. A factionless ambient vehicle spawn point would be unable to select a vehicle.";
 	private const string MESSAGE_DROP_SPAWNPOINT_FACTION_UNAVAILABLE = "The point was not created because an incoming ambient vehicle spawn point requires a faction unavailable from this world's FactionManager or its faction affiliation could not be read. Configure the FactionManager or use a compatible point.";
 	private const string MESSAGE_CHECK_WORLD_EDITOR_UNAVAILABLE = "The World Editor API is unavailable, so ambient vehicle spawning cannot be checked.";
 	private const string MESSAGE_CHECK_NO_GAME_MODE = "Ambient vehicle spawning needs a GameMode to apply Test Game Flags. Add or configure a GameMode derived from SCR_BaseGameMode.";
@@ -95,6 +125,8 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	private const string MESSAGE_CHECK_TEST_GAME_FLAGS_UNAVAILABLE = "Test Game Flags / m_eTestGameFlags is unavailable on the only SCR_BaseGameMode. Use an editable GameMode that exposes Test Game Flags.";
 	private const string MESSAGE_CHECK_SPAWN_VEHICLES_DISABLED = "Ambient vehicle spawning is disabled for the current GameMode. Select the GameMode and enable Spawn Vehicles in Test Game Flags / m_eTestGameFlags. EGameFlags.SpawnVehicles = 2; 6 also enables SpawnAI.";
 	private const string MESSAGE_CHECK_NO_FACTION_MANAGER = "Running a world with ambient vehicle spawn points requires a FactionManager. Add a FactionManager to this world.";
+	private const string MESSAGE_CHECK_GLOBAL_VEHICLE_CATALOG_UNAVAILABLE = "A factionless ambient vehicle spawn point cannot be validated because the configured global VEHICLE catalog is unavailable. The point cannot safely select a vehicle until the active GameMode provides a readable global vehicle catalog.";
+	private const string MESSAGE_CHECK_EMPTY_GLOBAL_VEHICLE_CATALOG = "A factionless ambient vehicle spawn point cannot select a vehicle because the active GameMode provides no entries in the global VEHICLE catalog. Assign a supported faction-specific point or configure the global vehicle catalog.";
 	private const string MESSAGE_CHECK_MISSING_SPAWNPOINT_FACTIONS = "Some ambient vehicle spawn points require faction keys that are not available in this world's FactionManager. Configure the FactionManager or replace the affected points; this advisory check does not guarantee vehicle spawning.";
 
 	//------------------------------------------------------------------------------------------------
@@ -175,15 +207,15 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	//------------------------------------------------------------------------------------------------
 	//! Collects editor diagnostic state to decide whether an ambient vehicle spawn point may be placed.
 	//! It checks GameMode count and editable layer, m_eTestGameFlags including SpawnVehicles, and FactionManager.
-	//! When requested by the explicit command, it also checks existing points' faction keys without making that advisory result placement-blocking.
+	//! When requested by the explicit command, it also checks existing points' faction keys and the global catalog used by factionless points.
 	//!
-	//! \param[in] checkSpawnPointFactions True to collect missing faction keys for existing points
+	//! \param[in] checkSpawnPointFactions True to collect faction and global catalog diagnostics for existing points
 	//! \return Populated prerequisite-check result for the current World Editor state
 	//! Собирает диагностическое состояние редактора, чтобы определить, можно ли разместить точку появления ambient-техники.
 	//! Метод проверяет количество GameMode и редактируемость слоя, m_eTestGameFlags включая SpawnVehicles и FactionManager.
-	//! По запросу явной команды он также проверяет ключи фракций существующих точек, не делая этот рекомендательный результат блокировкой размещения.
+	//! По запросу явной команды он также проверяет ключи фракций существующих точек и глобальный каталог для точек без фракции.
 	//!
-	//! \param[in] checkSpawnPointFactions True для сбора отсутствующих ключей фракций существующих точек
+	//! \param[in] checkSpawnPointFactions True для сбора диагностики фракций и глобального каталога существующих точек
 	//! \return Заполненный результат проверки предпосылок для текущего состояния World Editor
 	private ME_AmbientSpawnPointCheck CanCreateAmbientSpawnPoint(bool checkSpawnPointFactions = false, out FactionManager activeFactionManager = null)
 	{
@@ -285,7 +317,22 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 		activeFactionManager = factionManager;
 		if (checkSpawnPointFactions)
 		{
-			CollectMissingSpawnPointFactions(api, factionManager, check);
+			CollectSpawnPointDiagnostics(api, factionManager, check);
+			if (!check.m_aFactionlessSpawnPoints.IsEmpty())
+			{
+				if (check.m_iGlobalVehicleCatalogEntryCount < 0)
+				{
+					check.m_eResult = EME_AmbientSpawnPointCheckResult.GLOBAL_VEHICLE_CATALOG_UNAVAILABLE;
+					return check;
+				}
+
+				if (check.m_iGlobalVehicleCatalogEntryCount == 0)
+				{
+					check.m_eResult = EME_AmbientSpawnPointCheckResult.EMPTY_GLOBAL_VEHICLE_CATALOG;
+					return check;
+				}
+			}
+
 			if (!check.m_aMissingSpawnPointFactions.IsEmpty())
 			{
 				check.m_eResult = EME_AmbientSpawnPointCheckResult.MISSING_SPAWNPOINT_FACTIONS;
@@ -298,20 +345,20 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Validates only incoming ambient spawn-point prefabs against the selected FactionManager before native placement.
-	//! It does not create entities or change the world. The first unreadable or unavailable prefab cancels the complete drop.
+	//! Validates incoming ambient spawn-point faction affiliation and the global catalog required by factionless prefabs before native placement.
+	//! It does not create entities or change the world. The first unreadable or unsupported prefab cancels the complete drop.
 	//!
 	//! \param[in] resourcePaths Dropped resource paths to inspect
 	//! \param[in] factionManager FactionManager selected by the successful prerequisite scan
 	//! \param[in,out] check Result data populated when an incoming prefab is rejected
-	//! \return True when every incoming ambient prefab is factionless or compatible with the FactionManager
-	//! Проверяет только входящие префабы ambient-точек по выбранному FactionManager до встроенного размещения.
-	//! Метод не создаёт сущности и не изменяет мир. Первый нечитаемый или недоступный префаб отменяет весь drop.
+	//! \return True when every incoming ambient prefab has a usable global catalog or a compatible faction
+	//! Проверяет affiliation фракции входящих префабов ambient-точек и глобальный каталог для префабов без фракции до встроенного размещения.
+	//! Метод не создаёт сущности и не изменяет мир. Первый нечитаемый или неподдерживаемый префаб отменяет весь drop.
 	//!
 	//! \param[in] resourcePaths Пути сброшенных ресурсов для проверки
 	//! \param[in] factionManager FactionManager, выбранный успешной проверкой предпосылок
 	//! \param[in,out] check Данные результата, заполняемые при отклонении входящего префаба
-	//! \return True, когда каждый входящий ambient-префаб не имеет фракции или совместим с FactionManager
+	//! \return True, когда у каждого входящего ambient-префаба есть доступный глобальный каталог или совместимая фракция
 	private bool ValidateIncomingAmbientSpawnPointFactions(array<string> resourcePaths, FactionManager factionManager, ME_AmbientSpawnPointCheck check)
 	{
 		array<Faction> factions = {};
@@ -338,7 +385,28 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 				return false;
 			}
 
-			if (requiredKey.IsEmpty() || factionManager.GetFactionByKey(requiredKey))
+			if (requiredKey.IsEmpty())
+			{
+				if (!TryReadGlobalVehicleCatalog(check))
+				{
+					check.m_aRejectedIncomingPrefabs.Insert(resourcePath);
+					check.m_aIncomingPrefabDiagnosticReasons.Insert(check.m_sGlobalVehicleCatalogDiagnosticReason);
+					check.m_eResult = EME_AmbientSpawnPointCheckResult.GLOBAL_VEHICLE_CATALOG_UNAVAILABLE;
+					return false;
+				}
+
+				if (check.m_iGlobalVehicleCatalogEntryCount == 0)
+				{
+					check.m_aRejectedIncomingPrefabs.Insert(resourcePath);
+					check.m_aIncomingPrefabDiagnosticReasons.Insert("empty_global_vehicle_catalog");
+					check.m_eResult = EME_AmbientSpawnPointCheckResult.EMPTY_GLOBAL_VEHICLE_CATALOG;
+					return false;
+				}
+
+				continue;
+			}
+
+			if (factionManager.GetFactionByKey(requiredKey))
 				continue;
 
 			check.m_aRejectedIncomingPrefabs.Insert(resourcePath);
@@ -347,6 +415,40 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 			check.m_eResult = EME_AmbientSpawnPointCheckResult.DROPPED_SPAWNPOINT_FACTION_UNAVAILABLE;
 			return false;
 		}
+
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Reads the complete configured global VEHICLE catalog exactly once for one editor check.
+	//! Empty include and exclude arrays deliberately bypass point-specific label filtering.
+	//!
+	//! \param[in,out] check Result data populated with catalog reason and complete entry count
+	//! \return True when the configured global VEHICLE catalog was read, including a valid empty result
+	//! Читает полный настроенный глобальный VEHICLE-каталог ровно один раз для одной editor-проверки.
+	//! Пустые массивы include и exclude намеренно обходят фильтрацию меток конкретной точки.
+	//!
+	//! \param[in,out] check Данные результата, заполняемые причиной каталога и полным числом записей
+	//! \return True, когда настроенный глобальный VEHICLE-каталог прочитан, включая корректный пустой результат
+	private bool TryReadGlobalVehicleCatalog(ME_AmbientSpawnPointCheck check)
+	{
+		if (check.m_bGlobalVehicleCatalogChecked)
+			return check.m_iGlobalVehicleCatalogEntryCount >= 0;
+
+		check.m_bGlobalVehicleCatalogChecked = true;
+		string reason;
+		SCR_EntityCatalog catalog = SCR_EntityCatalogManagerComponent.ME_GetEditorGlobalVehicleCatalog(reason);
+		check.m_sGlobalVehicleCatalogDiagnosticReason = reason;
+		if (!catalog)
+			return false;
+
+		array<EEditableEntityLabel> includedLabels = {};
+		array<EEditableEntityLabel> excludedLabels = {};
+		array<SCR_EntityCatalogEntry> entries = {};
+		catalog.GetFullFilteredEntityListWithLabels(entries, includedLabels, excludedLabels, false);
+		check.m_iGlobalVehicleCatalogEntryCount = entries.Count();
+		if (check.m_iGlobalVehicleCatalogEntryCount == 0)
+			check.m_sGlobalVehicleCatalogDiagnosticReason = "empty_global_vehicle_catalog";
 
 		return true;
 	}
@@ -426,19 +528,19 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Collects faction keys unavailable to existing ambient spawn points from the active FactionManager.
-	//! This advisory scan does not alter point placement or runtime spawning.
+	//! Collects factionless points and faction keys unavailable to existing ambient spawn points.
+	//! The configured global VEHICLE catalog is read once only when at least one factionless point exists.
 	//!
 	//! \param[in] api World Editor API used to enumerate entities
 	//! \param[in] factionManager Active faction manager to inspect
-	//! \param[in,out] check Result data populated with available and missing faction keys
-	//! Собирает ключи фракций существующих ambient-точек, отсутствующие в активном FactionManager.
-	//! Это рекомендательное сканирование не изменяет размещение точек или runtime-появление.
+	//! \param[in,out] check Result data populated with faction and global catalog diagnostics
+	//! Собирает точки без фракции и ключи фракций, недоступные существующим ambient-точкам.
+	//! Настроенный глобальный VEHICLE-каталог читается один раз только при наличии хотя бы одной точки без фракции.
 	//!
 	//! \param[in] api API редактора мира для перечисления сущностей
 	//! \param[in] factionManager Активный менеджер фракций для проверки
-	//! \param[in,out] check Данные результата, заполняемые доступными и отсутствующими ключами фракций
-	private void CollectMissingSpawnPointFactions(WorldEditorAPI api, FactionManager factionManager, ME_AmbientSpawnPointCheck check)
+	//! \param[in,out] check Данные результата, заполняемые диагностикой фракций и глобального каталога
+	private void CollectSpawnPointDiagnostics(WorldEditorAPI api, FactionManager factionManager, ME_AmbientSpawnPointCheck check)
 	{
 		array<Faction> factions = {};
 		factionManager.GetFactionsList(factions);
@@ -470,15 +572,22 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 			if (requiredKey.IsEmpty())
 				requiredKey = currentKey;
 
-			if (requiredKey.IsEmpty() || factionManager.GetFactionByKey(requiredKey))
-				continue;
-
 			string pointName = entity.GetName();
 			if (pointName.IsEmpty())
 				pointName = "<unnamed>";
 
-			check.m_aMissingSpawnPointFactions.Insert(string.Format("entity=%1 coords=%2 requiredKey=%3 defaultKey=%4 currentKey=%5", pointName, entity.GetOrigin(), requiredKey, defaultKey, currentKey));
+			if (requiredKey.IsEmpty())
+			{
+				check.m_aFactionlessSpawnPoints.Insert(string.Format("entity=%1 coords=%2 defaultKey=%3 currentKey=%4", pointName, entity.GetOrigin(), defaultKey, currentKey));
+				continue;
+			}
+
+			if (!factionManager.GetFactionByKey(requiredKey))
+				check.m_aMissingSpawnPointFactions.Insert(string.Format("entity=%1 coords=%2 requiredKey=%3 defaultKey=%4 currentKey=%5", pointName, entity.GetOrigin(), requiredKey, defaultKey, currentKey));
 		}
+
+		if (!check.m_aFactionlessSpawnPoints.IsEmpty())
+			TryReadGlobalVehicleCatalog(check);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -577,10 +686,12 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 	{
 		PrintFormat("[ME_DEBUG_AVSP_WB] editor scan result=%1 spawnpoints=%2 gameModes=%3 factionManagers=%4 m_eTestGameFlags=%5 available=%6 spawnVehicles=%7 subscene=%8 layerId=%9", GetResultCode(check.m_eResult), spawnPointCount, check.m_iGameModeCount, check.m_iFactionManagerCount, check.m_eTestGameFlags, check.m_bHasTestGameFlags, check.m_bSpawnVehiclesEnabled, check.m_iGameModeSubscene, check.m_iGameModeLayerId);
 		PrintFormat("[ME_DEBUG_AVSP_WB] editor scan layerPath=%1 lockedHierarchy=%2", check.m_sGameModeLayerPath, check.m_bLockedHierarchy);
+		if (!check.m_aFactionlessSpawnPoints.IsEmpty())
+			PrintFormat("[ME_DEBUG_AVSP_WB] result=%1 affectedFactionlessPoints=%2 globalVehicleCatalogEntryCount=%3 catalogDiagnosticReason=%4", GetResultCode(check.m_eResult), check.m_aFactionlessSpawnPoints, check.m_iGlobalVehicleCatalogEntryCount, check.m_sGlobalVehicleCatalogDiagnosticReason);
 		if (!check.m_aMissingSpawnPointFactions.IsEmpty())
 			PrintFormat("[ME_DEBUG_AVSP_WB] result=missing_spawnpoint_factions affectedPoints=%1 availableFactionKeys=%2", check.m_aMissingSpawnPointFactions, check.m_aAvailableFactionKeys);
 		if (!check.m_aRejectedIncomingPrefabs.IsEmpty())
-			PrintFormat("[ME_DEBUG_AVSP_WB] result=dropped_spawnpoint_faction_unavailable rejectedPrefabs=%1 requiredFactionKeys=%2 diagnosticReasons=%3 availableFactionKeys=%4", check.m_aRejectedIncomingPrefabs, check.m_aRejectedIncomingFactionKeys, check.m_aIncomingPrefabDiagnosticReasons, check.m_aAvailableFactionKeys);
+			PrintFormat("[ME_DEBUG_AVSP_WB] result=%1 rejectedPrefabs=%2 requiredFactionKeys=%3 diagnosticReasons=%4 availableFactionKeys=%5 globalVehicleCatalogEntryCount=%6 catalogDiagnosticReason=%7", GetResultCode(check.m_eResult), check.m_aRejectedIncomingPrefabs, check.m_aRejectedIncomingFactionKeys, check.m_aIncomingPrefabDiagnosticReasons, check.m_aAvailableFactionKeys, check.m_iGlobalVehicleCatalogEntryCount, check.m_sGlobalVehicleCatalogDiagnosticReason);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -610,6 +721,10 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 				return "spawn_vehicles_disabled";
 			case EME_AmbientSpawnPointCheckResult.NO_FACTION_MANAGER:
 				return "no_faction_manager";
+			case EME_AmbientSpawnPointCheckResult.GLOBAL_VEHICLE_CATALOG_UNAVAILABLE:
+				return "global_vehicle_catalog_unavailable";
+			case EME_AmbientSpawnPointCheckResult.EMPTY_GLOBAL_VEHICLE_CATALOG:
+				return "empty_global_vehicle_catalog";
 			case EME_AmbientSpawnPointCheckResult.DROPPED_SPAWNPOINT_FACTION_UNAVAILABLE:
 				return "dropped_spawnpoint_faction_unavailable";
 			case EME_AmbientSpawnPointCheckResult.MISSING_SPAWNPOINT_FACTIONS:
@@ -644,6 +759,10 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 				return MESSAGE_DROP_SPAWN_VEHICLES_DISABLED;
 			case EME_AmbientSpawnPointCheckResult.NO_FACTION_MANAGER:
 				return MESSAGE_DROP_NO_FACTION_MANAGER;
+			case EME_AmbientSpawnPointCheckResult.GLOBAL_VEHICLE_CATALOG_UNAVAILABLE:
+				return MESSAGE_DROP_GLOBAL_VEHICLE_CATALOG_UNAVAILABLE;
+			case EME_AmbientSpawnPointCheckResult.EMPTY_GLOBAL_VEHICLE_CATALOG:
+				return MESSAGE_DROP_EMPTY_GLOBAL_VEHICLE_CATALOG;
 			case EME_AmbientSpawnPointCheckResult.DROPPED_SPAWNPOINT_FACTION_UNAVAILABLE:
 				return MESSAGE_DROP_SPAWNPOINT_FACTION_UNAVAILABLE;
 		}
@@ -676,6 +795,10 @@ class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 				return MESSAGE_CHECK_SPAWN_VEHICLES_DISABLED;
 			case EME_AmbientSpawnPointCheckResult.NO_FACTION_MANAGER:
 				return MESSAGE_CHECK_NO_FACTION_MANAGER;
+			case EME_AmbientSpawnPointCheckResult.GLOBAL_VEHICLE_CATALOG_UNAVAILABLE:
+				return MESSAGE_CHECK_GLOBAL_VEHICLE_CATALOG_UNAVAILABLE;
+			case EME_AmbientSpawnPointCheckResult.EMPTY_GLOBAL_VEHICLE_CATALOG:
+				return MESSAGE_CHECK_EMPTY_GLOBAL_VEHICLE_CATALOG;
 			case EME_AmbientSpawnPointCheckResult.MISSING_SPAWNPOINT_FACTIONS:
 				return MESSAGE_CHECK_MISSING_SPAWNPOINT_FACTIONS;
 		}

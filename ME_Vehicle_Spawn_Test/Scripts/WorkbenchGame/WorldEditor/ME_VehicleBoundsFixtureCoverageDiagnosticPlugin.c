@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------------------------
 //! Compares marked fixture vehicle roots with the non-mutating candidate output of all fixture spawn points.
 //! Сравнивает помеченные корни техники fixture с немутирующим выводом кандидатов всех spawn-point fixture.
-[WorkbenchPluginAttribute(name: "Validate vehicle bounds fixture coverage", description: "Checks exact catalog-to-marker coverage for the dedicated bounds fixture.", wbModules: { "WorldEditor" })]
+[WorkbenchPluginAttribute(name: "Validate fixture coverage", description: "Checks exact catalog-to-marker coverage for the dedicated bounds fixture.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Vehicle Bounds")]
 class ME_VehicleBoundsFixtureCoverageDiagnosticPlugin : WorldEditorPlugin
 {
 	protected const string US_SPAWN_POINT_NAME = "AmbientVehicleSpawnPoint_US_AllExceptArmed";

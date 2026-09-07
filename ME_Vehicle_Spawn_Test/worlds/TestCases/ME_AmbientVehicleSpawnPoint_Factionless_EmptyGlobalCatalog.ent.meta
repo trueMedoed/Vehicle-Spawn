@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{367F98B26612E507}worlds/TestCases/ME_AmbientVehicleSpawnPoint_Factionless_EmptyGlobalCatalog.ent"
+ Configurations {
+  ENTResourceClass PC {
+  }
+  ENTResourceClass XBOX_ONE : PC {
+  }
+  ENTResourceClass XBOX_SERIES : PC {
+  }
+  ENTResourceClass PS4 : PC {
+  }
+  ENTResourceClass PS5 : PC {
+  }
+  ENTResourceClass HEADLESS : PC {
+  }
+ }
+}

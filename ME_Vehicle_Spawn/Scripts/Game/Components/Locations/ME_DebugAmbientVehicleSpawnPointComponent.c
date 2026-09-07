@@ -7,10 +7,22 @@
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
 	ref Shape m_ME_EditorSpawnAreaShape;
+	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
+	ref DebugTextWorldSpace m_ME_EditorVehicleCategoryExcludedLabel;
+	ref array<ref DebugTextWorldSpace> m_aME_EditorVehicleCategoryIncludedLabels = {};
+	// Bit value for the wheeled vehicle catalog category.
+	static const int ME_EDITOR_VEHICLE_CATEGORY_WHEELED = 1;
+	// Bit value for the helicopter vehicle catalog category.
+	static const int ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER = 2;
 	static ref array<SCR_AmbientVehicleSpawnPointComponent> s_ME_EditorSpawnPoints = {};
 	static ref array<IEntity> s_ME_EditorStaticObjectMarkerEntities = {};
 	static ref array<ref Shape> s_ME_EditorStaticObjectMarkerShapes = {};
+	protected int m_iME_EditorVehicleCategoryMask;
 	protected int m_iME_EditorStaticObjectConflictCount;
+	protected vector m_vME_EditorVehicleEnvelopeLocalMins;
+	protected vector m_vME_EditorVehicleEnvelopeLocalMaxs;
+	protected bool m_bME_EditorVehicleEnvelopePreviewActive;
+	protected int m_iME_EditorVehicleEnvelopeFillColor;
 
 	//------------------------------------------------------------------------------------------------
 	//! Formats editable entity labels as a readable comma-separated list for log output.
@@ -126,6 +138,402 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		}
 
 		// No prefab is selected here: super.Update(faction) already performed the vanilla selection.
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Resolves the spawn point faction color used by the editor-only vehicle envelope fill.
+	//! The fallback uses a neutral diagnostic yellow when no faction is assigned to this point.
+	protected int ME_GetEditorVehicleEnvelopeFillColor()
+	{
+		const int fallbackColor = Color.FromRGBA(255, 215, 0, 255).PackToInt();
+		IEntity owner = GetOwner();
+		if (!owner)
+			return fallbackColor;
+
+		SCR_FactionAffiliationComponent affiliation = SCR_FactionAffiliationComponent.Cast(owner.FindComponent(SCR_FactionAffiliationComponent));
+		if (!affiliation)
+			return fallbackColor;
+
+		FactionKey factionKey = affiliation.GetDefaultFactionKey();
+		if (factionKey.IsEmpty())
+			factionKey = affiliation.GetAffiliatedFactionKey();
+		if (factionKey.IsEmpty())
+			return fallbackColor;
+
+		FactionManager factionManager = GetGame().GetFactionManager();
+		if (!factionManager)
+			return fallbackColor;
+
+		SCR_Faction faction = SCR_Faction.Cast(factionManager.GetFactionByKey(factionKey));
+		if (!faction)
+			return fallbackColor;
+
+		return faction.GetFactionColor().PackToInt();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Stores the resolved faction color before rebuilding the validated envelope.
+	void ME_SetEditorVehicleEnvelopeFillColor()
+	{
+		m_iME_EditorVehicleEnvelopeFillColor = ME_GetEditorVehicleEnvelopeFillColor();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Collects the vehicle-catalog candidates that vanilla Update() would filter for this point in the World Editor.
+	//! This read-only diagnostic does not select a prefab, spawn an entity, or change runtime state.
+	//!
+	//! \param[out] entries Filtered vehicle catalog entries
+	//! \param[out] reason Stable reason when candidates cannot be read safely
+	//! \return True when entries contain the complete applicable catalog filter result
+	bool ME_GetEditorVehicleEnvelopeCandidates(out array<SCR_EntityCatalogEntry> entries, out string reason)
+	{
+		entries = {};
+		reason = "";
+
+		IEntity owner = GetOwner();
+		if (!owner)
+		{
+			reason = "owner_unavailable";
+			return false;
+		}
+
+		SCR_Faction faction;
+		SCR_FactionAffiliationComponent affiliation = SCR_FactionAffiliationComponent.Cast(owner.FindComponent(SCR_FactionAffiliationComponent));
+		if (affiliation)
+		{
+			FactionKey factionKey = affiliation.GetDefaultFactionKey();
+			if (factionKey.IsEmpty())
+				factionKey = affiliation.GetAffiliatedFactionKey();
+
+			if (!factionKey.IsEmpty())
+			{
+				FactionManager factionManager = GetGame().GetFactionManager();
+				if (!factionManager)
+				{
+					reason = "faction_manager_unavailable";
+					return false;
+				}
+
+				faction = SCR_Faction.Cast(factionManager.GetFactionByKey(factionKey));
+				if (!faction)
+				{
+					reason = string.Format("faction_unavailable key=%1", factionKey);
+					return false;
+				}
+			}
+		}
+
+		SCR_EntityCatalog entityCatalog;
+		if (faction)
+		{
+			if (!faction.ME_EnsureEditorCatalogsInitialized())
+			{
+				reason = "faction_vehicle_catalog_initialization_unavailable";
+				return false;
+			}
+
+			entityCatalog = faction.GetFactionEntityCatalogOfType(EEntityCatalogType.VEHICLE);
+		}
+		else
+		{
+			entityCatalog = SCR_EntityCatalogManagerComponent.ME_GetEditorGlobalVehicleCatalog(reason);
+			if (!entityCatalog)
+				return false;
+		}
+
+		if (!entityCatalog)
+		{
+			reason = "vehicle_catalog_unavailable";
+			return false;
+		}
+
+		entityCatalog.GetFullFilteredEntityListWithLabels(entries, m_aIncludedEditableEntityLabels, m_aExcludedEditableEntityLabels, m_bRequireAllIncludedLabels);
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Collects the complete vehicle catalog result that vanilla Update() would filter for this point in the World Editor.
+	//! This read-only diagnostic does not select a prefab, spawn an entity, or change runtime state.
+	//!
+	//! \param[out] entries Filtered vehicle catalog entries
+	//! \param[out] reason Stable reason when candidates cannot be read safely
+	//! \return True when entries contain the complete applicable catalog filter result
+	bool ME_GetEditorVehicleCategoryCandidates(out array<SCR_EntityCatalogEntry> entries, out string reason)
+	{
+		return ME_GetEditorVehicleEnvelopeCandidates(entries, reason);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Collects the filtered vehicle catalog, its faction or global scope key, and unique VEHICLE_* label names.
+	//!
+	//! \param[out] factionKey Resolved faction key or the reserved global-catalog scope
+	//! \param[out] vehicleTypeNames Unique vehicle-type label names present in the filtered result
+	//! \param[out] entries Filtered vehicle catalog entries
+	//! \param[out] reason Stable reason when the selection cannot be read safely
+	//! \return True when the complete applicable catalog filter result is available
+	bool ME_GetEditorVehicleAggregateSelection(out string factionKey, out array<string> vehicleTypeNames, out array<SCR_EntityCatalogEntry> entries, out string reason)
+	{
+		factionKey = "";
+		vehicleTypeNames = {};
+		if (!ME_GetEditorVehicleEnvelopeCandidates(entries, reason))
+			return false;
+
+		SCR_FactionAffiliationComponent affiliation = SCR_FactionAffiliationComponent.Cast(GetOwner().FindComponent(SCR_FactionAffiliationComponent));
+		if (affiliation)
+		{
+			FactionKey resolvedFactionKey = affiliation.GetDefaultFactionKey();
+			if (resolvedFactionKey.IsEmpty())
+				resolvedFactionKey = affiliation.GetAffiliatedFactionKey();
+			if (!resolvedFactionKey.IsEmpty())
+				factionKey = resolvedFactionKey;
+		}
+
+		if (factionKey.IsEmpty())
+			factionKey = ME_VehicleBoundsSnapshotHelper.ME_GLOBAL_VEHICLE_CATALOG_SCOPE;
+
+		foreach (SCR_EntityCatalogEntry entry : entries)
+		{
+			array<EEditableEntityLabel> labels = {};
+			entry.GetEditableEntityLabels(labels);
+			foreach (EEditableEntityLabel label : labels)
+			{
+				string labelName = typename.EnumToString(EEditableEntityLabel, label);
+				if (labelName.Contains("VEHICLE_") && !vehicleTypeNames.Contains(labelName))
+					vehicleTypeNames.Insert(labelName);
+			}
+		}
+
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Classifies filtered vehicle prefab paths using the canonical wheeled and helicopter categories.
+	//!
+	//! \param[out] reason Stable reason when the catalog cannot be read safely
+	//! \return Bit mask of supported vehicle categories
+	protected int ME_GetEditorVehicleCategoryMask(out string reason)
+	{
+		reason = "";
+		array<SCR_EntityCatalogEntry> entries;
+		if (!ME_GetEditorVehicleCategoryCandidates(entries, reason))
+			return 0;
+
+		int categoryMask;
+		foreach (SCR_EntityCatalogEntry entry: entries)
+		{
+			string prefabPath = entry.GetPrefab();
+			if (prefabPath.Contains("Prefabs/Vehicles/Wheeled/"))
+				categoryMask = categoryMask | ME_EDITOR_VEHICLE_CATEGORY_WHEELED;
+			else if (prefabPath.Contains("Prefabs/Vehicles/Helicopters/"))
+				categoryMask = categoryMask | ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER;
+		}
+
+		return categoryMask;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Formats configured labels as comma-separated enum names, using ALL when the list is empty.
+	//!
+	//! \param[in] labels Included or excluded labels configured on this spawn point
+	//! \return Comma-separated label names, or ALL when none are configured
+	protected string ME_GetEditorVehicleCategoryLabelLabels(array<EEditableEntityLabel> labels)
+	{
+		if (!labels || labels.IsEmpty())
+			return "ALL";
+
+		string result;
+		foreach (EEditableEntityLabel label: labels)
+		{
+			if (!result.IsEmpty())
+				result += ", ";
+
+			result += typename.EnumToString(EEditableEntityLabel, label);
+		}
+
+		return result;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Selects the editor-only color for one included vehicle label by its enum name.
+	//!
+	//! \param[in] label Included label configured on this spawn point
+	//! \return Color for this included label
+	protected Color ME_GetEditorVehicleCategoryIncludedLabelColor(EEditableEntityLabel label)
+	{
+		string labelName = typename.EnumToString(EEditableEntityLabel, label);
+		if (labelName.Contains("_HELICOPTER"))
+			return Color.FromRGBA(180, 80, 255, 255);
+		if (labelName.Contains("_TRUCK"))
+			return Color.FromRGBA(0, 200, 255, 255);
+		if (labelName.Contains("_APC"))
+			return Color.FromRGBA(255, 140, 0, 255);
+		if (labelName.Contains("_CAR"))
+			return Color.FromRGBA(80, 220, 100, 255);
+		return Color.FromRGBA(224, 224, 224, 255);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Clears this point's editor-only excluded and included category text objects.
+	void ME_ClearEditorVehicleCategoryLabel()
+	{
+		m_ME_EditorVehicleCategoryExcludedLabel = null;
+		for (int includedIndex = 0; includedIndex < m_aME_EditorVehicleCategoryIncludedLabels.Count(); includedIndex++)
+			m_aME_EditorVehicleCategoryIncludedLabels[includedIndex] = null;
+		m_aME_EditorVehicleCategoryIncludedLabels.Clear();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Rebuilds the camera-facing configured-label display from the cached catalog mask.
+	//!
+	//! \param[in] owner Spawn point entity whose transform anchors the label
+	void ME_RefreshEditorVehicleCategoryLabel(IEntity owner)
+	{
+		ME_ClearEditorVehicleCategoryLabel();
+		if (!owner)
+			return;
+
+		switch (m_iME_EditorVehicleCategoryMask)
+		{
+			case ME_EDITOR_VEHICLE_CATEGORY_WHEELED:
+			case ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER:
+			case ME_EDITOR_VEHICLE_CATEGORY_WHEELED | ME_EDITOR_VEHICLE_CATEGORY_HELICOPTER:
+				break;
+			default:
+				return;
+		}
+
+		vector transform[4];
+		owner.GetTransform(transform);
+		transform[3] = transform[3] + Vector(0, 8, 0);
+		const int backgroundColor = Color.FromRGBA(0, 0, 0, 178).PackToInt();
+		const DebugTextFlags textFlags = DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA;
+
+		if (m_aExcludedEditableEntityLabels && !m_aExcludedEditableEntityLabels.IsEmpty())
+		{
+			vector excludedTransform[4];
+			for (int excludedTransformIndex = 0; excludedTransformIndex < 4; excludedTransformIndex++)
+				excludedTransform[excludedTransformIndex] = transform[excludedTransformIndex];
+			excludedTransform[3] = excludedTransform[3] - Vector(0, 0.5, 0);
+			m_ME_EditorVehicleCategoryExcludedLabel = DebugTextWorldSpace.CreateInWorld(GetGame().GetWorld(), ME_GetEditorVehicleCategoryLabelLabels(m_aExcludedEditableEntityLabels), textFlags, excludedTransform, 1.0, Color.FromRGBA(255, 48, 48, 255).PackToInt(), backgroundColor, 1000);
+		}
+
+		vector includedTransform[4];
+		for (int includedTransformIndex = 0; includedTransformIndex < 4; includedTransformIndex++)
+			includedTransform[includedTransformIndex] = transform[includedTransformIndex];
+		includedTransform[3] = includedTransform[3] + Vector(0, 0.5, 0);
+		if (!m_aIncludedEditableEntityLabels || m_aIncludedEditableEntityLabels.IsEmpty())
+		{
+			m_aME_EditorVehicleCategoryIncludedLabels.Insert(DebugTextWorldSpace.CreateInWorld(GetGame().GetWorld(), ME_GetEditorVehicleCategoryLabelLabels(m_aIncludedEditableEntityLabels), textFlags, includedTransform, 1.0, Color.FromRGBA(255, 215, 0, 255).PackToInt(), backgroundColor, 1000));
+			return;
+		}
+
+		const float labelSpacing = 2.0;
+		float offset = -0.5 * labelSpacing * (m_aIncludedEditableEntityLabels.Count() - 1);
+		foreach (EEditableEntityLabel includedLabel: m_aIncludedEditableEntityLabels)
+		{
+			vector labelTransform[4];
+			for (int labelTransformIndex = 0; labelTransformIndex < 4; labelTransformIndex++)
+				labelTransform[labelTransformIndex] = includedTransform[labelTransformIndex];
+			labelTransform[3] = labelTransform[3] + transform[0] * offset;
+			m_aME_EditorVehicleCategoryIncludedLabels.Insert(DebugTextWorldSpace.CreateInWorld(GetGame().GetWorld(), typename.EnumToString(EEditableEntityLabel, includedLabel), textFlags, labelTransform, 1.0, ME_GetEditorVehicleCategoryIncludedLabelColor(includedLabel).PackToInt(), backgroundColor, 1000));
+			offset += labelSpacing;
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Computes the catalog category mask and creates the editor-only labels.
+	void ME_UpdateEditorVehicleCategoryLabel()
+	{
+		string reason;
+		m_iME_EditorVehicleCategoryMask = ME_GetEditorVehicleCategoryMask(reason);
+		ME_RefreshEditorVehicleCategoryLabel(GetOwner());
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Releases this point's cached editor-only vehicle-envelope fill Shape and bounds.
+	void ME_ClearEditorVehicleEnvelopePreview()
+	{
+		m_ME_EditorVehicleEnvelopeFillShape = null;
+		m_bME_EditorVehicleEnvelopePreviewActive = false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Calculates and validates the selected faction and vehicle-type aggregate envelope, then stores it for transform refreshes.
+	void ME_RefreshValidatedEditorVehicleEnvelopePreview()
+	{
+		string factionKey;
+		array<string> vehicleTypeNames;
+		array<SCR_EntityCatalogEntry> entries;
+		string reason;
+		if (!ME_GetEditorVehicleAggregateSelection(factionKey, vehicleTypeNames, entries, reason))
+			return;
+
+		vector aggregateMins;
+		vector aggregateMaxs;
+		if (!ME_VehicleBoundsSnapshotHelper.ME_GetValidatedAggregateBounds(factionKey, vehicleTypeNames, aggregateMins, aggregateMaxs, reason))
+			return;
+
+		ME_ShowEditorVehicleEnvelopePreview(aggregateMins, aggregateMaxs);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Rebuilds the cached vehicle envelope at the current editor transform.
+	void ME_RefreshEditorVehicleEnvelopePreview()
+	{
+		m_ME_EditorVehicleEnvelopeFillShape = null;
+		if (!m_bME_EditorVehicleEnvelopePreviewActive)
+			return;
+
+		IEntity owner = GetOwner();
+		if (!owner)
+			return;
+
+		vector origin = owner.GetOrigin();
+		vector transform[4];
+		owner.GetTransform(transform);
+		vector angles = Math3D.MatrixToAngles(transform);
+		float yawRadians = angles[0] * Math.DEG2RAD;
+		float yawSin = Math.Sin(yawRadians);
+		float yawCos = Math.Cos(yawRadians);
+		vector localCorners[8];
+		localCorners[0] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
+		localCorners[1] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
+		localCorners[2] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
+		localCorners[3] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
+		localCorners[4] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
+		localCorners[5] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
+		localCorners[6] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
+		localCorners[7] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
+
+		vector corners[8];
+		for (int cornerIndex = 0; cornerIndex < 8; cornerIndex++)
+		{
+			vector localCorner = localCorners[cornerIndex];
+			corners[cornerIndex] = origin + Vector(localCorner[0] * yawCos + localCorner[2] * yawSin, localCorner[1], localCorner[2] * yawCos - localCorner[0] * yawSin);
+		}
+
+		vector fillPoints[] = {
+			corners[0], corners[1], corners[3], corners[0], corners[3], corners[2],
+			corners[4], corners[6], corners[7], corners[4], corners[7], corners[5],
+			corners[0], corners[2], corners[6], corners[0], corners[6], corners[4],
+			corners[1], corners[5], corners[7], corners[1], corners[7], corners[3],
+			corners[0], corners[4], corners[5], corners[0], corners[5], corners[1],
+			corners[2], corners[3], corners[7], corners[2], corners[7], corners[6]
+		};
+		Color fillColor = Color.FromInt(m_iME_EditorVehicleEnvelopeFillColor);
+		fillColor.SetA(48.0 / 255.0);
+		m_ME_EditorVehicleEnvelopeFillShape = Shape.CreateTris(fillColor.PackToInt(), ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE, fillPoints, 36);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Stores this point's validated conservative local vehicle envelope and refreshes only this point's Shape.
+	void ME_ShowEditorVehicleEnvelopePreview(vector localMins, vector localMaxs)
+	{
+		m_vME_EditorVehicleEnvelopeLocalMins = localMins;
+		m_vME_EditorVehicleEnvelopeLocalMaxs = localMaxs;
+		ME_SetEditorVehicleEnvelopeFillColor();
+		m_bME_EditorVehicleEnvelopePreviewActive = true;
+		ME_RefreshEditorVehicleEnvelopePreview();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -329,6 +737,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		super._WB_OnInit(owner, mat, src);
 		ME_RegisterEditorDebugSpawnPoint();
 		ME_RefreshAllEditorDebugShapes();
+		ME_UpdateEditorVehicleCategoryLabel();
+		ME_RefreshValidatedEditorVehicleEnvelopePreview();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -340,6 +750,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	{
 		super._WB_SetTransform(owner, mat, src);
 		ME_RefreshAllEditorDebugShapes();
+		if (m_bME_EditorVehicleEnvelopePreviewActive)
+			ME_RefreshEditorVehicleEnvelopePreview();
+		ME_RefreshEditorVehicleCategoryLabel(owner);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -349,6 +762,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	{
 		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
+		ME_ClearEditorVehicleEnvelopePreview();
+		ME_ClearEditorVehicleCategoryLabel();
 		super.OnDelete(owner);
 		ME_RefreshAllEditorDebugShapes();
 	}
@@ -361,6 +776,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	{
 		ME_UnregisterEditorDebugSpawnPoint();
 		ME_ClearEditorDebugShape();
+		ME_ClearEditorVehicleEnvelopePreview();
+		ME_ClearEditorVehicleCategoryLabel();
 		super._WB_OnDelete(owner, src);
 		ME_RefreshAllEditorDebugShapes();
 	}
