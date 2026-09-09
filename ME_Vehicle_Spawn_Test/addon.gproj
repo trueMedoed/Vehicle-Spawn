@@ -4,6 +4,7 @@ GameProject {
  TITLE "ME_Vehicle_Spawn_Test"
  Dependencies {
   "58D0FB3206B6F859"
+  "AEEBCCA53D2E81BA"
  }
  Configurations {
   GameProjectConfig PC {}

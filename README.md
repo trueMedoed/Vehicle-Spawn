@@ -26,4 +26,12 @@
 
 Открывайте `ME_Vehicle_Spawn_Test` отдельно от production. Диагностические значения, log prefixes и сравнение с campaign baseline описаны в `docs/TEST_DIAGNOSTICS.md`.
 
-Ручной процесс генерации, проверки и принятия per-prefab vehicle-bounds Baseline описан в `ME_Vehicle_Spawn_Test/VEHICLE_BOUNDS_REGRESSION.md`.
+Vehicle-bounds workflow разделён по ответственности:
+
+1. `ME_Vehicle_Bounds_Toolkit` измеряет prefab и проверяет свой per-prefab Candidate/Baseline.
+2. `ME_Vehicle_Spawn_Test` читает проверенный VBT Candidate, применяет реальные ambient spawn-point filters и создаёт aggregate staged snapshot для preview.
+3. После изучения staged/published diff aggregate payload принимается вручную с сохранением published filename, GUID и `.meta`.
+
+VBT является единственным владельцем per-prefab regression. Test владеет aggregate filter/preview contract. Production `ME_Vehicle_Spawn` не зависит от VBT.
+
+Подробный процесс описан в `ME_Vehicle_Spawn_Test/VEHICLE_BOUNDS_REGRESSION.md`.
