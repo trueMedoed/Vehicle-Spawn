@@ -1,0 +1,5 @@
+# Claude Code personal permission rules (written automatically by the CLI)
+.claude/settings.local.json
+
+# Claude Code agent worktrees
+.claude/worktrees/

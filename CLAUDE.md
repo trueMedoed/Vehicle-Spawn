@@ -8,10 +8,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Claude project data
 
-- Keep all Claude Code project data, settings, worktrees, and implementation plans for this repository under `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn`, not in the repository-local `.claude` directory.
-- Save implementation plans under `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn\plans`.
-- Never create, modify, or restore `C:\Users\Phil\Documents\GitHub\Mods\Vehicle Spawn\.claude\settings.local.json` (or any other repository-local `.claude` content). If required tool permissions are missing, update `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn\settings.local.json` instead — that is the only settings file to edit.
-- The CLI may still auto-create the repository-local `settings.local.json` when the user approves a tool prompt. If that file appears, merge any `permissions.allow` entries that are missing from `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn\settings.local.json` into it, skip duplicates and entries tied to one-off state (e.g. a hardcoded process ID), then delete the repository-local file. Keep `C:\Users\Phil\Documents\GitHub\Mods\Vehicle Spawn\.claude\` out of Git.
+Claude Code project data lives in the repository-local `.claude/` directory, using the standard layout. Implementation plans are tracked in Git on purpose, so the work behind each change stays visible in the project history.
+
+- Save implementation plans under `.claude/plans/` and let Git track them.
+- `.claude/settings.json` is the shared, committed permission set: portable rules only, such as the `mcp__enfusion-mcp__*` Workbench tools, documentation domains, and `Bash(git:*)`. It is meant to be reusable by anyone cloning this repository, so never put absolute paths, user names, or drive layouts there.
+- `.claude/settings.local.json` holds personal, machine-specific rules (absolute Workbench install paths, log directories, process-control commands) and is written automatically by the CLI when a tool prompt is approved. It is listed in `.gitignore`; never delete it to "clean up", because that discards approved permissions and causes the prompts to repeat.
+- To add a tool permission, decide by portability: machine-independent rules belong in `.claude/settings.json`, anything containing a local path belongs in `.claude/settings.local.json`. Do not reintroduce a settings file outside the repository.
+- `.claude/worktrees/` is agent scratch space and is ignored by Git.
 
 ## Script documentation
 
