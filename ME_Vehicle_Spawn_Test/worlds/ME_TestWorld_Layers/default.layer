@@ -1,3 +1,17 @@
+GenericEntity : "{0DDAFCA92FF4451C}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_CIV.et" {
+ components {
+  SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+   m_aIncludedEditableEntityLabels {
+    TRAIT_PASSENGERS_SMALL
+    TRAIT_PASSENGERS_LARGE
+    TRAIT_MEDICAL
+    TRAIT_ARMOR
+    TRAIT_RADIO
+   }
+  }
+ }
+ coords 89.521 1 107.731
+}
 $grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_US.et" {
  Standart {
   coords 110.56 1 142.825
@@ -23,4 +37,15 @@ $grp GenericEntity : "{67EE7343073E3AF4}Prefabs/Systems/AmbientVehicles/AmbientV
   }
   coords 123.925 1 148.254
  }
+}
+GenericEntity Two_Trait_labels : "{D4A604DD154470CD}Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_FIA.et" {
+ components {
+  SCR_AmbientVehicleSpawnPointComponent "{5D5E85F932F777FA}" {
+   m_aIncludedEditableEntityLabels {
+    TRAIT_PASSENGERS_SMALL
+    TRAIT_PASSENGERS_LARGE
+   }
+  }
+ }
+ coords 58.456 1 108.488
 }

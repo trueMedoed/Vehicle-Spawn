@@ -1047,10 +1047,14 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	//------------------------------------------------------------------------------------------------
 	//! Rebuilds the camera-facing configured-label display eight metres above this point from its cached catalog mask.
 	//! It creates text only for exact supported masks and does not repeat catalog filtering after transform changes.
+	//! Each included label gets its own coloured text, except that TRAIT_PASSENGERS_SMALL and TRAIT_PASSENGERS_LARGE
+	//! collapse into a single comma-separated text when both are configured.
 	//!
 	//! \param[in] owner Spawn point entity whose transform anchors the label
 	//! Перестраивает обращённое к камере отображение настроенных меток в восьми метрах над точкой по кэшированной маске каталога.
 	//! Текст создаётся только для точных поддерживаемых масок; после изменения преобразования фильтрация каталога не повторяется.
+	//! Каждая включающая метка получает свой цветной текст, но TRAIT_PASSENGERS_SMALL и TRAIT_PASSENGERS_LARGE
+	//! объединяются в один текст через запятую, когда настроены обе.
 	//!
 	//! \param[in] owner Сущность точки появления, чьё преобразование задаёт привязку метки
 	void ME_RefreshEditorVehicleCategoryLabel(IEntity owner)
@@ -1112,9 +1116,53 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			return;
 		}
 
-		const float labelSpacing = 2.0;
-		float offset = -0.5 * labelSpacing * (m_aIncludedEditableEntityLabels.Count() - 1);
+		// Both passenger-capacity traits share the default colour, so they are joined into one comma-separated text instead of two adjacent labels.
+		// Обе метки пассажирской вместимости используют цвет по умолчанию, поэтому они объединяются в один текст через запятую вместо двух соседних меток.
+		bool mergePassengerTraits = m_aIncludedEditableEntityLabels.Contains(EEditableEntityLabel.TRAIT_PASSENGERS_SMALL)
+			&& m_aIncludedEditableEntityLabels.Contains(EEditableEntityLabel.TRAIT_PASSENGERS_LARGE);
+
+		string passengerTraitText;
+		if (mergePassengerTraits)
+		{
+			foreach (EEditableEntityLabel passengerLabel: m_aIncludedEditableEntityLabels)
+			{
+				if (passengerLabel != EEditableEntityLabel.TRAIT_PASSENGERS_SMALL && passengerLabel != EEditableEntityLabel.TRAIT_PASSENGERS_LARGE)
+					continue;
+
+				if (!passengerTraitText.IsEmpty())
+					passengerTraitText += ", ";
+
+				passengerTraitText += typename.EnumToString(EEditableEntityLabel, passengerLabel);
+			}
+		}
+
+		array<string> labelTexts = {};
+		array<int> labelColors = {};
+		bool passengerTraitTextInserted = false;
 		foreach (EEditableEntityLabel includedLabel: m_aIncludedEditableEntityLabels)
+		{
+			bool isPassengerTrait = includedLabel == EEditableEntityLabel.TRAIT_PASSENGERS_SMALL
+				|| includedLabel == EEditableEntityLabel.TRAIT_PASSENGERS_LARGE;
+			if (mergePassengerTraits && isPassengerTrait)
+			{
+				if (passengerTraitTextInserted)
+					continue;
+
+				passengerTraitTextInserted = true;
+				labelTexts.Insert(passengerTraitText);
+			}
+			else
+			{
+				labelTexts.Insert(typename.EnumToString(EEditableEntityLabel, includedLabel));
+			}
+
+			labelColors.Insert(ME_GetEditorVehicleCategoryIncludedLabelColor(includedLabel).PackToInt());
+		}
+
+		const float labelSpacing = 2.0;
+		int labelCount = labelTexts.Count();
+		float offset = -0.5 * labelSpacing * (labelCount - 1);
+		for (int labelIndex = 0; labelIndex < labelCount; labelIndex++)
 		{
 			vector labelTransform[4];
 			for (int labelTransformIndex = 0; labelTransformIndex < 4; labelTransformIndex++)
@@ -1122,11 +1170,11 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			labelTransform[3] = labelTransform[3] + transform[0] * offset;
 			m_aME_EditorVehicleCategoryIncludedLabels.Insert(DebugTextWorldSpace.CreateInWorld(
 				GetGame().GetWorld(),
-				typename.EnumToString(EEditableEntityLabel, includedLabel),
+				labelTexts[labelIndex],
 				textFlags,
 				labelTransform,
 				1.0,
-				ME_GetEditorVehicleCategoryIncludedLabelColor(includedLabel).PackToInt(),
+				labelColors[labelIndex],
 				backgroundColor,
 				1000
 			));
