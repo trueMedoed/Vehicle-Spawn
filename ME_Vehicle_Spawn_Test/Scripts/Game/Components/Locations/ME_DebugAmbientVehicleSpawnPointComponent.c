@@ -224,6 +224,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	// Editor-only текст в мировом пространстве для исключающих и отдельно окрашенных включающих меток техники.
 	ref DebugTextWorldSpace m_ME_EditorVehicleCategoryExcludedLabel;
 	ref array<ref DebugTextWorldSpace> m_aME_EditorVehicleCategoryIncludedLabels = {};
+	// World-space font size shared by the excluded and included vehicle label texts, kept small enough to stay readable with a close camera.
+	// Размер шрифта в мировом пространстве, общий для текстов исключающих и включающих меток техники, достаточно малый, чтобы оставаться читаемым при близкой камере.
+	static const float ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE = 0.5;
+	// Horizontal distance between adjacent included vehicle label texts, scaled to the label font size.
+	// Горизонтальное расстояние между соседними текстами включающих меток техники, согласованное с размером шрифта метки.
+	static const float ME_EDITOR_VEHICLE_CATEGORY_LABEL_SPACING = 1.0;
 	// Bit value for the wheeled vehicle catalog category.
 	// Битовое значение категории колёсной техники в каталоге.
 	static const int ME_EDITOR_VEHICLE_CATEGORY_WHEELED = 1;
@@ -1090,7 +1096,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 				ME_GetEditorVehicleCategoryLabelLabels(m_aExcludedEditableEntityLabels),
 				textFlags,
 				excludedTransform,
-				1.0,
+				ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
 				Color.FromRGBA(255, 48, 48, 255).PackToInt(),
 				backgroundColor,
 				1000
@@ -1108,7 +1114,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 				ME_GetEditorVehicleCategoryLabelLabels(m_aIncludedEditableEntityLabels),
 				textFlags,
 				includedTransform,
-				1.0,
+				ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
 				Color.FromRGBA(255, 215, 0, 255).PackToInt(),
 				backgroundColor,
 				1000
@@ -1159,9 +1165,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			labelColors.Insert(ME_GetEditorVehicleCategoryIncludedLabelColor(includedLabel).PackToInt());
 		}
 
-		const float labelSpacing = 2.0;
 		int labelCount = labelTexts.Count();
-		float offset = -0.5 * labelSpacing * (labelCount - 1);
+		float offset = -0.5 * ME_EDITOR_VEHICLE_CATEGORY_LABEL_SPACING * (labelCount - 1);
 		for (int labelIndex = 0; labelIndex < labelCount; labelIndex++)
 		{
 			vector labelTransform[4];
@@ -1173,12 +1178,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 				labelTexts[labelIndex],
 				textFlags,
 				labelTransform,
-				1.0,
+				ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
 				labelColors[labelIndex],
 				backgroundColor,
 				1000
 			));
-			offset += labelSpacing;
+			offset += ME_EDITOR_VEHICLE_CATEGORY_LABEL_SPACING;
 		}
 	}
 
