@@ -2,19 +2,31 @@
 //! Генератор только для Test для aggregate bounds ambient-техники на основе VBT.
 
 //------------------------------------------------------------------------------------------------
+//! One indexed VBT prefab entry with its single parent faction/type membership.
+//! Одна индексированная VBT-запись prefab с единственной родительской принадлежностью faction/type.
+class ME_VehicleBoundsVbtCandidateIndexRecord
+{
+	string m_sFactionKey;
+	string m_sVehicleType;
+	ME_VBT_VehicleBoundsPerPrefabSnapshotEntry m_Entry;
+}
+
+//------------------------------------------------------------------------------------------------
 //! Builds aggregate bounds from the VBT Candidate while preserving the Test spawn-point filter contract.
 //! Создаёт aggregate bounds из VBT Candidate, сохраняя контракт фильтров spawn point в Test.
-[WorkbenchPluginAttribute(name: "Generate bounds snapshots", description: "Generates VBT-backed aggregate bounds and reload-validates the staged snapshot.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Vehicle Bounds")]
+[WorkbenchPluginAttribute(name: "Generate bounds snapshots", description: "Generates and reload-validates the canonical VBT-backed aggregate bounds snapshot.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Vehicle Bounds")]
 class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 {
-	protected const string STAGED_PATH = "Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf";
-	protected static const ResourceName STAGED_RESOURCE = "{1C3AE4A8F2630BF8}Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf";
-	protected const int VBT_SCHEMA_VERSION = 1;
-	protected const string VBT_GENERATOR_VERSION = "ME_VBT_per_prefab_generator_v1";
+	protected const string SNAPSHOT_PATH = "Configs/Generated/ME_VehicleBoundsSnapshot.conf";
+	protected static const ResourceName SNAPSHOT_RESOURCE = "{1C3AE4A8F2630BF7}Configs/Generated/ME_VehicleBoundsSnapshot.conf";
+	protected const int VBT_SCHEMA_VERSION = 2;
+	protected const int VBT_EXPECTED_PREFAB_COUNT = 146;
+	protected const string VBT_GENERATOR_VERSION = "ME_VBT_per_prefab_generator_v2-faction-type-groups";
 	protected const string VBT_FIXTURE_IDENTITY = "ME_VBT_VehicleBoundsFixture_v1";
 	protected static const ResourceName VBT_CANDIDATE_RESOURCE = "{0F8D7A7D004E2D06}Configs/Generated/ME_VBT_VehicleBoundsPerPrefabCandidate.conf";
 	protected ref ME_VBT_VehicleBoundsPerPrefabSnapshot m_pVbtCandidate;
 	protected ref array<string> m_aVbtPrefabPaths = {};
+	protected ref array<ref ME_VehicleBoundsVbtCandidateIndexRecord> m_aVbtRecords = {};
 	protected ref array<string> m_aProcessedCandidates = {};
 
 	//------------------------------------------------------------------------------------------------
@@ -74,47 +86,53 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 			}
 		}
 
-		ME_SortEntries(snapshot.m_aEntries);
-		if (snapshot.m_aEntries.IsEmpty() || !ME_ValidateAggregateSnapshot(snapshot, reason))
+		ME_SortFactionsAndEntries(snapshot);
+		if (snapshot.m_aFactions.IsEmpty() || !ME_ValidateAggregateSnapshot(snapshot, reason))
 		{
 			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot status=FAIL reason=%1", reason);
 			return;
 		}
 
-		if (!ME_SaveAndValidateStagedSnapshot(snapshot, reason))
+		if (!ME_SaveAndValidateSnapshot(snapshot, reason))
 		{
 			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot status=FAIL reason=%1", reason);
 			return;
 		}
 
-		foreach (ME_VehicleBoundsSnapshotEntry entry : snapshot.m_aEntries)
+		int aggregateCount;
+		foreach (ME_VehicleBoundsSnapshotFaction faction : snapshot.m_aFactions)
 		{
-			string sources = entry.m_sMinXSourcePrefab + "|" + entry.m_sMaxXSourcePrefab + "|" + entry.m_sMinYSourcePrefab + "|" + entry.m_sMaxYSourcePrefab + "|" + entry.m_sMinZSourcePrefab + "|" + entry.m_sMaxZSourcePrefab;
-			PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot_aggregate faction=%1 type=%2 count=%3 mins=%4 maxs=%5 sources=%6", entry.m_sFactionKey, entry.m_sVehicleType, entry.m_iCandidateCount, entry.m_vLocalMins, entry.m_vLocalMaxs, sources);
+			aggregateCount += faction.m_aEntries.Count();
+			foreach (ME_VehicleBoundsSnapshotEntry entry : faction.m_aEntries)
+			{
+				string sources = entry.m_sMinXSourcePrefab + "|" + entry.m_sMaxXSourcePrefab + "|" + entry.m_sMinYSourcePrefab + "|" + entry.m_sMaxYSourcePrefab + "|" + entry.m_sMinZSourcePrefab + "|" + entry.m_sMaxZSourcePrefab;
+				PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot_aggregate faction=%1 type=%2 count=%3 mins=%4 maxs=%5 sources=%6", faction.m_sFactionKey, entry.m_sVehicleType, entry.m_iCandidateCount, entry.m_vLocalMins, entry.m_vLocalMaxs, sources);
+			}
 		}
-		PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot status=PASS source=VBT stage=%1 count=%2 memberships=%3", STAGED_PATH, snapshot.m_aEntries.Count(), m_aProcessedCandidates.Count());
+		PrintFormat("[ME_DEBUG_AVSP_WB] bounds_snapshot status=PASS source=VBT resource=%1 count=%2 memberships=%3", SNAPSHOT_PATH, aggregateCount, m_aProcessedCandidates.Count());
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Creates an empty aggregate snapshot with the accepted staged schema contract.
-	//! Создаёт пустой aggregate snapshot с принятым контрактом staged schema.
+	//! Creates an empty aggregate snapshot with the accepted canonical schema contract.
+	//! Создаёт пустой aggregate snapshot с принятым каноническим контрактом schema.
 	protected ME_VehicleBoundsSnapshot ME_CreateAggregateSnapshot()
 	{
 		ME_VehicleBoundsSnapshot snapshot = new ME_VehicleBoundsSnapshot();
-		snapshot.m_iSchemaVersion = 4;
-		snapshot.m_sGeneratorVersion = "catalog-aggregate-generator-v4-provenance";
-		snapshot.m_aEntries = {};
+		snapshot.m_iSchemaVersion = 5;
+		snapshot.m_sGeneratorVersion = "catalog-aggregate-generator-v5-faction-groups-provenance";
+		snapshot.m_aFactions = {};
 		return snapshot;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Loads and strictly validates the VBT Candidate before any staged output can be written.
-	//! Загружает и строго проверяет VBT Candidate до возможности записи staged output.
+	//! Loads and strictly validates the VBT Candidate before the canonical snapshot can be written.
+	//! Загружает и строго проверяет VBT Candidate до возможности записи канонического snapshot.
 	protected bool ME_LoadAndIndexVbtCandidate(string gameVersion, out string reason)
 	{
 		reason = "";
 		m_pVbtCandidate = null;
 		m_aVbtPrefabPaths = {};
+		m_aVbtRecords = {};
 		Resource resource = Resource.Load(VBT_CANDIDATE_RESOURCE);
 		if (!resource || !resource.IsValid())
 		{
@@ -130,7 +148,7 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 		}
 
 		m_pVbtCandidate = ME_VBT_VehicleBoundsPerPrefabSnapshot.Cast(BaseContainerTools.CreateInstanceFromContainer(container));
-		if (!m_pVbtCandidate || !m_pVbtCandidate.m_aEntries)
+		if (!m_pVbtCandidate || !m_pVbtCandidate.m_aFactions)
 		{
 			reason = "vbt_candidate_deserialization_failed";
 			return false;
@@ -145,105 +163,107 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 			reason = string.Format("vbt_candidate_game_version_mismatch candidate=%1 current=%2", m_pVbtCandidate.m_sGameVersion, gameVersion);
 			return false;
 		}
-		if (m_pVbtCandidate.m_aEntries.IsEmpty())
+		if (m_pVbtCandidate.m_aFactions.IsEmpty())
 		{
-			reason = "vbt_candidate_entries_empty";
+			reason = "vbt_candidate_factions_empty";
 			return false;
 		}
 
-		string previousPath;
-		foreach (ME_VBT_VehicleBoundsPerPrefabSnapshotEntry entry : m_pVbtCandidate.m_aEntries)
+		string previousFactionKey;
+		foreach (ME_VBT_VehicleBoundsPerPrefabSnapshotFaction faction : m_pVbtCandidate.m_aFactions)
 		{
-			if (!entry || entry.m_sPrefab.IsEmpty())
+			if (!faction || faction.m_sFactionKey.IsEmpty() || !faction.m_aVehicleTypes || faction.m_aVehicleTypes.IsEmpty() || !previousFactionKey.IsEmpty() && faction.m_sFactionKey <= previousFactionKey)
 			{
-				reason = "vbt_candidate_entry_identity_invalid";
+				reason = "vbt_candidate_faction_invalid_or_unsorted";
 				return false;
 			}
-			if (!previousPath.IsEmpty() && entry.m_sPrefab <= previousPath)
+
+			string previousVehicleType;
+			foreach (ME_VBT_VehicleBoundsPerPrefabSnapshotVehicleType vehicleType : faction.m_aVehicleTypes)
 			{
-				reason = string.Format("vbt_candidate_entry_order_or_duplicate path=%1", entry.m_sPrefab);
-				return false;
-			}
-			if (!ME_AreFiniteOrderedBounds(entry.m_vLocalMins, entry.m_vLocalMaxs))
-			{
-				reason = string.Format("vbt_candidate_bounds_invalid path=%1", entry.m_sPrefab);
-				return false;
-			}
-			if (!ME_ValidateSortedUniqueNames(entry.m_aFactionKeys, "faction", entry.m_sPrefab, reason) || !ME_ValidateSortedUniqueNames(entry.m_aVehicleTypes, "vehicle_type", entry.m_sPrefab, reason))
-				return false;
-			foreach (string vehicleType : entry.m_aVehicleTypes)
-			{
-				if (!ME_IsVehicleTypeName(vehicleType))
+				if (!vehicleType || !ME_IsVehicleTypeName(vehicleType.m_sVehicleType) || !vehicleType.m_aEntries || vehicleType.m_aEntries.IsEmpty() || !previousVehicleType.IsEmpty() && vehicleType.m_sVehicleType <= previousVehicleType)
 				{
-					reason = string.Format("vbt_candidate_vehicle_type_invalid path=%1 type=%2", entry.m_sPrefab, vehicleType);
+					reason = string.Format("vbt_candidate_vehicle_type_invalid_or_unsorted faction=%1", faction.m_sFactionKey);
 					return false;
 				}
-			}
-			m_aVbtPrefabPaths.Insert(entry.m_sPrefab);
-			previousPath = entry.m_sPrefab;
-		}
-		return true;
-	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Requires a non-empty lexically sorted array without duplicate values.
-	//! Требует непустой лексикографически отсортированный массив без повторяющихся значений.
-	protected bool ME_ValidateSortedUniqueNames(array<string> names, string fieldName, string prefabPath, out string reason)
-	{
-		reason = "";
-		if (!names || names.IsEmpty())
+				string previousPath;
+				foreach (ME_VBT_VehicleBoundsPerPrefabSnapshotEntry entry : vehicleType.m_aEntries)
+				{
+					if (!entry || entry.m_sPrefab.IsEmpty() || !previousPath.IsEmpty() && entry.m_sPrefab <= previousPath)
+					{
+						reason = string.Format("vbt_candidate_entry_order_or_identity_invalid faction=%1 type=%2", faction.m_sFactionKey, vehicleType.m_sVehicleType);
+						return false;
+					}
+					if (m_aVbtPrefabPaths.Contains(entry.m_sPrefab))
+					{
+						reason = string.Format("vbt_candidate_prefab_duplicate path=%1", entry.m_sPrefab);
+						return false;
+					}
+					if (!ME_AreFiniteOrderedBounds(entry.m_vLocalMins, entry.m_vLocalMaxs))
+					{
+						reason = string.Format("vbt_candidate_bounds_invalid path=%1", entry.m_sPrefab);
+						return false;
+					}
+
+					ME_VehicleBoundsVbtCandidateIndexRecord record = new ME_VehicleBoundsVbtCandidateIndexRecord();
+					record.m_sFactionKey = faction.m_sFactionKey;
+					record.m_sVehicleType = vehicleType.m_sVehicleType;
+					record.m_Entry = entry;
+					m_aVbtPrefabPaths.Insert(entry.m_sPrefab);
+					m_aVbtRecords.Insert(record);
+					previousPath = entry.m_sPrefab;
+				}
+				previousVehicleType = vehicleType.m_sVehicleType;
+			}
+			previousFactionKey = faction.m_sFactionKey;
+		}
+
+		if (m_aVbtRecords.Count() != VBT_EXPECTED_PREFAB_COUNT)
 		{
-			reason = string.Format("vbt_candidate_%1_array_empty path=%2", fieldName, prefabPath);
+			reason = string.Format("vbt_candidate_entry_count_invalid actual=%1 expected=%2", m_aVbtRecords.Count(), VBT_EXPECTED_PREFAB_COUNT);
 			return false;
 		}
-
-		string previousName;
-		foreach (string name : names)
-		{
-			if (name.IsEmpty() || !previousName.IsEmpty() && name <= previousName)
-			{
-				reason = string.Format("vbt_candidate_%1_order_or_duplicate path=%2 value=%3", fieldName, prefabPath, name);
-				return false;
-			}
-			previousName = name;
-		}
 		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Finds exactly one VBT entry by its canonical ResourceName path.
-	//! Находит ровно одну VBT-запись по её каноническому пути ResourceName.
-	protected ME_VBT_VehicleBoundsPerPrefabSnapshotEntry ME_FindVbtEntry(string prefabPath)
+	//! Finds exactly one indexed VBT record by its canonical ResourceName path.
+	//! Находит ровно одну индексированную VBT-запись по её каноническому пути ResourceName.
+	protected ME_VehicleBoundsVbtCandidateIndexRecord ME_FindVbtRecord(string prefabPath)
 	{
 		int index = m_aVbtPrefabPaths.Find(prefabPath);
 		if (index < 0)
 			return null;
-		return m_pVbtCandidate.m_aEntries[index];
+		return m_aVbtRecords[index];
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Verifies the selected faction and complete basic VEHICLE classification against VBT metadata.
-	//! Проверяет выбранную фракцию и полную basic VEHICLE-классификацию по metadata VBT.
-	protected bool ME_ValidateVbtMembership(ME_VBT_VehicleBoundsPerPrefabSnapshotEntry entry, string factionKey, array<string> basicTypes, out string reason)
+	//! Finds exactly one VBT bounds entry by its canonical ResourceName path.
+	//! Находит ровно одну VBT-запись bounds по её каноническому пути ResourceName.
+	protected ME_VBT_VehicleBoundsPerPrefabSnapshotEntry ME_FindVbtEntry(string prefabPath)
+	{
+		ME_VehicleBoundsVbtCandidateIndexRecord record = ME_FindVbtRecord(prefabPath);
+		if (!record)
+			return null;
+		return record.m_Entry;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Verifies one selected faction and basic VEHICLE classification against VBT parent groups.
+	//! Проверяет одну выбранную faction и базовую VEHICLE-классификацию по родительским группам VBT.
+	protected bool ME_ValidateVbtMembership(ME_VehicleBoundsVbtCandidateIndexRecord record, string factionKey, string basicType, out string reason)
 	{
 		reason = "";
-		if (!entry.m_aFactionKeys.Contains(factionKey))
+		if (record.m_sFactionKey != factionKey)
 		{
-			reason = string.Format("vbt_faction_membership_mismatch path=%1 faction=%2", entry.m_sPrefab, factionKey);
+			reason = string.Format("vbt_faction_membership_mismatch path=%1 catalog=%2 vbt=%3", record.m_Entry.m_sPrefab, factionKey, record.m_sFactionKey);
 			return false;
 		}
-		if (!basicTypes || basicTypes.Count() != entry.m_aVehicleTypes.Count())
+		if (record.m_sVehicleType != basicType)
 		{
-			reason = string.Format("vbt_vehicle_type_count_mismatch path=%1 catalog=%2 vbt=%3", entry.m_sPrefab, basicTypes.Count(), entry.m_aVehicleTypes.Count());
+			reason = string.Format("vbt_vehicle_type_membership_mismatch path=%1 catalog=%2 vbt=%3", record.m_Entry.m_sPrefab, basicType, record.m_sVehicleType);
 			return false;
-		}
-		for (int index = 0; index < basicTypes.Count(); index++)
-		{
-			if (basicTypes[index] != entry.m_aVehicleTypes[index])
-			{
-				reason = string.Format("vbt_vehicle_type_membership_mismatch path=%1 catalog=%2 vbt=%3", entry.m_sPrefab, basicTypes[index], entry.m_aVehicleTypes[index]);
-				return false;
-			}
 		}
 		return true;
 	}
@@ -287,24 +307,29 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 				return false;
 			}
 
-			ME_VBT_VehicleBoundsPerPrefabSnapshotEntry vbtEntry = ME_FindVbtEntry(prefabPath);
-			if (!vbtEntry)
+			ME_VehicleBoundsVbtCandidateIndexRecord vbtRecord = ME_FindVbtRecord(prefabPath);
+			if (!vbtRecord)
 			{
 				reason = string.Format("vbt_prefab_missing path=%1", prefabPath);
 				return false;
 			}
+			ME_VBT_VehicleBoundsPerPrefabSnapshotEntry vbtEntry = vbtRecord.m_Entry;
 
 			array<EEditableEntityLabel> labels = {};
 			catalogEntry.GetEditableEntityLabels(labels);
 			array<string> basicTypes = {};
 			foreach (EEditableEntityLabel basicLabel : labels)
 			{
-				string basicType = typename.EnumToString(EEditableEntityLabel, basicLabel);
-				if (ME_IsVehicleTypeName(basicType) && !basicTypes.Contains(basicType))
-					basicTypes.Insert(basicType);
+				string labelName = typename.EnumToString(EEditableEntityLabel, basicLabel);
+				if (ME_IsVehicleTypeName(labelName) && !basicTypes.Contains(labelName))
+					basicTypes.Insert(labelName);
 			}
-			basicTypes.Sort();
-			if (!ME_ValidateVbtMembership(vbtEntry, factionKey, basicTypes, reason))
+			if (basicTypes.Count() != 1)
+			{
+				reason = string.Format("catalog_basic_vehicle_type_count_invalid path=%1 count=%2", prefabPath, basicTypes.Count());
+				return false;
+			}
+			if (!ME_ValidateVbtMembership(vbtRecord, factionKey, basicTypes[0], reason))
 				return false;
 
 			foreach (EEditableEntityLabel label : labels)
@@ -329,11 +354,19 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 	//! Обновляет один aggregate фракции/типа уникальным VBT prefab и детерминированным provenance.
 	protected void ME_AccumulateCandidate(ME_VehicleBoundsSnapshot snapshot, string factionKey, string vehicleType, string prefabPath, vector localMins, vector localMaxs)
 	{
-		ME_VehicleBoundsSnapshotEntry aggregate = ME_FindAggregate(snapshot, factionKey, vehicleType);
+		ME_VehicleBoundsSnapshotFaction faction = ME_FindFaction(snapshot, factionKey);
+		if (!faction)
+		{
+			faction = new ME_VehicleBoundsSnapshotFaction();
+			faction.m_sFactionKey = factionKey;
+			faction.m_aEntries = {};
+			snapshot.m_aFactions.Insert(faction);
+		}
+
+		ME_VehicleBoundsSnapshotEntry aggregate = ME_FindAggregate(faction, vehicleType);
 		if (!aggregate)
 		{
 			aggregate = new ME_VehicleBoundsSnapshotEntry();
-			aggregate.m_sFactionKey = factionKey;
 			aggregate.m_sVehicleType = vehicleType;
 			aggregate.m_vLocalMins = localMins;
 			aggregate.m_vLocalMaxs = localMaxs;
@@ -344,7 +377,7 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 			aggregate.m_sMaxYSourcePrefab = prefabPath;
 			aggregate.m_sMinZSourcePrefab = prefabPath;
 			aggregate.m_sMaxZSourcePrefab = prefabPath;
-			snapshot.m_aEntries.Insert(aggregate);
+			faction.m_aEntries.Insert(aggregate);
 			return;
 		}
 
@@ -367,12 +400,12 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Validates unique membership keys, aggregate counts, reverse coverage, bounds, and provenance.
-	//! Проверяет уникальные membership keys, counts aggregate, reverse coverage, bounds и provenance.
+	//! Validates sorted faction groups and entries, unique memberships, counts, reverse coverage, bounds, and provenance.
+	//! Проверяет сортировку групп и записей, уникальные memberships, counts, reverse coverage, bounds и provenance.
 	protected bool ME_ValidateAggregateSnapshot(ME_VehicleBoundsSnapshot snapshot, out string reason)
 	{
 		reason = "";
-		if (!snapshot || !snapshot.m_aEntries || !m_aProcessedCandidates || m_aProcessedCandidates.IsEmpty())
+		if (!snapshot || !snapshot.m_aFactions || snapshot.m_aFactions.IsEmpty() || !m_aProcessedCandidates || m_aProcessedCandidates.IsEmpty())
 		{
 			reason = "aggregate_validation_input_invalid";
 			return false;
@@ -390,42 +423,60 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 			}
 		}
 
-		foreach (ME_VehicleBoundsSnapshotEntry entry : snapshot.m_aEntries)
+		string previousFactionKey;
+		foreach (ME_VehicleBoundsSnapshotFaction faction : snapshot.m_aFactions)
 		{
-			if (!entry || entry.m_sFactionKey.IsEmpty() || entry.m_sVehicleType.IsEmpty() || entry.m_iCandidateCount <= 0 || !ME_AreFiniteOrderedBounds(entry.m_vLocalMins, entry.m_vLocalMaxs))
+			if (!faction || faction.m_sFactionKey.IsEmpty() || !faction.m_aEntries || faction.m_aEntries.IsEmpty() || !previousFactionKey.IsEmpty() && faction.m_sFactionKey <= previousFactionKey)
 			{
-				reason = "aggregate_entry_invalid";
+				reason = "aggregate_faction_invalid_or_unsorted";
 				return false;
 			}
 
-			string prefix = entry.m_sFactionKey + "\x1F" + entry.m_sVehicleType + "\x1F";
-			int count = 0;
-			foreach (string key : sortedKeys)
+			string previousVehicleType;
+			foreach (ME_VehicleBoundsSnapshotEntry entry : faction.m_aEntries)
 			{
-				if (key.Contains(prefix))
-					count++;
-			}
-			if (count != entry.m_iCandidateCount)
-			{
-				reason = string.Format("membership_count_mismatch faction=%1 type=%2 aggregate=%3 memberships=%4", entry.m_sFactionKey, entry.m_sVehicleType, entry.m_iCandidateCount, count);
-				return false;
-			}
+				if (!entry || entry.m_sVehicleType.IsEmpty() || !previousVehicleType.IsEmpty() && entry.m_sVehicleType <= previousVehicleType || entry.m_iCandidateCount <= 0 || !ME_AreFiniteOrderedBounds(entry.m_vLocalMins, entry.m_vLocalMaxs))
+				{
+					reason = string.Format("aggregate_entry_invalid_or_unsorted faction=%1", faction.m_sFactionKey);
+					return false;
+				}
 
-			if (!ME_ValidateAggregateSource(entry, prefix, entry.m_sMinXSourcePrefab, 0, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxXSourcePrefab, 0, true, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMinYSourcePrefab, 1, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxYSourcePrefab, 1, true, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMinZSourcePrefab, 2, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxZSourcePrefab, 2, true, reason))
-				return false;
+				string prefix = faction.m_sFactionKey + "\x1F" + entry.m_sVehicleType + "\x1F";
+				int count = 0;
+				foreach (string key : sortedKeys)
+				{
+					if (key.Contains(prefix))
+						count++;
+				}
+				if (count != entry.m_iCandidateCount)
+				{
+					reason = string.Format("membership_count_mismatch faction=%1 type=%2 aggregate=%3 memberships=%4", faction.m_sFactionKey, entry.m_sVehicleType, entry.m_iCandidateCount, count);
+					return false;
+				}
+
+				if (!ME_ValidateAggregateSource(entry, prefix, entry.m_sMinXSourcePrefab, 0, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxXSourcePrefab, 0, true, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMinYSourcePrefab, 1, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxYSourcePrefab, 1, true, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMinZSourcePrefab, 2, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxZSourcePrefab, 2, true, reason))
+					return false;
+				previousVehicleType = entry.m_sVehicleType;
+			}
+			previousFactionKey = faction.m_sFactionKey;
 		}
 
 		foreach (string membershipKey : sortedKeys)
 		{
 			bool covered = false;
-			foreach (ME_VehicleBoundsSnapshotEntry aggregate : snapshot.m_aEntries)
+			foreach (ME_VehicleBoundsSnapshotFaction faction : snapshot.m_aFactions)
 			{
-				string aggregatePrefix = aggregate.m_sFactionKey + "\x1F" + aggregate.m_sVehicleType + "\x1F";
-				if (membershipKey.Contains(aggregatePrefix))
+				foreach (ME_VehicleBoundsSnapshotEntry aggregate : faction.m_aEntries)
 				{
-					covered = true;
-					break;
+					string aggregatePrefix = faction.m_sFactionKey + "\x1F" + aggregate.m_sVehicleType + "\x1F";
+					if (membershipKey.Contains(aggregatePrefix))
+					{
+						covered = true;
+						break;
+					}
 				}
+				if (covered)
+					break;
 			}
 			if (!covered)
 			{
@@ -481,13 +532,26 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Finds one aggregate without cross-faction fallback.
-	//! Находит один aggregate без fallback между фракциями.
-	protected ME_VehicleBoundsSnapshotEntry ME_FindAggregate(ME_VehicleBoundsSnapshot snapshot, string factionKey, string vehicleType)
+	//! Finds one exact faction group without fallback.
+	//! Находит одну точную группу фракции без fallback.
+	protected ME_VehicleBoundsSnapshotFaction ME_FindFaction(ME_VehicleBoundsSnapshot snapshot, string factionKey)
 	{
-		foreach (ME_VehicleBoundsSnapshotEntry entry : snapshot.m_aEntries)
+		foreach (ME_VehicleBoundsSnapshotFaction faction : snapshot.m_aFactions)
 		{
-			if (entry.m_sFactionKey == factionKey && entry.m_sVehicleType == vehicleType)
+			if (faction.m_sFactionKey == factionKey)
+				return faction;
+		}
+		return null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Finds one aggregate only inside its faction group.
+	//! Находит один aggregate только внутри его группы фракции.
+	protected ME_VehicleBoundsSnapshotEntry ME_FindAggregate(ME_VehicleBoundsSnapshotFaction faction, string vehicleType)
+	{
+		foreach (ME_VehicleBoundsSnapshotEntry entry : faction.m_aEntries)
+		{
+			if (entry.m_sVehicleType == vehicleType)
 				return entry;
 		}
 		return null;
@@ -564,15 +628,36 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Sorts aggregate entries by faction key and vehicle type.
-	//! Сортирует записи aggregate по ключу фракции и типу техники.
+	//! Sorts faction groups by key and each group's aggregate entries by vehicle type.
+	//! Сортирует группы фракций по ключу, а aggregate-записи каждой группы — по типу техники.
+	protected void ME_SortFactionsAndEntries(ME_VehicleBoundsSnapshot snapshot)
+	{
+		for (int index = 1; index < snapshot.m_aFactions.Count(); index++)
+		{
+			ME_VehicleBoundsSnapshotFaction value = snapshot.m_aFactions[index];
+			int previousIndex = index - 1;
+			while (previousIndex >= 0 && snapshot.m_aFactions[previousIndex].m_sFactionKey > value.m_sFactionKey)
+			{
+				snapshot.m_aFactions[previousIndex + 1] = snapshot.m_aFactions[previousIndex];
+				previousIndex--;
+			}
+			snapshot.m_aFactions[previousIndex + 1] = value;
+		}
+
+		foreach (ME_VehicleBoundsSnapshotFaction faction : snapshot.m_aFactions)
+			ME_SortEntries(faction.m_aEntries);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Sorts one faction group's aggregate entries by vehicle type.
+	//! Сортирует aggregate-записи одной группы фракции по типу техники.
 	protected void ME_SortEntries(array<ref ME_VehicleBoundsSnapshotEntry> entries)
 	{
 		for (int index = 1; index < entries.Count(); index++)
 		{
 			ME_VehicleBoundsSnapshotEntry value = entries[index];
 			int previousIndex = index - 1;
-			while (previousIndex >= 0 && entries[previousIndex].m_sFactionKey + "\x1F" + entries[previousIndex].m_sVehicleType > value.m_sFactionKey + "\x1F" + value.m_sVehicleType)
+			while (previousIndex >= 0 && entries[previousIndex].m_sVehicleType > value.m_sVehicleType)
 			{
 				entries[previousIndex + 1] = entries[previousIndex];
 				previousIndex--;
@@ -582,48 +667,166 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Assigns stable names to serialized entry containers so repeated generation produces identical files.
-	//! Назначает стабильные имена сериализованным контейнерам записей, чтобы повторная генерация создавала идентичные файлы.
-	protected bool ME_SetDeterministicEntryContainerNames(BaseContainer container, int expectedCount, out string reason)
+	//! Accepts only identifier-safe ASCII letters, digits, and underscores in a container name.
+	//! Допускает в имени контейнера только безопасные для идентификатора ASCII-буквы, цифры и подчёркивания.
+	protected bool ME_IsSafeContainerName(string value)
 	{
-		reason = "";
-		BaseContainerList entries = container.GetObjectArray("m_aEntries");
-		if (!entries || entries.Count() != expectedCount)
-		{
-			reason = "serialized_entry_container_count_mismatch";
+		if (value.IsEmpty())
 			return false;
-		}
-		for (int index = 0; index < entries.Count(); index++)
+
+		string firstCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
+		if (!firstCharacters.Contains(value.Substring(0, 1)))
+			return false;
+
+		string allowedCharacters = firstCharacters + "0123456789";
+		for (int index = 0; index < value.Length(); index++)
 		{
-			BaseContainer entry = entries.Get(index);
-			if (!entry)
-			{
-				reason = "serialized_entry_container_missing";
+			if (!allowedCharacters.Contains(value.Substring(index, 1)))
 				return false;
-			}
-			entry.SetName(string.Format("aggregate_entry_%1", index));
 		}
 		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Saves the aggregate staged resource and compares every reloaded field.
-	//! Сохраняет staged-ресурс aggregate и сравнивает каждое перезагруженное поле.
-	protected bool ME_SaveAndValidateStagedSnapshot(ME_VehicleBoundsSnapshot snapshot, out string reason)
+	//! Assigns unique faction-key names and per-faction vehicle-type names to serialized containers.
+	//! Назначает сериализованным контейнерам уникальные имена faction key и vehicle type внутри каждой фракции.
+	protected bool ME_SetDeterministicContainerNames(BaseContainer container, ME_VehicleBoundsSnapshot snapshot, out string reason)
+	{
+		reason = "";
+		BaseContainerList factionContainers = container.GetObjectArray("m_aFactions");
+		if (!factionContainers || !snapshot || !snapshot.m_aFactions || factionContainers.Count() != snapshot.m_aFactions.Count())
+		{
+			reason = "serialized_faction_container_count_mismatch";
+			return false;
+		}
+
+		array<string> factionNames = {};
+		for (int factionIndex = 0; factionIndex < factionContainers.Count(); factionIndex++)
+		{
+			BaseContainer factionContainer = factionContainers.Get(factionIndex);
+			ME_VehicleBoundsSnapshotFaction faction = snapshot.m_aFactions[factionIndex];
+			if (!factionContainer || !faction || !ME_IsSafeContainerName(faction.m_sFactionKey))
+			{
+				reason = "serialized_faction_container_name_invalid";
+				return false;
+			}
+			if (factionNames.Contains(faction.m_sFactionKey))
+			{
+				reason = string.Format("serialized_faction_container_name_duplicate name=%1", faction.m_sFactionKey);
+				return false;
+			}
+			factionContainer.SetName(faction.m_sFactionKey);
+			factionNames.Insert(faction.m_sFactionKey);
+
+			BaseContainerList entryContainers = factionContainer.GetObjectArray("m_aEntries");
+			if (!entryContainers || !faction.m_aEntries || entryContainers.Count() != faction.m_aEntries.Count())
+			{
+				reason = string.Format("serialized_entry_container_count_mismatch faction=%1", faction.m_sFactionKey);
+				return false;
+			}
+
+			array<string> entryNames = {};
+			for (int entryIndex = 0; entryIndex < entryContainers.Count(); entryIndex++)
+			{
+				BaseContainer entryContainer = entryContainers.Get(entryIndex);
+				ME_VehicleBoundsSnapshotEntry entry = faction.m_aEntries[entryIndex];
+				if (!entryContainer || !entry || !ME_IsSafeContainerName(entry.m_sVehicleType))
+				{
+					reason = string.Format("serialized_entry_container_name_invalid faction=%1", faction.m_sFactionKey);
+					return false;
+				}
+				if (entryNames.Contains(entry.m_sVehicleType))
+				{
+					reason = string.Format("serialized_entry_container_name_duplicate faction=%1 name=%2", faction.m_sFactionKey, entry.m_sVehicleType);
+					return false;
+				}
+				entryContainer.SetName(entry.m_sVehicleType);
+				entryNames.Insert(entry.m_sVehicleType);
+			}
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Verifies that faction and nested entry names survived serialization and reload unchanged.
+	//! Проверяет, что имена фракций и вложенных записей сохранились после сериализации и перезагрузки.
+	protected bool ME_ValidateReloadedContainerNames(BaseContainer container, ME_VehicleBoundsSnapshot snapshot, out string reason)
+	{
+		reason = "";
+		BaseContainerList factionContainers = container.GetObjectArray("m_aFactions");
+		if (!factionContainers || !snapshot || !snapshot.m_aFactions || factionContainers.Count() != snapshot.m_aFactions.Count())
+		{
+			reason = "reload_faction_container_count_mismatch";
+			return false;
+		}
+
+		array<string> factionNames = {};
+		for (int factionIndex = 0; factionIndex < factionContainers.Count(); factionIndex++)
+		{
+			BaseContainer factionContainer = factionContainers.Get(factionIndex);
+			ME_VehicleBoundsSnapshotFaction faction = snapshot.m_aFactions[factionIndex];
+			if (!factionContainer || !faction)
+			{
+				reason = "reload_faction_container_missing";
+				return false;
+			}
+
+			string actualFactionName = factionContainer.GetName();
+			if (actualFactionName != faction.m_sFactionKey || factionNames.Contains(faction.m_sFactionKey))
+			{
+				reason = string.Format("reload_faction_container_name_mismatch expected=%1 actual=%2", faction.m_sFactionKey, actualFactionName);
+				return false;
+			}
+			factionNames.Insert(faction.m_sFactionKey);
+
+			BaseContainerList entryContainers = factionContainer.GetObjectArray("m_aEntries");
+			if (!entryContainers || !faction.m_aEntries || entryContainers.Count() != faction.m_aEntries.Count())
+			{
+				reason = string.Format("reload_entry_container_count_mismatch faction=%1", faction.m_sFactionKey);
+				return false;
+			}
+
+			array<string> entryNames = {};
+			for (int entryIndex = 0; entryIndex < entryContainers.Count(); entryIndex++)
+			{
+				BaseContainer entryContainer = entryContainers.Get(entryIndex);
+				string expectedName = faction.m_aEntries[entryIndex].m_sVehicleType;
+				if (!entryContainer)
+				{
+					reason = string.Format("reload_entry_container_missing faction=%1 index=%2", faction.m_sFactionKey, entryIndex);
+					return false;
+				}
+
+				string actualEntryName = entryContainer.GetName();
+				if (actualEntryName != expectedName || entryNames.Contains(expectedName))
+				{
+					reason = string.Format("reload_entry_container_name_mismatch faction=%1 expected=%2 actual=%3", faction.m_sFactionKey, expectedName, actualEntryName);
+					return false;
+				}
+				entryNames.Insert(expectedName);
+			}
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Saves the canonical aggregate resource and compares every reloaded field and entry name.
+	//! Сохраняет канонический aggregate-ресурс и сравнивает каждое перезагруженное поле и имя записи.
+	protected bool ME_SaveAndValidateSnapshot(ME_VehicleBoundsSnapshot snapshot, out string reason)
 	{
 		reason = "";
 		Resource containerResource = BaseContainerTools.CreateContainerFromInstance(snapshot);
 		string absolutePath;
-		if (!containerResource || !Workbench.GetAbsolutePath(STAGED_PATH, absolutePath, false))
+		if (!containerResource || !Workbench.GetAbsolutePath(SNAPSHOT_PATH, absolutePath, false))
 		{
 			reason = "create_or_path_failed";
 			return false;
 		}
 
 		BaseContainer container = containerResource.GetResource().ToBaseContainer();
-		if (!container || !ME_SetDeterministicEntryContainerNames(container, snapshot.m_aEntries.Count(), reason))
+		if (!container || !ME_SetDeterministicContainerNames(container, snapshot, reason))
 			return false;
-		if (!BaseContainerTools.SaveContainer(container, STAGED_RESOURCE, absolutePath))
+		if (!BaseContainerTools.SaveContainer(container, SNAPSHOT_RESOURCE, absolutePath))
 		{
 			reason = "save_container_failed";
 			return false;
@@ -642,35 +845,47 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 			return false;
 		}
 
-		Resource loaded = Resource.Load(STAGED_RESOURCE);
+		Resource loaded = BaseContainerTools.LoadContainer(SNAPSHOT_RESOURCE);
 		BaseContainer loadedContainer;
 		if (loaded)
 			loadedContainer = loaded.GetResource().ToBaseContainer();
-		ME_VehicleBoundsSnapshot reloaded;
-		if (loadedContainer)
-			reloaded = ME_VehicleBoundsSnapshot.Cast(BaseContainerTools.CreateInstanceFromContainer(loadedContainer));
-		if (!reloaded || reloaded.m_iSchemaVersion != snapshot.m_iSchemaVersion || reloaded.m_sGeneratorVersion != snapshot.m_sGeneratorVersion || !reloaded.m_aEntries || reloaded.m_aEntries.Count() != snapshot.m_aEntries.Count())
+		if (!loadedContainer || !ME_ValidateReloadedContainerNames(loadedContainer, snapshot, reason))
+			return false;
+
+		ME_VehicleBoundsSnapshot reloaded = ME_VehicleBoundsSnapshot.Cast(BaseContainerTools.CreateInstanceFromContainer(loadedContainer));
+		if (!reloaded || reloaded.m_iSchemaVersion != snapshot.m_iSchemaVersion || reloaded.m_sGeneratorVersion != snapshot.m_sGeneratorVersion || !reloaded.m_aFactions || reloaded.m_aFactions.Count() != snapshot.m_aFactions.Count())
 		{
 			reason = "reload_validation_failed";
 			return false;
 		}
 
-		for (int index = 0; index < snapshot.m_aEntries.Count(); index++)
+		for (int factionIndex = 0; factionIndex < snapshot.m_aFactions.Count(); factionIndex++)
 		{
-			ME_VehicleBoundsSnapshotEntry expected = snapshot.m_aEntries[index];
-			ME_VehicleBoundsSnapshotEntry actual = reloaded.m_aEntries[index];
-			if (expected.m_sFactionKey != actual.m_sFactionKey || expected.m_sVehicleType != actual.m_sVehicleType || expected.m_iCandidateCount != actual.m_iCandidateCount || expected.m_sMinXSourcePrefab != actual.m_sMinXSourcePrefab || expected.m_sMaxXSourcePrefab != actual.m_sMaxXSourcePrefab || expected.m_sMinYSourcePrefab != actual.m_sMinYSourcePrefab || expected.m_sMaxYSourcePrefab != actual.m_sMaxYSourcePrefab || expected.m_sMinZSourcePrefab != actual.m_sMinZSourcePrefab || expected.m_sMaxZSourcePrefab != actual.m_sMaxZSourcePrefab || !ME_AreVectorsClose(expected.m_vLocalMins, actual.m_vLocalMins) || !ME_AreVectorsClose(expected.m_vLocalMaxs, actual.m_vLocalMaxs))
+			ME_VehicleBoundsSnapshotFaction expectedFaction = snapshot.m_aFactions[factionIndex];
+			ME_VehicleBoundsSnapshotFaction actualFaction = reloaded.m_aFactions[factionIndex];
+			if (!actualFaction || expectedFaction.m_sFactionKey != actualFaction.m_sFactionKey || !actualFaction.m_aEntries || actualFaction.m_aEntries.Count() != expectedFaction.m_aEntries.Count())
 			{
-				reason = "reload_entry_mismatch";
+				reason = "reload_faction_mismatch";
 				return false;
+			}
+
+			for (int entryIndex = 0; entryIndex < expectedFaction.m_aEntries.Count(); entryIndex++)
+			{
+				ME_VehicleBoundsSnapshotEntry expected = expectedFaction.m_aEntries[entryIndex];
+				ME_VehicleBoundsSnapshotEntry actual = actualFaction.m_aEntries[entryIndex];
+				if (!actual || expected.m_sVehicleType != actual.m_sVehicleType || expected.m_iCandidateCount != actual.m_iCandidateCount || expected.m_sMinXSourcePrefab != actual.m_sMinXSourcePrefab || expected.m_sMaxXSourcePrefab != actual.m_sMaxXSourcePrefab || expected.m_sMinYSourcePrefab != actual.m_sMinYSourcePrefab || expected.m_sMaxYSourcePrefab != actual.m_sMaxYSourcePrefab || expected.m_sMinZSourcePrefab != actual.m_sMinZSourcePrefab || expected.m_sMaxZSourcePrefab != actual.m_sMaxZSourcePrefab || !ME_AreVectorsClose(expected.m_vLocalMins, actual.m_vLocalMins) || !ME_AreVectorsClose(expected.m_vLocalMaxs, actual.m_vLocalMaxs))
+				{
+					reason = "reload_entry_mismatch";
+					return false;
+				}
 			}
 		}
 		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Compares vectors with the staged resource precision tolerance.
-	//! Сравнивает векторы с допуском точности staged-ресурса.
+	//! Compares vectors with the canonical resource precision tolerance.
+	//! Сравнивает векторы с допуском точности канонического ресурса.
 	protected bool ME_AreVectorsClose(vector left, vector right)
 	{
 		return Math.AbsFloat(left[0] - right[0]) <= 0.0011 && Math.AbsFloat(left[1] - right[1]) <= 0.0011 && Math.AbsFloat(left[2] - right[2]) <= 0.0011;

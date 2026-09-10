@@ -29,8 +29,8 @@
 Vehicle-bounds workflow разделён по ответственности:
 
 1. `ME_Vehicle_Bounds_Toolkit` измеряет prefab и проверяет свой per-prefab Candidate/Baseline.
-2. `ME_Vehicle_Spawn_Test` читает проверенный VBT Candidate, применяет реальные ambient spawn-point filters и создаёт aggregate staged snapshot для preview.
-3. После изучения staged/published diff aggregate payload принимается вручную с сохранением published filename, GUID и `.meta`.
+2. `ME_Vehicle_Spawn_Test` читает проверенный VBT Candidate, применяет реальные ambient spawn-point filters и генерирует единственный canonical aggregate snapshot для preview.
+3. Генератор reload-validates этот resource, а изменения aggregate payload и их история проверяются через Git без отдельного staged-файла.
 
 VBT является единственным владельцем per-prefab regression. Test владеет aggregate filter/preview contract. Production `ME_Vehicle_Spawn` не зависит от VBT.
 

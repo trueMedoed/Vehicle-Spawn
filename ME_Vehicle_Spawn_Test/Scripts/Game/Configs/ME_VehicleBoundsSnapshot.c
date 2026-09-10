@@ -7,11 +7,6 @@
 [BaseContainerProps(namingConvention: NamingConvention.NC_MUST_HAVE_NAME)]
 class ME_VehicleBoundsSnapshotEntry
 {
-	//! Faction key owning this catalog aggregate.
-	//! Ключ фракции, владеющей этим агрегатом каталога.
-	[Attribute("")]
-	string m_sFactionKey;
-
 	//! Editable entity label name identifying this vehicle type.
 	//! Имя метки editable entity, определяющее этот тип техники.
 	[Attribute("")]
@@ -64,6 +59,23 @@ class ME_VehicleBoundsSnapshotEntry
 }
 
 //------------------------------------------------------------------------------------------------
+//! One faction group containing vehicle-type aggregates for its catalog.
+//! Одна группа фракции, содержащая агрегаты типов техники для её каталога.
+[BaseContainerProps(namingConvention: NamingConvention.NC_MUST_HAVE_NAME)]
+class ME_VehicleBoundsSnapshotFaction
+{
+	//! Faction key owning every aggregate in this group.
+	//! Ключ фракции, владеющей каждым агрегатом в этой группе.
+	[Attribute("")]
+	string m_sFactionKey;
+
+	//! Aggregate entries sorted lexicographically by vehicle type.
+	//! Aggregate-записи, отсортированные лексикографически по типу техники.
+	[Attribute()]
+	ref array<ref ME_VehicleBoundsSnapshotEntry> m_aEntries;
+}
+
+//------------------------------------------------------------------------------------------------
 //! Root schema for deterministic faction and vehicle-type bounds aggregates.
 //! Корневая schema для детерминированных агрегатов границ по фракции и типу техники.
 [BaseContainerProps(configRoot: true)]
@@ -71,7 +83,7 @@ class ME_VehicleBoundsSnapshot
 {
 	//! Schema compatibility version expected by the reader.
 	//! Версия совместимости schema, ожидаемая reader.
-	[Attribute("4")]
+	[Attribute("5")]
 	int m_iSchemaVersion;
 
 	//! Generator implementation version that produced this aggregate payload.
@@ -79,8 +91,8 @@ class ME_VehicleBoundsSnapshot
 	[Attribute("")]
 	string m_sGeneratorVersion;
 
-	//! Entries sorted lexicographically by faction key and vehicle type.
-	//! Записи, отсортированные лексикографически по ключу фракции и типу техники.
+	//! Faction groups sorted lexicographically by faction key.
+	//! Группы фракций, отсортированные лексикографически по ключу фракции.
 	[Attribute()]
-	ref array<ref ME_VehicleBoundsSnapshotEntry> m_aEntries;
+	ref array<ref ME_VehicleBoundsSnapshotFaction> m_aFactions;
 }

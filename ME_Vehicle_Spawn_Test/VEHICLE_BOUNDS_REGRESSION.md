@@ -20,15 +20,18 @@ Test загружает зарегистрированный ресурс:
 {0F8D7A7D004E2D06}Configs/Generated/ME_VBT_VehicleBoundsPerPrefabCandidate.conf
 ```
 
-Перед записью aggregate staged resource генератор строго проверяет:
+Перед записью canonical aggregate resource генератор строго проверяет grouped schema v2 VBT (`faction → basic vehicle type → prefab`):
 
-- schema, generator version и fixture identity VBT;
+- schema version `2`, generator version и fixture identity VBT;
 - совпадение `m_sGameVersion` с текущей сборкой игры;
-- непустые, уникальные и лексикографически отсортированные canonical prefab paths;
-- конечные и упорядоченные `mins`/`maxs`;
-- отсортированные уникальные faction keys и basic vehicle types;
-- точное наличие каждого выбранного catalog prefab;
-- соответствие faction и всех шести basic classifications:
+- непустые, уникальные и лексикографически отсортированные faction groups;
+- непустые, уникальные и лексикографически отсортированные basic-type groups внутри каждой faction;
+- непустые и отсортированные canonical prefab paths внутри каждой type group;
+- глобальную уникальность prefab: один canonical prefab встречается ровно один раз и получает faction/basic type только из родительских групп;
+- конечные и упорядоченные `mins`/`maxs` каждой prefab entry;
+- точное общее количество `146` prefab;
+- точное наличие каждого выбранного Test catalog prefab;
+- строгое совпадение его catalog faction и единственной basic classification с родительскими VBT groups:
   - `VEHICLE_CAR`;
   - `VEHICLE_HELICOPTER`;
   - `VEHICLE_AIRPLANE`;
@@ -36,31 +39,37 @@ Test загружает зарегистрированный ресурс:
   - `VEHICLE_TRUCK`;
   - `VEHICLE_TURRET`.
 
-Lookup выполняется только по точному canonical `ResourceName`, полученному из `SCR_EntityCatalogEntry.GetPrefab()`.
+Повторяющиеся в catalog entry экземпляры одной и той же basic label сначала семантически дедуплицируются. Ноль или несколько разных basic classifications приводят к `FAIL`. Lookup выполняется только по точному canonical `ResourceName`, полученному из `SCR_EntityCatalogEntry.GetPrefab()`, и сохраняет parent faction/type context для проверки membership.
 
 ### Test aggregate
 
-Test сохраняет aggregate schema v4 в два независимых ресурса:
+Test сохраняет aggregate schema v5 в единственный canonical resource:
+
+```text
+{1C3AE4A8F2630BF7}Configs/Generated/ME_VehicleBoundsSnapshot.conf
+```
 
 | Файл | Назначение | Кто изменяет |
 | --- | --- | --- |
-| `Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf` | Результат текущего запуска для проверки | Генератор перезаписывает автоматически |
-| `Configs/Generated/ME_VehicleBoundsSnapshot.conf` | Вручную принятый aggregate для preview/regression | Только человек после проверки изменений |
+| `Configs/Generated/ME_VehicleBoundsSnapshot.conf` | Canonical aggregate для preview/regression | Генератор после успешной полной проверки |
 | `Scripts/WorkbenchGame/WorldEditor/ME_GenerateVehicleBoundsSnapshotPlugin.c` | VBT-backed агрегация, валидация, сериализация и reload-validation | Разработчик |
 | `worlds/TestCases/ME_VehicleBoundsSnapshot.ent` | Минимальная Test-сцена с ambient spawn-point filters | Разработчик через Workbench |
 
-Published и staged `.conf` имеют разные `.meta` и GUID. При принятии нового aggregate заменяйте только payload published `.conf`; не копируйте и не заменяйте `.meta`.
+Отдельного staged resource нет: историю и review изменений обеспечивает Git. Существующий filename, GUID и `.meta` canonical resource должны сохраняться.
 
 Генератор использует существующий Test resolver `ME_GetEditorVehicleAggregateSelection(...)` и фактические labels каждого `SCR_EntityCatalogEntry`. В aggregate входят все labels, имя которых содержит `VEHICLE_`, включая traits, например `TRAIT_VEHICLE_REARMING`. VBT хранит только шесть basic classifications, поэтому trait labels берутся из каталога, а их bounds — из соответствующей VBT per-prefab записи.
 
 Для каждой aggregate-группы сохраняются:
 
-- faction key и label;
+- faction key один раз в объекте faction-группы;
+- label/type техники только во вложенной aggregate-записи;
 - объединённые локальные `mins` и `maxs`;
 - количество уникальных prefab-кандидатов;
 - canonical prefab path, определивший каждый из шести экстремумов.
 
-При равных extrema provenance выбирается лексикографически. Записи и сериализованные контейнеры создаются детерминированно.
+Корневой `m_aFactions` отсортирован лексикографически по `m_sFactionKey`, а `m_aEntries` внутри каждой группы — по `m_sVehicleType`. Имена сериализованных faction-контейнеров равны `<FactionKey>` (например, `CIV`), а имена вложенных entry-контейнеров — только `<VehicleType>` (например, `VEHICLE_CAR` или `TRAIT_VEHICLE_REARMING`). Faction names уникальны глобально, entry names уникальны внутри своей faction-группы; фиксированный список faction keys не используется.
+
+После записи генератор reload-validates оба уровня имён, порядок и полное field-by-field содержимое schema v5. При равных extrema provenance выбирается лексикографически.
 
 ## Обычный workflow
 
@@ -83,7 +92,7 @@ Published и staged `.conf` имеют разные `.meta` и GUID. При пр
 ME_Vehicle_Bounds_Toolkit/Configs/Generated/ME_VBT_VehicleBoundsPerPrefabCandidate.conf
 ```
 
-### 2. Создать Test aggregate staged snapshot
+### 2. Создать canonical Test aggregate snapshot
 
 1. Запустите Workbench с `ME_Vehicle_Spawn_Test/addon.gproj` и доступным addon `ME_Vehicle_Bounds_Toolkit`.
 2. Откройте:
@@ -105,66 +114,54 @@ ME_Vehicle_Bounds_Toolkit/Configs/Generated/ME_VBT_VehicleBoundsPerPrefabCandida
    C:\Users\Phil\Documents\My Games\ArmaReforgerWorkbench\logs\logs_YYYY-MM-DD_HH-MM-SS\
    ```
 
-Успешный запуск завершается строкой:
+Успешный запуск сохраняет и reload-validates canonical resource, затем завершается строкой:
 
 ```text
-[ME_DEBUG_AVSP_WB] bounds_snapshot status=PASS source=VBT stage=Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf count=... memberships=...
+[ME_DEBUG_AVSP_WB] bounds_snapshot status=PASS source=VBT resource=Configs/Generated/ME_VehicleBoundsSnapshot.conf count=17 memberships=150
 ```
 
 Перед итоговой строкой выводится одна `bounds_snapshot_aggregate` запись для каждой группы с count, bounds и шестью provenance paths.
 
-### 3. Проверить staged versus published
+### 3. Проверить изменения через Git
 
-Просмотрите Git diff:
+Просмотрите Git diff единственного aggregate resource:
 
 ```text
-ME_Vehicle_Spawn_Test/Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf
 ME_Vehicle_Spawn_Test/Configs/Generated/ME_VehicleBoundsSnapshot.conf
 ```
 
 Для каждой изменённой группы проверьте:
 
-1. faction и label;
+1. имя faction-контейнера `<FactionKey>`, единственный `m_sFactionKey` группы и имя вложенного entry-контейнера `<VehicleType>`;
 2. candidate count;
 3. `mins` и `maxs`;
 4. все шесть provenance prefab paths;
 5. ожидаемость изменений каталогов, фильтров или VBT bounds;
 6. наличие trait-групп, если соответствующие catalog labels существуют.
 
-`PASS` означает, что staged snapshot внутренне согласован с текущим VBT Candidate и Test filters. Он не означает автоматического принятия отличий от published snapshot.
+`PASS` означает, что записанный canonical snapshot внутренне согласован с текущим grouped VBT Candidate v2 и Test filters и успешно загружен обратно с теми же именами и полями. VBT Candidate перед агрегацией отдельно проверяется на трёхуровневый порядок, глобальную prefab uniqueness и точное совпадение parent faction/basic type с Test catalog selection. Принятие или отклонение получившегося Git diff остаётся явным действием разработчика.
 
-### 4. Вручную принять aggregate
+### 4. Проверить canonical aggregate
 
-1. Принимайте staged payload только после полного изучения diff.
-2. Замените содержимое:
-
-   ```text
-   Configs/Generated/ME_VehicleBoundsSnapshot.conf
-   ```
-
-   проверенным содержимым:
-
-   ```text
-   Configs/Generated/ME_VehicleBoundsSnapshot_Staged.conf
-   ```
-
-3. Сохраните published filename, GUID и существующий `.meta`.
-4. Дайте Workbench rebuild/reload ресурса.
-5. Повторно запустите Test generator и проверьте preview/warning plugins на принятом aggregate.
-6. Не добавляйте автоматическое копирование staged в published: принятие должно оставаться явным ручным действием.
+1. Повторно запустите Test generator без промежуточных изменений.
+2. Убедитесь, что второй запуск не создаёт нового Git diff.
+3. Проверьте preview/warning plugins на том же canonical aggregate resource.
+4. Если изменение отклонено, восстановите canonical `.conf` через Git; не создавайте второй staged resource.
+5. Не заменяйте и не копируйте `.meta`: canonical resource сохраняет filename и GUID `1C3AE4A8F2630BF7`.
 
 ## Значение `FAIL`
 
-При любой ненадёжности генератор завершает работу до записи staged resource и выводит `reason=...`. Основные категории:
+Проверки входных данных и aggregate-модели завершают работу до записи canonical resource. Ошибка сохранения или reload-validation выводит `reason=...` уже после попытки записи; в этом случае проверьте diff и восстановите canonical `.conf` через Git. Основные категории:
 
-- VBT Candidate отсутствует, не десериализуется или имеет неверную metadata;
+- VBT Candidate отсутствует, не десериализуется, не соответствует grouped schema v2 или имеет неверную metadata;
 - версия игры VBT Candidate устарела;
+- VBT hierarchy не отсортирована, содержит пустую группу, недопустимый basic type, неверные bounds, duplicate prefab или не ровно `146` entries;
 - canonical prefab из Test catalog отсутствует в VBT;
-- faction membership не совпадает;
-- basic vehicle classifications не совпадают;
+- parent faction membership не совпадает;
+- catalog entry не имеет ровно одной семантически уникальной basic classification либо она не совпадает с parent VBT type;
 - Test spawn point или его aggregate selection недоступны;
 - candidate counts, reverse coverage, bounds или provenance не прошли проверку;
-- staged resource не сохранился или не прошёл field-by-field reload-validation.
+- canonical resource не сохранился, потерял читаемые faction/entry names или не прошёл двухуровневую field-by-field reload-validation.
 
 Не обходите такие проверки fallback-логикой и не принимайте частичный результат.
 
@@ -174,7 +171,9 @@ ME_Vehicle_Spawn_Test/Configs/Generated/ME_VehicleBoundsSnapshot.conf
 
 После второго запуска:
 
-- staged `.conf` не должен получать новый Git diff;
+- canonical `.conf` не должен получать новый Git diff;
+- faction names должны остаться уникальными и соответствовать `<FactionKey>`, а entry names — быть уникальными внутри группы и соответствовать `<VehicleType>`;
+- порядок faction groups и entries внутри каждой группы должен остаться лексикографическим;
 - итоговые group и membership counts должны совпадать;
 - aggregate diagnostics должны совпадать;
 - оба запуска должны завершиться `status=PASS source=VBT`.
@@ -192,7 +191,7 @@ ME_Vehicle_Spawn_Test/Configs/Generated/ME_VehicleBoundsSnapshot.conf
    ```
 
 6. Убедитесь, что production `ME_Vehicle_Spawn` и его dependency graph не изменены.
-7. Убедитесь, что published aggregate `.meta` не изменён и staged не был принят автоматически.
+7. Убедитесь, что canonical aggregate сохраняет GUID `1C3AE4A8F2630BF7`, а staged resource отсутствует.
 8. Если Workbench запускался через EnfusionMCP, удалите временные handler scripts:
 
    ```text

@@ -10,7 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Keep all Claude Code project data, settings, worktrees, and implementation plans for this repository under `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn`, not in the repository-local `.claude` directory.
 - Save implementation plans under `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn\plans`.
-- Never create, modify, or restore `C:\Users\Phil\Documents\GitHub\Mods\Vehicle Spawn\.claude\settings.local.json` (or any other repository-local `.claude` content). If required tool permissions are missing, update `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn\settings.local.json` instead.
+- Never create, modify, or restore `C:\Users\Phil\Documents\GitHub\Mods\Vehicle Spawn\.claude\settings.local.json` (or any other repository-local `.claude` content). If required tool permissions are missing, update `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn\settings.local.json` instead — that is the only settings file to edit.
+- The CLI may still auto-create the repository-local `settings.local.json` when the user approves a tool prompt. If that file appears, merge any `permissions.allow` entries that are missing from `C:\Users\Phil\Documents\GitHub\Mods\.claude\Vehicle Spawn\settings.local.json` into it, skip duplicates and entries tied to one-off state (e.g. a hardcoded process ID), then delete the repository-local file. Keep `C:\Users\Phil\Documents\GitHub\Mods\Vehicle Spawn\.claude\` out of Git.
 
 ## Script documentation
 
