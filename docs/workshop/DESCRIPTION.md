@@ -1,41 +1,47 @@
-# Workshop description
+# Workshop page text
 
-Source text for the `ME_Vehicle_Spawn` Workshop page. Keep this file in sync with the published page. The Russian reference translation lives in [RU_DESCRIPTION.md](RU_DESCRIPTION.md) and is not published.
+Source text for the two Workshop fields of `ME_Vehicle_Spawn`. Both blocks below are stored exactly as published, including the `•` and `-` bullets, because the Workshop page has no Markdown formatting. Copy them verbatim; do not convert them to Markdown lists.
 
-## ME_Vehicle_Spawn
+The Russian reference translation lives in [RU_DESCRIPTION.md](RU_DESCRIPTION.md) and is not published.
 
-An editor-only toolset that reports misconfigured ambient vehicle spawn points in the Arma Reforger World Editor. The vanilla component fails silently when a spawn point can never select a vehicle, which leaves an empty point and no trace in the log. This addon makes those cases visible while you edit, before you enter Game mode.
+## Summary
 
-Nothing here changes runtime spawning. Every marker and message is an editor advisory, not a guarantee that a vehicle will spawn.
+Workbench diagnostics for ambient vehicle spawn points: configuration warnings, visual spawn-area checks, overlap detection, and static-object conflict markers.
 
-## Features
+## Description
 
-**Placement checks**
+Ambient Vehicle Spawn Diag adds Workbench diagnostics for vanilla ambient vehicle spawn points in Arma Reforger.
 
-Dragging an ambient vehicle spawn point into a world is blocked with an explanation when its prerequisites are missing: no GameMode or several of them, a locked GameMode layer, a disabled Spawn Vehicles test flag, a missing FactionManager, or a faction the world cannot provide. For factionless points the global VEHICLE catalog is checked for readability and content.
+It is a mission-making and configuration-validation tool. The addon does not replace the vanilla ambient vehicle spawning system and does not add a separate vehicle spawning system.
 
-**Check ambient vehicle spawning**
+Features
+• Prevents placement of an ambient vehicle spawn point when the current world configuration cannot support it.
+• Checks that exactly one editable GameMode is available.
+• Warns when the GameMode layer is locked.
+• Checks that Spawn Vehicles is enabled in the GameMode Test Game Flags.
+• Shows the spawn area in the World Editor:
+  - green: an empty terrain position was found;
+  - red: no valid terrain position was found, or another ambient spawn area overlaps it.
+• Marks static physics objects whose bounds intersect a spawn area.
+• Shows a translucent box for the selected spawn point with the space the vehicle will occupy, sized by the largest catalog vehicle that matches the point's label filter, tinted with the faction colour, and updated when the point is moved or rotated.
+• Reports an error when configured included/excluded entity labels leave no eligible vehicle in the catalog.
+• Draws the configured labels of a point above it: included labels each in their own colour, excluded labels in red, and ALL when a list is empty.
+• Includes worlds/ME_TestWorld.ent with valid and intentionally invalid examples for testing the diagnostics.
+• Checks that a FactionManager is present in the world.
+• Validates the faction affiliation of incoming ambient vehicle spawn-point prefabs.
+• Prevents placement when a spawn point requires a faction unavailable in the world's FactionManager.
 
-An explicit World Editor command that audits every point already placed in the open world. It reports points requiring faction keys absent from the FactionManager and factionless points whose global vehicle catalog is unavailable or empty.
+Important notes
+• This addon is designed for vanilla Arma Reforger ambient vehicle spawn points.
+• It has been tested only with vanilla game content.
+• Compatibility with other mods is not guaranteed, especially mods that override SCR_AmbientVehicleSpawnPointComponent, SCR_AmbientVehicleSystem, or World Editor placement callbacks.
+• Some layers in ME_TestWorld intentionally contain conflicts and invalid configurations. They are demonstration cases, not ready-to-use mission content.
 
-**Clearance visualization**
-
-Each point shows a sphere covering the area the vanilla code searches for free ground. Colour reflects the result of that search. The sphere follows the point as you move it.
-
-**Conflict warnings**
-
-Overlapping spawn areas are flagged, as are collisions between an area and ordinary static objects, based on their bounds. One marker is created per object even when several areas touch it.
-
-**Vehicle envelope preview**
-
-For a selected point, a box shows the space the vehicle will actually occupy. The size is aggregated from all catalog vehicles matching the point's label filter and is deliberately conservative, following the largest match. The box is tinted with the faction colour of the point, or neutral yellow when no faction is assigned.
-
-**Filter labels**
-
-The configured labels of a point are drawn above it: included labels each in their own colour, excluded labels in red, and `ALL` when a list is empty. The text always faces the camera.
-
-## Requirements and limitations
-
-- Requires the base game only.
-- The demo world `worlds/ME_TestWorld.ent` ships with the addon and contains prepared valid and invalid cases.
-- Do not enable this addon together with `ME_Vehicle_Spawn_Test`; both provide `modded class` overrides for the same vanilla classes and will conflict.
+How to use
+1. Open your world in Workbench.
+2. Configure exactly one editable GameMode.
+3. Enable Spawn Vehicles in Test Game Flags.
+4. Add a FactionManager to the world and configure the required factions.
+5. Place a vanilla Ambient Vehicle Spawnpoint prefab.
+6. Use the visual indicators and warning dialogs to correct placement or configuration issues.
+7. For a manual check of the current world, open Workbench Plugins and run “Check ambient vehicle spawning”.
