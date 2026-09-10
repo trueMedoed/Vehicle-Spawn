@@ -13,7 +13,23 @@
    - тестовые миры, слои и Workbench-managed `resourceDatabase.rdb`.
 4. Для modded overrides сохраняйте `super`-вызовы, если изменение явно не заменяет базовое поведение.
 5. После переноса откройте production `addon.gproj` в Workbench, перезагрузите скрипты и проверьте свежий `error.log`.
-6. Проверьте `git diff --check`, `git diff` и `git status` перед коммитом.
+6. Если Workbench запускался через EnfusionMCP, очистите production-аддон по процедуре ниже.
+7. Проверьте `git diff --check`, `git diff` и `git status` перед коммитом.
+
+## Очистка production-аддона после запуска через EnfusionMCP
+
+`wb_launch` копирует handler-скрипты в `<аддон>/Scripts/WorkbenchGame/EnfusionMCP/`, чтобы они компилировались вместе с модом. Workbench регистрирует их в `<аддон>/resourceDatabase.rdb`. `wb_cleanup` удаляет только сами `.c`-файлы, поэтому в `.rdb` остаются висячие записи `EMCP_WB_*`. Ни файлы, ни эти записи не должны попадать в коммит или в Workshop.
+
+1. Вызовите `wb_cleanup` с путём к production-аддону.
+2. Остановите процесс `ArmaReforgerWorkbenchSteamDiag.exe`, иначе он перезапишет `resourceDatabase.rdb` при выходе.
+3. Восстановите базу: `git checkout -- ME_Vehicle_Spawn/resourceDatabase.rdb`.
+4. Убедитесь, что записей не осталось: `grep -c EnfusionMCP ME_Vehicle_Spawn/resourceDatabase.rdb` должен вернуть `0`, а в `Scripts/WorkbenchGame/` должен остаться только `WorldEditor/`.
+
+Восстановление из HEAD корректно, когда во время сессии не менялись ресурсы аддона. Если ресурсы менялись, сравните таблицы печатных строк вместо восстановления файла и убедитесь, что различия ограничены записями EnfusionMCP:
+
+```bash
+tr -c '[:print:]' '\n' < resourceDatabase.rdb | grep -E '.{6,}' | sort -u
+```
 
 ## Пример: проверка FactionManager
 
