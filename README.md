@@ -22,6 +22,8 @@
 
 Подробности: `docs/PROJECT_SPLIT.md` и `docs/PRODUCTION_WORKFLOW.md`.
 
+Каноническое описание vanilla lifecycle, catalog filtering и границ editor preview: [`docs/AMBIENT_VEHICLE_SPAWNPOINT.md`](docs/AMBIENT_VEHICLE_SPAWNPOINT.md).
+
 Тексты для страницы мода в Workshop хранятся в `docs/workshop/`: `DESCRIPTION.md` — публикуемое описание, `RU_DESCRIPTION.md` — его русский перевод для внутренней сверки, `CHANGELOG.md` — история версий. Обновляйте их вместе с публикацией новой версии.
 
 ## Test

@@ -27,7 +27,13 @@
 - `PROD.md` — состав аддона и порядок проверки;
 - `docs/PRODUCTION_WORKFLOW.md` — шаги проверки в Workbench;
 - `docs/PROJECT_SPLIT.md` — перечень файлов production;
+- `docs/AMBIENT_VEHICLE_SPAWNPOINT.md` — vanilla lifecycle, prerequisites, catalog/resource paths, границы production editor-only и Test runtime diagnostics, а также формулировки о preview как не-гарантии runtime spawn;
+- `docs/TEST_DIAGNOSTICS.md` — значения flags и runtime evidence;
+- `CLI_AUTOTESTS.md` — Test fixture paths и CLI validation;
+- `ME_Vehicle_Spawn_Test/VEHICLE_BOUNDS_REGRESSION.md` — bounds pipeline и canonical aggregate;
 - `docs/workshop/DESCRIPTION.md` и `docs/workshop/RU_DESCRIPTION.md` — описание для страницы мода и его русский перевод.
+
+При изменениях vanilla prerequisites, GameMode flags, faction/catalog flow, resource paths, состава diagnostics или поведения editor preview сначала обновите и проверьте `docs/AMBIENT_VEHICLE_SPAWNPOINT.md`. Отдельно убедитесь, что production по-прежнему описан как editor-only, Test — как runtime diagnostics, а Shape, envelope, catalog match, registration и `FindEmptyTerrainPosition` не сформулированы как гарантия runtime spawn.
 
 Быстрая проверка ссылок на ресурсы, упомянутые в документации:
 
