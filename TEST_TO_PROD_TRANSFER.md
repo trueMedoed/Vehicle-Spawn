@@ -27,7 +27,7 @@
 - `PROD.md` — состав аддона и порядок проверки;
 - `docs/PRODUCTION_WORKFLOW.md` — шаги проверки в Workbench;
 - `docs/PROJECT_SPLIT.md` — перечень файлов production;
-- `docs/workshop/DESCRIPTION.md` — описание для страницы мода.
+- `docs/workshop/DESCRIPTION.md` и `docs/workshop/RU_DESCRIPTION.md` — описание для страницы мода и его русский перевод.
 
 Быстрая проверка ссылок на ресурсы, упомянутые в документации:
 
