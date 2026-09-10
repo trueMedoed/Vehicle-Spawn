@@ -9,7 +9,7 @@
 
 ## Production
 
-Демонстрационный мир: `ME_Vehicle_Spawn/worlds/MP/MpTest/ME_MpTest_BasicSpawnVehicles.ent`.
+Демонстрационный мир: `ME_Vehicle_Spawn/worlds/ME_TestWorld.ent`.
 
 Краткий workflow:
 
@@ -21,6 +21,8 @@
 Цвет Shape — только edit-world clearance preflight. Он не гарантирует будущий runtime spawn.
 
 Подробности: `docs/PROJECT_SPLIT.md` и `docs/PRODUCTION_WORKFLOW.md`.
+
+Тексты для страницы мода в Workshop хранятся в `docs/workshop/`: `DESCRIPTION.md` — описание, `CHANGELOG.md` — история версий. Обновляйте их вместе с публикацией новой версии.
 
 ## Test
 
