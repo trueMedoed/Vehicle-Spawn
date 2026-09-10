@@ -10,6 +10,10 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
 	ref DebugTextWorldSpace m_ME_EditorVehicleCategoryExcludedLabel;
 	ref array<ref DebugTextWorldSpace> m_aME_EditorVehicleCategoryIncludedLabels = {};
+	// World-space font size shared by the excluded and included vehicle label texts, kept small enough to stay readable with a close camera.
+	static const float ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE = 0.5;
+	// Horizontal distance between adjacent included vehicle label texts, scaled to the label font size.
+	static const float ME_EDITOR_VEHICLE_CATEGORY_LABEL_SPACING = 1.0;
 	// Bit value for the wheeled vehicle catalog category.
 	static const int ME_EDITOR_VEHICLE_CATEGORY_WHEELED = 1;
 	// Bit value for the helicopter vehicle catalog category.
@@ -414,7 +418,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			for (int excludedTransformIndex = 0; excludedTransformIndex < 4; excludedTransformIndex++)
 				excludedTransform[excludedTransformIndex] = transform[excludedTransformIndex];
 			excludedTransform[3] = excludedTransform[3] - Vector(0, 0.5, 0);
-			m_ME_EditorVehicleCategoryExcludedLabel = DebugTextWorldSpace.CreateInWorld(GetGame().GetWorld(), ME_GetEditorVehicleCategoryLabelLabels(m_aExcludedEditableEntityLabels), textFlags, excludedTransform, 1.0, Color.FromRGBA(255, 48, 48, 255).PackToInt(), backgroundColor, 1000);
+			m_ME_EditorVehicleCategoryExcludedLabel = DebugTextWorldSpace.CreateInWorld(GetGame().GetWorld(), ME_GetEditorVehicleCategoryLabelLabels(m_aExcludedEditableEntityLabels), textFlags, excludedTransform, ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE, Color.FromRGBA(255, 48, 48, 255).PackToInt(), backgroundColor, 1000);
 		}
 
 		vector includedTransform[4];
@@ -423,20 +427,19 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		includedTransform[3] = includedTransform[3] + Vector(0, 0.5, 0);
 		if (!m_aIncludedEditableEntityLabels || m_aIncludedEditableEntityLabels.IsEmpty())
 		{
-			m_aME_EditorVehicleCategoryIncludedLabels.Insert(DebugTextWorldSpace.CreateInWorld(GetGame().GetWorld(), ME_GetEditorVehicleCategoryLabelLabels(m_aIncludedEditableEntityLabels), textFlags, includedTransform, 1.0, Color.FromRGBA(255, 215, 0, 255).PackToInt(), backgroundColor, 1000));
+			m_aME_EditorVehicleCategoryIncludedLabels.Insert(DebugTextWorldSpace.CreateInWorld(GetGame().GetWorld(), ME_GetEditorVehicleCategoryLabelLabels(m_aIncludedEditableEntityLabels), textFlags, includedTransform, ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE, Color.FromRGBA(255, 215, 0, 255).PackToInt(), backgroundColor, 1000));
 			return;
 		}
 
-		const float labelSpacing = 2.0;
-		float offset = -0.5 * labelSpacing * (m_aIncludedEditableEntityLabels.Count() - 1);
+		float offset = -0.5 * ME_EDITOR_VEHICLE_CATEGORY_LABEL_SPACING * (m_aIncludedEditableEntityLabels.Count() - 1);
 		foreach (EEditableEntityLabel includedLabel: m_aIncludedEditableEntityLabels)
 		{
 			vector labelTransform[4];
 			for (int labelTransformIndex = 0; labelTransformIndex < 4; labelTransformIndex++)
 				labelTransform[labelTransformIndex] = includedTransform[labelTransformIndex];
 			labelTransform[3] = labelTransform[3] + transform[0] * offset;
-			m_aME_EditorVehicleCategoryIncludedLabels.Insert(DebugTextWorldSpace.CreateInWorld(GetGame().GetWorld(), typename.EnumToString(EEditableEntityLabel, includedLabel), textFlags, labelTransform, 1.0, ME_GetEditorVehicleCategoryIncludedLabelColor(includedLabel).PackToInt(), backgroundColor, 1000));
-			offset += labelSpacing;
+			m_aME_EditorVehicleCategoryIncludedLabels.Insert(DebugTextWorldSpace.CreateInWorld(GetGame().GetWorld(), typename.EnumToString(EEditableEntityLabel, includedLabel), textFlags, labelTransform, ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE, ME_GetEditorVehicleCategoryIncludedLabelColor(includedLabel).PackToInt(), backgroundColor, 1000));
+			offset += ME_EDITOR_VEHICLE_CATEGORY_LABEL_SPACING;
 		}
 	}
 
