@@ -80,22 +80,35 @@ modded class SCR_Faction
 	//------------------------------------------------------------------------------------------------
 	//! Initializes this faction's catalog map only while the World Editor is active.
 	//! This changes no editable entities and never creates or probes a vehicle prefab.
+	//! In vanilla runtime Init() is called only when !IsEditMode(), so in the editor
+	//! m_bCatalogInitDone remains false and m_aEntityCatalogs stays populated.
 	//!
 	//! \return True when the catalog map is ready for read-only candidate filtering
 	//! Инициализирует map каталога этой фракции только в активном World Editor.
 	//! Это не изменяет редактируемые сущности и никогда не создаёт либо не проверяет prefab техники.
+	//! В vanilla runtime Init() вызывается только при !IsEditMode(), поэтому в редакторе
+	//! m_bCatalogInitDone остаётся false и m_aEntityCatalogs остаётся заполненным.
 	//!
 	//! \return True, когда map каталога готов для фильтрации кандидатов только на чтение
 	bool ME_EnsureEditorCatalogsInitialized()
 	{
+		// Already initialized at runtime or in a previous editor call
+		// Уже инициализирован в runtime или в предыдущем editor-вызове
 		if (m_bCatalogInitDone)
 			return true;
 
+		// Not in editor mode or config has no catalogs array
+		// Не в режиме редактора или в конфиге нет массива каталогов
 		if (!SCR_Global.IsEditMode() || !m_aEntityCatalogs)
 			return false;
 
+		// Initialize the catalog map using the same vanilla helper
+		// Инициализировать map каталога с помощью того же vanilla-хелпера
 		SCR_EntityCatalogManagerComponent.InitCatalogs(m_aEntityCatalogs, m_mEntityCatalogs);
 		m_bCatalogInitDone = true;
+
+		// Clear the array as vanilla runtime does
+		// Очистить массив, как это делает vanilla runtime
 		m_aEntityCatalogs = null;
 		return true;
 	}

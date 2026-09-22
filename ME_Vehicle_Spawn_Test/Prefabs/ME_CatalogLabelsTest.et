@@ -1,0 +1,10 @@
+GenericEntity {
+ ID "680518FB05CA54AE"
+ components {
+  ME_TestCatalogLabelsAccess "{09B40A6CE33B6B48}" {
+  }
+  SCR_EditableEntityComponent "{6E550D4D97A56DC3}" {
+   m_sDisplayName "Test entity for catalog labels access"
+  }
+ }
+}

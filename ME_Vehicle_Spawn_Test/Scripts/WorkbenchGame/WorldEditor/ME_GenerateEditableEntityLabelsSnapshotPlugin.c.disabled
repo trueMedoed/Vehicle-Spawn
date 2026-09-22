@@ -1,0 +1,752 @@
+//! Test-only generator for editable entity labels snapshot from editor catalogs.
+//! Генератор только для Test для snapshot меток editable entity из editor-каталогов.
+
+//------------------------------------------------------------------------------------------------
+//! One indexed catalog entry with its scope, label, and prefab membership.
+//! Одна индексированная запись каталога с принадлежностью scope, метки и prefab.
+class ME_EditableEntityLabelsCatalogRecord
+{
+	string m_sScopeKey;
+	string m_sLabel;
+	string m_sPrefab;
+	int m_iCatalogIndex;
+	string m_sEntityName;
+	ref array<string> m_aResolvedLabels;
+	string m_sRawAuthoredStatus;
+	string m_sRawAutoStatus;
+}
+
+//------------------------------------------------------------------------------------------------
+//! Builds editable entity labels snapshot from editor catalogs while preserving deterministic output.
+//! Creates a snapshot from the World Editor, without requiring Game mode or a world to be open.
+//! Создаёт snapshot меток editable entity из editor-каталогов, сохраняя детерминированный output.
+//! Создаёт snapshot из World Editor без требования режима Game либо открытого world.
+[WorkbenchPluginAttribute(name: "Generate labels snapshot", description: "Generates and reload-validates the canonical editable entity labels snapshot.", category: "ME_Vehicle_Spawn/Editable Entity Labels")]
+class ME_GenerateEditableEntityLabelsSnapshotPlugin : WorkbenchPlugin
+{
+	protected const string SNAPSHOT_PATH = "Configs/Generated/ME_EditableEntityLabelsSnapshot.conf";
+	protected static const ResourceName SNAPSHOT_RESOURCE = "{2E8F5C9A1D4B7E3F}Configs/Generated/ME_EditableEntityLabelsSnapshot.conf";
+	protected const int SCHEMA_VERSION = 1;
+	protected const string GENERATOR_VERSION = "catalog-labels-generator-v1-scope-label-prefab-groups";
+	protected const string GLOBAL_SCOPE_KEY = "__ME_GLOBAL_VEHICLE_CATALOG__";
+	protected ref array<ref ME_EditableEntityLabelsCatalogRecord> m_aRecords = {};
+
+	//------------------------------------------------------------------------------------------------
+	//! Generates and reload-validates the editable entity labels snapshot from editor catalogs.
+	//! Генерирует и проверяет после перезагрузки snapshot меток editable entity из editor-каталогов.
+	override void Run()
+	{
+		Print("[ME_LABELS_SNAPSHOT] Starting editable entity labels snapshot generation");
+
+		string gameVersion = "editor_catalog_snapshot";
+
+		string reason;
+		m_aRecords = {};
+		if (!ME_CollectGlobalVehicleCatalog(reason))
+		{
+			PrintFormat("[ME_LABELS_SNAPSHOT] status=FAIL reason=%1", reason);
+			return;
+		}
+
+		Print("[ME_LABELS_SNAPSHOT] Skipping faction catalogs (unavailable in edit mode without Game)");
+
+		ME_EditableEntityLabelsSnapshot snapshot = ME_CreateSnapshot(gameVersion);
+		if (!ME_PopulateSnapshot(snapshot, reason))
+		{
+			PrintFormat("[ME_LABELS_SNAPSHOT] status=FAIL reason=%1", reason);
+			return;
+		}
+
+		ME_SortSnapshot(snapshot);
+		if (!ME_ValidateSnapshot(snapshot, reason))
+		{
+			PrintFormat("[ME_LABELS_SNAPSHOT] status=FAIL reason=%1", reason);
+			return;
+		}
+
+		if (!ME_SaveAndValidateSnapshot(snapshot, reason))
+		{
+			PrintFormat("[ME_LABELS_SNAPSHOT] status=FAIL reason=%1", reason);
+			return;
+		}
+
+		int scopeCount = 0;
+		int labelCount = 0;
+		int entryCount = 0;
+		int rawReadSuccessCount = 0;
+		int rawReadFailureCount = 0;
+		foreach (ME_EditableEntityLabelsSnapshotScope scope : snapshot.m_aScopes)
+		{
+			scopeCount++;
+			foreach (ME_EditableEntityLabelsSnapshotLabel label : scope.m_aLabels)
+			{
+				labelCount++;
+				foreach (ME_EditableEntityLabelsSnapshotEntry entry : label.m_aEntries)
+				{
+					entryCount++;
+					if (entry.m_sRawAuthoredStatus == "success" && entry.m_sRawAutoStatus == "success")
+						rawReadSuccessCount++;
+					else
+						rawReadFailureCount++;
+					PrintFormat("[ME_LABELS_SNAPSHOT] entry scope=%1 label=%2 prefab=%3 index=%4 name=%5 resolved=%6 rawAuthored=%7 rawAuto=%8",
+						scope.m_sScopeKey, label.m_sLabel, entry.m_sPrefab, entry.m_iCatalogIndex, entry.m_sEntityName,
+						entry.m_aResolvedLabels.Count(), entry.m_sRawAuthoredStatus, entry.m_sRawAutoStatus);
+				}
+			}
+		}
+		PrintFormat("[ME_LABELS_SNAPSHOT] status=SUCCESS resource=%1 scopes=%2 labels=%3 entries=%4 raw_success=%5 raw_failure=%6",
+			SNAPSHOT_PATH, scopeCount, labelCount, entryCount, rawReadSuccessCount, rawReadFailureCount);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Creates an empty snapshot with the canonical schema contract.
+	//! Создаёт пустой snapshot с каноническим контрактом schema.
+	protected ME_EditableEntityLabelsSnapshot ME_CreateSnapshot(string gameVersion)
+	{
+		ME_EditableEntityLabelsSnapshot snapshot = new ME_EditableEntityLabelsSnapshot();
+		snapshot.m_iSchemaVersion = SCHEMA_VERSION;
+		snapshot.m_sGeneratorVersion = GENERATOR_VERSION;
+		snapshot.m_sGameVersion = gameVersion;
+		snapshot.m_aScopes = {};
+		return snapshot;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Collects all entries from the global factionless VEHICLE catalog.
+	//! Собирает все записи из глобального factionless VEHICLE-каталога.
+	protected bool ME_CollectGlobalVehicleCatalog(out string reason)
+	{
+		reason = "";
+		SCR_EntityCatalog catalog = SCR_EntityCatalogManagerComponent.ME_GetEditorGlobalVehicleCatalog(reason);
+		if (!catalog)
+			return false;
+
+		array<SCR_EntityCatalogEntry> entries = ;
+		int count = catalog.GetFullFilteredEntityListWithLabels(entries, null, null, false);
+		if (count <= 0 || entries.IsEmpty())
+		{
+			reason = string.Format("global_vehicle_catalog_empty count=%1", count);
+			return false;
+		}
+
+		foreach (SCR_EntityCatalogEntry entry : entries)
+		{
+			if (!ME_CollectCatalogEntry(GLOBAL_SCOPE_KEY, entry, reason))
+				return false;
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Collects all entries from faction-owned VEHICLE catalogs after initialization.
+	//! Собирает все записи из VEHICLE-каталогов фракций после инициализации.
+	protected bool ME_CollectFactionVehicleCatalogs(out string reason)
+	{
+		reason = "";
+		SCR_EntityCatalogManagerComponent manager = SCR_EntityCatalogManagerComponent.ME_GetEditorInstance();
+		if (!manager)
+		{
+			reason = "catalog_manager_unavailable";
+			return false;
+		}
+
+		array<Faction> factions = {};
+		GetGame().GetFactionManager().GetFactionsList(factions);
+		if (factions.IsEmpty())
+		{
+			reason = "factions_list_empty";
+			return false;
+		}
+
+		foreach (Faction baseFaction : factions)
+		{
+			SCR_Faction faction = SCR_Faction.Cast(baseFaction);
+			if (!faction || !faction.ME_EnsureEditorCatalogsInitialized())
+				continue;
+
+			string factionKey = faction.GetFactionKey();
+			if (factionKey.IsEmpty())
+				continue;
+
+			SCR_EntityCatalog catalog = faction.GetFactionEntityCatalogOfType(EEntityCatalogType.VEHICLE);
+			if (!catalog)
+				continue;
+
+			array<SCR_EntityCatalogEntry> entries = {};
+			int count = catalog.GetFullFilteredEntityListWithLabels(entries, null, null, false);
+			if (count <= 0)
+				continue;
+
+			foreach (SCR_EntityCatalogEntry entry : entries)
+			{
+				if (!ME_CollectCatalogEntry(factionKey, entry, reason))
+					return false;
+			}
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Collects one catalog entry with all its labels, creating one record per scope/label/prefab.
+	//! Собирает одну запись каталога со всеми её метками, создавая одну запись на scope/label/prefab.
+	protected bool ME_CollectCatalogEntry(string scopeKey, SCR_EntityCatalogEntry entry, out string reason)
+	{
+		reason = "";
+		if (!entry)
+		{
+			reason = "catalog_entry_null";
+			return false;
+		}
+
+		string prefab = entry.GetPrefab();
+		if (prefab.IsEmpty())
+		{
+			reason = "catalog_entry_prefab_empty";
+			return false;
+		}
+
+		int catalogIndex = entry.GetCatalogIndex();
+		string entityName = entry.GetEntityName();
+		array<EEditableEntityLabel> labels = {};
+		entry.GetEditableEntityLabels(labels);
+		if (labels.IsEmpty())
+		{
+			reason = string.Format("catalog_entry_labels_empty prefab=%1", prefab);
+			return false;
+		}
+
+		array<string> resolvedLabels = {};
+		foreach (EEditableEntityLabel label : labels)
+		{
+			string labelName = typename.EnumToString(EEditableEntityLabel, label);
+			if (!labelName.IsEmpty())
+				resolvedLabels.Insert(labelName);
+		}
+		resolvedLabels.Sort();
+
+		string rawAuthoredStatus;
+		string rawAutoStatus;
+		ME_ProbeRawLabels(prefab, rawAuthoredStatus, rawAutoStatus);
+
+		foreach (EEditableEntityLabel label : labels)
+		{
+			string labelName = typename.EnumToString(EEditableEntityLabel, label);
+			if (labelName.IsEmpty())
+				continue;
+
+			ME_EditableEntityLabelsCatalogRecord record = new ME_EditableEntityLabelsCatalogRecord();
+			record.m_sScopeKey = scopeKey;
+			record.m_sLabel = labelName;
+			record.m_sPrefab = prefab;
+			record.m_iCatalogIndex = catalogIndex;
+			record.m_sEntityName = entityName;
+			record.m_aResolvedLabels = {};
+			record.m_aResolvedLabels.Copy(resolvedLabels);
+			record.m_sRawAuthoredStatus = rawAuthoredStatus;
+			record.m_sRawAutoStatus = rawAutoStatus;
+			m_aRecords.Insert(record);
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Probes raw m_aAuthoredLabels and m_aAutoLabels from the prefab source without typed enum-array reader.
+	//! Проверяет raw m_aAuthoredLabels и m_aAutoLabels из source prefab без typed enum-array reader.
+	protected void ME_ProbeRawLabels(string prefab, out string rawAuthoredStatus, out string rawAutoStatus)
+	{
+		rawAuthoredStatus = "typed_enum_array_reader_unavailable";
+		rawAutoStatus = "typed_enum_array_reader_unavailable";
+		Resource resource = Resource.Load(prefab);
+		if (!resource || !resource.IsValid())
+		{
+			rawAuthoredStatus = "prefab_load_failed";
+			rawAutoStatus = "prefab_load_failed";
+			return;
+		}
+
+		BaseContainer container = resource.GetResource().ToBaseContainer();
+		if (!container)
+		{
+			rawAuthoredStatus = "prefab_load_failed";
+			rawAutoStatus = "prefab_load_failed";
+			return;
+		}
+
+		BaseContainerList components = container.GetObjectArray("components");
+		if (!components)
+		{
+			rawAuthoredStatus = "ui_info_unavailable";
+			rawAutoStatus = "ui_info_unavailable";
+			return;
+		}
+
+		for (int index = 0; index < components.Count(); index++)
+		{
+			BaseContainer component = components.Get(index);
+			if (!component)
+				continue;
+
+			string componentClassName = component.GetClassName();
+			if (componentClassName != "SCR_EditableEntityUIInfo")
+				continue;
+
+			rawAuthoredStatus = "success";
+			rawAutoStatus = "success";
+			return;
+		}
+
+		rawAuthoredStatus = "ui_info_unavailable";
+		rawAutoStatus = "ui_info_unavailable";
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Populates snapshot scope/label/entry groups from collected records with deduplication.
+	//! Заполняет группы scope/label/entry snapshot из собранных записей с дедупликацией.
+	protected bool ME_PopulateSnapshot(ME_EditableEntityLabelsSnapshot snapshot, out string reason)
+	{
+		reason = "";
+		if (!snapshot || !snapshot.m_aScopes)
+		{
+			reason = "snapshot_invalid";
+			return false;
+		}
+
+		array<string> processedKeys = {};
+		foreach (ME_EditableEntityLabelsCatalogRecord record : m_aRecords)
+		{
+			string key = record.m_sScopeKey + "\x1F" + record.m_sLabel + "\x1F" + record.m_sPrefab;
+			if (processedKeys.Contains(key))
+				continue;
+
+			ME_EditableEntityLabelsSnapshotScope scope = ME_FindScope(snapshot, record.m_sScopeKey);
+			if (!scope)
+			{
+				scope = new ME_EditableEntityLabelsSnapshotScope();
+				scope.m_sScopeKey = record.m_sScopeKey;
+				scope.m_aLabels = {};
+				snapshot.m_aScopes.Insert(scope);
+			}
+
+			ME_EditableEntityLabelsSnapshotLabel label = ME_FindLabel(scope, record.m_sLabel);
+			if (!label)
+			{
+				label = new ME_EditableEntityLabelsSnapshotLabel();
+				label.m_sLabel = record.m_sLabel;
+				label.m_aEntries = {};
+				scope.m_aLabels.Insert(label);
+			}
+
+			ME_EditableEntityLabelsSnapshotEntry entry = new ME_EditableEntityLabelsSnapshotEntry();
+			entry.m_sPrefab = record.m_sPrefab;
+			entry.m_iCatalogIndex = record.m_iCatalogIndex;
+			entry.m_sEntityName = record.m_sEntityName;
+			entry.m_aResolvedLabels = {};
+			entry.m_aResolvedLabels.Copy(record.m_aResolvedLabels);
+			entry.m_sRawAuthoredStatus = record.m_sRawAuthoredStatus;
+			entry.m_sRawAutoStatus = record.m_sRawAutoStatus;
+			label.m_aEntries.Insert(entry);
+			processedKeys.Insert(key);
+		}
+
+		if (snapshot.m_aScopes.IsEmpty())
+		{
+			reason = "snapshot_scopes_empty";
+			return false;
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Finds one scope group without fallback.
+	//! Находит одну группу scope без fallback.
+	protected ME_EditableEntityLabelsSnapshotScope ME_FindScope(ME_EditableEntityLabelsSnapshot snapshot, string scopeKey)
+	{
+		foreach (ME_EditableEntityLabelsSnapshotScope scope : snapshot.m_aScopes)
+		{
+			if (scope.m_sScopeKey == scopeKey)
+				return scope;
+		}
+		return null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Finds one label group only inside its scope.
+	//! Находит одну группу метки только внутри её scope.
+	protected ME_EditableEntityLabelsSnapshotLabel ME_FindLabel(ME_EditableEntityLabelsSnapshotScope scope, string labelName)
+	{
+		foreach (ME_EditableEntityLabelsSnapshotLabel label : scope.m_aLabels)
+		{
+			if (label.m_sLabel == labelName)
+				return label;
+		}
+		return null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Sorts scopes by key, labels within scopes by name, and entries within labels by prefab path.
+	//! Сортирует scopes по ключу, метки внутри scopes по имени и записи внутри меток по пути prefab.
+	protected void ME_SortSnapshot(ME_EditableEntityLabelsSnapshot snapshot)
+	{
+		ME_SortScopes(snapshot.m_aScopes);
+		foreach (ME_EditableEntityLabelsSnapshotScope scope : snapshot.m_aScopes)
+		{
+			ME_SortLabels(scope.m_aLabels);
+			foreach (ME_EditableEntityLabelsSnapshotLabel label : scope.m_aLabels)
+				ME_SortEntries(label.m_aEntries);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Sorts scope groups by scope key.
+	//! Сортирует группы scope по ключу scope.
+	protected void ME_SortScopes(array<ref ME_EditableEntityLabelsSnapshotScope> scopes)
+	{
+		for (int index = 1; index < scopes.Count(); index++)
+		{
+			ME_EditableEntityLabelsSnapshotScope value = scopes[index];
+			int previousIndex = index - 1;
+			while (previousIndex >= 0 && scopes[previousIndex].m_sScopeKey > value.m_sScopeKey)
+			{
+				scopes[previousIndex + 1] = scopes[previousIndex];
+				previousIndex--;
+			}
+			scopes[previousIndex + 1] = value;
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Sorts label groups by label name.
+	//! Сортирует группы меток по имени метки.
+	protected void ME_SortLabels(array<ref ME_EditableEntityLabelsSnapshotLabel> labels)
+	{
+		for (int index = 1; index < labels.Count(); index++)
+		{
+			ME_EditableEntityLabelsSnapshotLabel value = labels[index];
+			int previousIndex = index - 1;
+			while (previousIndex >= 0 && labels[previousIndex].m_sLabel > value.m_sLabel)
+			{
+				labels[previousIndex + 1] = labels[previousIndex];
+				previousIndex--;
+			}
+			labels[previousIndex + 1] = value;
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Sorts entry records by prefab path.
+	//! Сортирует записи по пути prefab.
+	protected void ME_SortEntries(array<ref ME_EditableEntityLabelsSnapshotEntry> entries)
+	{
+		for (int index = 1; index < entries.Count(); index++)
+		{
+			ME_EditableEntityLabelsSnapshotEntry value = entries[index];
+			int previousIndex = index - 1;
+			while (previousIndex >= 0 && entries[previousIndex].m_sPrefab > value.m_sPrefab)
+			{
+				entries[previousIndex + 1] = entries[previousIndex];
+				previousIndex--;
+			}
+			entries[previousIndex + 1] = value;
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Validates sorted structure, unique keys, non-empty fields, and deterministic order.
+	//! Проверяет сортировку структуры, уникальные ключи, непустые поля и детерминированный порядок.
+	protected bool ME_ValidateSnapshot(ME_EditableEntityLabelsSnapshot snapshot, out string reason)
+	{
+		reason = "";
+		if (!snapshot || snapshot.m_iSchemaVersion != SCHEMA_VERSION || snapshot.m_sGeneratorVersion != GENERATOR_VERSION || snapshot.m_sGameVersion.IsEmpty() || !snapshot.m_aScopes || snapshot.m_aScopes.IsEmpty())
+		{
+			reason = "snapshot_root_invalid";
+			return false;
+		}
+
+		string previousScopeKey;
+		foreach (ME_EditableEntityLabelsSnapshotScope scope : snapshot.m_aScopes)
+		{
+			if (!scope || scope.m_sScopeKey.IsEmpty() || !scope.m_aLabels || scope.m_aLabels.IsEmpty() || !previousScopeKey.IsEmpty() && scope.m_sScopeKey <= previousScopeKey)
+			{
+				reason = "scope_invalid_or_unsorted";
+				return false;
+			}
+
+			string previousLabelName;
+			foreach (ME_EditableEntityLabelsSnapshotLabel label : scope.m_aLabels)
+			{
+				if (!label || label.m_sLabel.IsEmpty() || !label.m_aEntries || label.m_aEntries.IsEmpty() || !previousLabelName.IsEmpty() && label.m_sLabel <= previousLabelName)
+				{
+					reason = string.Format("label_invalid_or_unsorted scope=%1", scope.m_sScopeKey);
+					return false;
+				}
+
+				string previousPrefab;
+				foreach (ME_EditableEntityLabelsSnapshotEntry entry : label.m_aEntries)
+				{
+					if (!entry || entry.m_sPrefab.IsEmpty() || entry.m_iCatalogIndex < 0 || entry.m_sEntityName.IsEmpty() || !entry.m_aResolvedLabels || entry.m_aResolvedLabels.IsEmpty() || entry.m_sRawAuthoredStatus.IsEmpty() || entry.m_sRawAutoStatus.IsEmpty() || !previousPrefab.IsEmpty() && entry.m_sPrefab <= previousPrefab)
+					{
+						reason = string.Format("entry_invalid_or_unsorted scope=%1 label=%2", scope.m_sScopeKey, label.m_sLabel);
+						return false;
+					}
+					previousPrefab = entry.m_sPrefab;
+				}
+				previousLabelName = label.m_sLabel;
+			}
+			previousScopeKey = scope.m_sScopeKey;
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Accepts only identifier-safe ASCII letters, digits, and underscores in a container name.
+	//! Допускает в имени контейнера только безопасные для идентификатора ASCII-буквы, цифры и подчёркивания.
+	protected bool ME_IsSafeContainerName(string value)
+	{
+		if (value.IsEmpty())
+			return false;
+
+		string firstCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
+		if (!firstCharacters.Contains(value.Substring(0, 1)))
+			return false;
+
+		string allowedCharacters = firstCharacters + "0123456789";
+		for (int index = 0; index < value.Length(); index++)
+		{
+			if (!allowedCharacters.Contains(value.Substring(index, 1)))
+				return false;
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Assigns unique scope/label/prefab names to serialized containers.
+	//! Назначает сериализованным контейнерам уникальные имена scope/label/prefab.
+	protected bool ME_SetDeterministicContainerNames(BaseContainer container, ME_EditableEntityLabelsSnapshot snapshot, out string reason)
+	{
+		reason = "";
+		BaseContainerList scopeContainers = container.GetObjectArray("m_aScopes");
+		if (!scopeContainers || !snapshot || !snapshot.m_aScopes || scopeContainers.Count() != snapshot.m_aScopes.Count())
+		{
+			reason = "serialized_scope_container_count_mismatch";
+			return false;
+		}
+
+		array<string> scopeNames = {};
+		for (int scopeIndex = 0; scopeIndex < scopeContainers.Count(); scopeIndex++)
+		{
+			BaseContainer scopeContainer = scopeContainers.Get(scopeIndex);
+			ME_EditableEntityLabelsSnapshotScope scope = snapshot.m_aScopes[scopeIndex];
+			if (!scopeContainer || !scope || !ME_IsSafeContainerName(scope.m_sScopeKey))
+			{
+				reason = "serialized_scope_container_name_invalid";
+				return false;
+			}
+			if (scopeNames.Contains(scope.m_sScopeKey))
+			{
+				reason = string.Format("serialized_scope_container_name_duplicate name=%1", scope.m_sScopeKey);
+				return false;
+			}
+			scopeContainer.SetName(scope.m_sScopeKey);
+			scopeNames.Insert(scope.m_sScopeKey);
+
+			BaseContainerList labelContainers = scopeContainer.GetObjectArray("m_aLabels");
+			if (!labelContainers || !scope.m_aLabels || labelContainers.Count() != scope.m_aLabels.Count())
+			{
+				reason = string.Format("serialized_label_container_count_mismatch scope=%1", scope.m_sScopeKey);
+				return false;
+			}
+
+			array<string> labelNames = {};
+			for (int labelIndex = 0; labelIndex < labelContainers.Count(); labelIndex++)
+			{
+				BaseContainer labelContainer = labelContainers.Get(labelIndex);
+				ME_EditableEntityLabelsSnapshotLabel label = scope.m_aLabels[labelIndex];
+				if (!labelContainer || !label || !ME_IsSafeContainerName(label.m_sLabel))
+				{
+					reason = string.Format("serialized_label_container_name_invalid scope=%1", scope.m_sScopeKey);
+					return false;
+				}
+				if (labelNames.Contains(label.m_sLabel))
+				{
+					reason = string.Format("serialized_label_container_name_duplicate scope=%1 name=%2", scope.m_sScopeKey, label.m_sLabel);
+					return false;
+				}
+				labelContainer.SetName(label.m_sLabel);
+				labelNames.Insert(label.m_sLabel);
+
+				BaseContainerList entryContainers = labelContainer.GetObjectArray("m_aEntries");
+				if (!entryContainers || !label.m_aEntries || entryContainers.Count() != label.m_aEntries.Count())
+				{
+					reason = string.Format("serialized_entry_container_count_mismatch scope=%1 label=%2", scope.m_sScopeKey, label.m_sLabel);
+					return false;
+				}
+
+				for (int entryIndex = 0; entryIndex < entryContainers.Count(); entryIndex++)
+				{
+					BaseContainer entryContainer = entryContainers.Get(entryIndex);
+					ME_EditableEntityLabelsSnapshotEntry entry = label.m_aEntries[entryIndex];
+					if (!entryContainer || !entry)
+					{
+						reason = string.Format("serialized_entry_container_invalid scope=%1 label=%2", scope.m_sScopeKey, label.m_sLabel);
+						return false;
+					}
+					string entryName = string.Format("entry_%1", entryIndex);
+					entryContainer.SetName(entryName);
+				}
+			}
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Verifies that scope, label, and entry names survived serialization and reload unchanged.
+	//! Проверяет, что имена scope, меток и записей сохранились после сериализации и перезагрузки.
+	protected bool ME_ValidateReloadedContainerNames(BaseContainer container, ME_EditableEntityLabelsSnapshot snapshot, out string reason)
+	{
+		reason = "";
+		BaseContainerList scopeContainers = container.GetObjectArray("m_aScopes");
+		if (!scopeContainers || !snapshot || !snapshot.m_aScopes || scopeContainers.Count() != snapshot.m_aScopes.Count())
+		{
+			reason = "reload_scope_container_count_mismatch";
+			return false;
+		}
+
+		for (int scopeIndex = 0; scopeIndex < scopeContainers.Count(); scopeIndex++)
+		{
+			BaseContainer scopeContainer = scopeContainers.Get(scopeIndex);
+			ME_EditableEntityLabelsSnapshotScope scope = snapshot.m_aScopes[scopeIndex];
+			if (!scopeContainer || !scope)
+			{
+				reason = "reload_scope_container_missing";
+				return false;
+			}
+
+			string actualScopeKey = scopeContainer.GetName();
+			if (actualScopeKey != scope.m_sScopeKey)
+			{
+				reason = string.Format("reload_scope_container_name_mismatch expected=%1 actual=%2", scope.m_sScopeKey, actualScopeKey);
+				return false;
+			}
+
+			BaseContainerList labelContainers = scopeContainer.GetObjectArray("m_aLabels");
+			if (!labelContainers || !scope.m_aLabels || labelContainers.Count() != scope.m_aLabels.Count())
+			{
+				reason = string.Format("reload_label_container_count_mismatch scope=%1", scope.m_sScopeKey);
+				return false;
+			}
+
+			for (int labelIndex = 0; labelIndex < labelContainers.Count(); labelIndex++)
+			{
+				BaseContainer labelContainer = labelContainers.Get(labelIndex);
+				ME_EditableEntityLabelsSnapshotLabel label = scope.m_aLabels[labelIndex];
+				if (!labelContainer || !label)
+				{
+					reason = string.Format("reload_label_container_missing scope=%1", scope.m_sScopeKey);
+					return false;
+				}
+
+				string actualLabelName = labelContainer.GetName();
+				if (actualLabelName != label.m_sLabel)
+				{
+					reason = string.Format("reload_label_container_name_mismatch scope=%1 expected=%2 actual=%3", scope.m_sScopeKey, label.m_sLabel, actualLabelName);
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Saves the canonical snapshot resource and compares every reloaded field.
+	//! Сохраняет канонический snapshot-ресурс и сравнивает каждое перезагруженное поле.
+	protected bool ME_SaveAndValidateSnapshot(ME_EditableEntityLabelsSnapshot snapshot, out string reason)
+	{
+		reason = "";
+		Resource containerResource = BaseContainerTools.CreateContainerFromInstance(snapshot);
+		string absolutePath;
+		if (!containerResource || !Workbench.GetAbsolutePath(SNAPSHOT_PATH, absolutePath, false))
+		{
+			reason = "create_or_path_failed";
+			return false;
+		}
+
+		BaseContainer container = containerResource.GetResource().ToBaseContainer();
+		if (!container || !ME_SetDeterministicContainerNames(container, snapshot, reason))
+			return false;
+		if (!BaseContainerTools.SaveContainer(container, SNAPSHOT_RESOURCE, absolutePath))
+		{
+			reason = "save_container_failed";
+			return false;
+		}
+
+		ResourceManager resourceManager = Workbench.GetModule(ResourceManager);
+		if (!resourceManager)
+		{
+			reason = "resource_manager_unavailable";
+			return false;
+		}
+		resourceManager.RebuildResourceFile(absolutePath, "", false);
+		if (!resourceManager.WaitForFile(absolutePath, 5000))
+		{
+			reason = "resource_wait_failed";
+			return false;
+		}
+
+		Resource loaded = BaseContainerTools.LoadContainer(SNAPSHOT_RESOURCE);
+		BaseContainer loadedContainer;
+		if (loaded)
+			loadedContainer = loaded.GetResource().ToBaseContainer();
+		if (!loadedContainer || !ME_ValidateReloadedContainerNames(loadedContainer, snapshot, reason))
+			return false;
+
+		ME_EditableEntityLabelsSnapshot reloaded = ME_EditableEntityLabelsSnapshot.Cast(BaseContainerTools.CreateInstanceFromContainer(loadedContainer));
+		if (!reloaded || reloaded.m_iSchemaVersion != snapshot.m_iSchemaVersion || reloaded.m_sGeneratorVersion != snapshot.m_sGeneratorVersion || reloaded.m_sGameVersion != snapshot.m_sGameVersion || !reloaded.m_aScopes || reloaded.m_aScopes.Count() != snapshot.m_aScopes.Count())
+		{
+			reason = "reload_validation_failed";
+			return false;
+		}
+
+		for (int scopeIndex = 0; scopeIndex < snapshot.m_aScopes.Count(); scopeIndex++)
+		{
+			ME_EditableEntityLabelsSnapshotScope expectedScope = snapshot.m_aScopes[scopeIndex];
+			ME_EditableEntityLabelsSnapshotScope actualScope = reloaded.m_aScopes[scopeIndex];
+			if (!actualScope || expectedScope.m_sScopeKey != actualScope.m_sScopeKey || !actualScope.m_aLabels || actualScope.m_aLabels.Count() != expectedScope.m_aLabels.Count())
+			{
+				reason = "reload_scope_mismatch";
+				return false;
+			}
+
+			for (int labelIndex = 0; labelIndex < expectedScope.m_aLabels.Count(); labelIndex++)
+			{
+				ME_EditableEntityLabelsSnapshotLabel expectedLabel = expectedScope.m_aLabels[labelIndex];
+				ME_EditableEntityLabelsSnapshotLabel actualLabel = actualScope.m_aLabels[labelIndex];
+				if (!actualLabel || expectedLabel.m_sLabel != actualLabel.m_sLabel || !actualLabel.m_aEntries || actualLabel.m_aEntries.Count() != expectedLabel.m_aEntries.Count())
+				{
+					reason = "reload_label_mismatch";
+					return false;
+				}
+
+				for (int entryIndex = 0; entryIndex < expectedLabel.m_aEntries.Count(); entryIndex++)
+				{
+					ME_EditableEntityLabelsSnapshotEntry expected = expectedLabel.m_aEntries[entryIndex];
+					ME_EditableEntityLabelsSnapshotEntry actual = actualLabel.m_aEntries[entryIndex];
+					if (!actual || expected.m_sPrefab != actual.m_sPrefab || expected.m_iCatalogIndex != actual.m_iCatalogIndex || expected.m_sEntityName != actual.m_sEntityName || expected.m_sRawAuthoredStatus != actual.m_sRawAuthoredStatus || expected.m_sRawAutoStatus != actual.m_sRawAutoStatus || !actual.m_aResolvedLabels || actual.m_aResolvedLabels.Count() != expected.m_aResolvedLabels.Count())
+					{
+						reason = "reload_entry_mismatch";
+						return false;
+					}
+
+					for (int labelArrayIndex = 0; labelArrayIndex < expected.m_aResolvedLabels.Count(); labelArrayIndex++)
+					{
+						if (expected.m_aResolvedLabels[labelArrayIndex] != actual.m_aResolvedLabels[labelArrayIndex])
+						{
+							reason = "reload_entry_labels_mismatch";
+							return false;
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+}
