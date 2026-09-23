@@ -220,10 +220,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 {
 	ref Shape m_ME_EditorSpawnAreaShape;
 	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
+	// Editor-only warning for conflicting labels, empty filter results, or unavailable catalogs.
+	// Editor-only предупреждение о конфликтующих метках, пустом результате фильтра или недоступном каталоге.
+	ref DebugTextWorldSpace m_ME_EditorEditableLabelConflictWarning;
 	// Editor-only world-space text for excluded and individually colored included vehicle labels.
 	// Editor-only текст в мировом пространстве для исключающих и отдельно окрашенных включающих меток техники.
 	ref DebugTextWorldSpace m_ME_EditorVehicleCategoryExcludedLabel;
 	ref array<ref DebugTextWorldSpace> m_aME_EditorVehicleCategoryIncludedLabels = {};
+	// World-space warning offset above the configured vehicle labels.
+	// Вертикальное смещение предупреждения в мировом пространстве над настроенными метками техники.
+	static const float ME_EDITOR_EDITABLE_LABEL_CONFLICT_WARNING_OFFSET = 1.5;
 	// World-space font size shared by the excluded and included vehicle label texts, kept small enough to stay readable with a close camera.
 	// Размер шрифта в мировом пространстве, общий для текстов исключающих и включающих меток техники, достаточно малый, чтобы оставаться читаемым при близкой камере.
 	static const float ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE = 0.5;
@@ -896,9 +902,11 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		bool found = SCR_WorldTools.FindEmptyTerrainPosition(candidate, origin, SPAWNING_RADIUS, SPAWNING_RADIUS, 2, TraceFlags.ENTS | TraceFlags.OCEAN, world);
 		SCR_AmbientVehicleSpawnPointComponent overlappingPoint;
 		bool overlap = ME_FindOverlappingEditorSpawnPoint(origin, world, overlappingPoint);
-		bool red = !found || overlap;
+		bool filterWarning = ME_RefreshEditorEditableLabelConflictWarning(owner);
 		int color = Color.GREEN;
-		if (red)
+		if (filterWarning)
+			color = Color.FromRGBA(128, 128, 128, 255).PackToInt();
+		else if (!found || overlap)
 			color = Color.RED;
 
 		Color colorValue = Color.FromInt(color);
@@ -908,6 +916,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_RefreshEditorStaticObjectConflicts(owner);
 
 		string reason = "none";
+		if (filterWarning)
+			reason = "vehicle_filter_warning";
 		if (!found)
 			reason = "no_empty_position";
 		else if (overlap)
@@ -932,6 +942,77 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=1 candidate=%5 overlap=0 staticConflictCount=%6 editorWarning=%7 reason=%8", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, candidate, m_iME_EditorStaticObjectConflictCount, editorWarning, reason);
 		else
 			PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 searchRadius=%3 cylinderRadius=%4 cylinderHeight=2 traceFlags=ENTS|OCEAN found=0 overlap=0 staticConflictCount=%5 editorWarning=%6 reason=%7", owner.GetName(), origin, SPAWNING_RADIUS, SPAWNING_RADIUS, m_iME_EditorStaticObjectConflictCount, editorWarning, reason);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Releases this point's editor-only catalog and label warning.
+	//! Освобождает editor-only предупреждение этой точки о каталоге и метках.
+	void ME_ClearEditorEditableLabelConflictWarning()
+	{
+		m_ME_EditorEditableLabelConflictWarning = null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Refreshes filter warnings and returns true for conflicting labels, no candidates, or unavailable catalogs.
+	//! The warning explains whether requireAll makes the filter impossible or leaves other labels as candidates.
+	//!
+	//! \param[in] owner Spawn point entity whose transform anchors the warning
+	//! Обновляет предупреждения фильтра и возвращает true при конфликте меток, отсутствии кандидатов или недоступном каталоге.
+	//! Предупреждение объясняет, делает ли requireAll фильтр невыполнимым или оставляет другие метки кандидатами.
+	//!
+	//! \param[in] owner Сущность точки появления, чьё преобразование задаёт привязку предупреждения
+	bool ME_RefreshEditorEditableLabelConflictWarning(IEntity owner)
+	{
+		ME_ClearEditorEditableLabelConflictWarning();
+		if (!owner)
+			return false;
+
+		array<EEditableEntityLabel> conflictingLabels = ME_GetConflictingEditableEntityLabels();
+		array<SCR_EntityCatalogEntry> entries;
+		string catalogReason;
+		bool catalogAvailable = ME_GetEditorVehicleEnvelopeCandidates(entries, catalogReason);
+		bool noCandidates = catalogAvailable && entries.IsEmpty();
+		if (conflictingLabels.IsEmpty() && catalogAvailable && !noCandidates)
+			return false;
+
+		vector transform[4];
+		owner.GetTransform(transform);
+		transform[3] = transform[3] + Vector(0, 8 + ME_EDITOR_EDITABLE_LABEL_CONFLICT_WARNING_OFFSET, 0);
+
+		string warningText;
+		if (!conflictingLabels.IsEmpty() && m_bRequireAllIncludedLabels)
+		{
+			warningText = string.Format(
+				"WARNING: conflicting labels [%1] are both included and excluded. requireAll=true: these requirements are impossible; no vehicle can match this filter.",
+				ME_EditableEntityLabelsToString(conflictingLabels)
+			);
+		}
+		else if (!conflictingLabels.IsEmpty())
+		{
+			warningText = string.Format(
+				"WARNING: conflicting labels [%1] are both included and excluded. requireAll=false: these labels are excluded, but other included labels may still leave candidates.",
+				ME_EditableEntityLabelsToString(conflictingLabels)
+			);
+		}
+
+		if (noCandidates)
+			warningText += " WARNING: no vehicle candidates match this point's catalog and label filter.";
+		else if (!catalogAvailable)
+			warningText += string.Format(" WARNING: vehicle candidates could not be checked (%1).", catalogReason);
+
+		const DebugTextFlags textFlags = DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA;
+		const int backgroundColor = Color.FromRGBA(0, 0, 0, 178).PackToInt();
+		m_ME_EditorEditableLabelConflictWarning = DebugTextWorldSpace.CreateInWorld(
+			GetGame().GetWorld(),
+			warningText,
+			textFlags,
+			transform,
+			ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
+			Color.FromRGBA(255, 48, 48, 255).PackToInt(),
+			backgroundColor,
+			1000
+		);
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1342,6 +1423,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_ClearEditorDebugShape();
 		ME_ClearEditorVehicleEnvelopePreview();
 		ME_ClearEditorVehicleCategoryLabel();
+		ME_ClearEditorEditableLabelConflictWarning();
 		super.OnDelete(owner);
 		ME_RefreshAllEditorDebugShapes();
 	}
@@ -1361,6 +1443,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_ClearEditorDebugShape();
 		ME_ClearEditorVehicleEnvelopePreview();
 		ME_ClearEditorVehicleCategoryLabel();
+		ME_ClearEditorEditableLabelConflictWarning();
 		super._WB_OnDelete(owner, src);
 		ME_RefreshAllEditorDebugShapes();
 	}
