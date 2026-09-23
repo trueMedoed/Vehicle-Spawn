@@ -220,6 +220,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 {
 	ref Shape m_ME_EditorSpawnAreaShape;
 	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
+	// Editor-only arrow indicating the vehicle envelope's local forward direction.
+	// Стрелка локального направления вперёд для голограммы техники в редакторе.
+	ref Shape m_ME_EditorVehicleDirectionArrowShape;
+	// Camera-facing heading label above the direction arrow.
+	// Подпись угла направления над стрелкой, развёрнутая к камере.
+	ref DebugTextWorldSpace m_ME_EditorVehicleDirectionAngleText;
 	// Editor-only warning for conflicting labels, empty filter results, or unavailable catalogs.
 	// Editor-only предупреждение о конфликтующих метках, пустом результате фильтра или недоступном каталоге.
 	ref array<ref DebugTextWorldSpace> m_aME_EditorFilterWarnings = {};
@@ -1355,6 +1361,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	void ME_ClearEditorVehicleEnvelopePreview()
 	{
 		m_ME_EditorVehicleEnvelopeFillShape = null;
+		m_ME_EditorVehicleDirectionArrowShape = null;
+		m_ME_EditorVehicleDirectionAngleText = null;
 		m_bME_EditorVehicleEnvelopePreviewActive = false;
 	}
 
@@ -1390,6 +1398,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	void ME_RefreshEditorVehicleEnvelopePreview()
 	{
 		m_ME_EditorVehicleEnvelopeFillShape = null;
+		m_ME_EditorVehicleDirectionArrowShape = null;
+		m_ME_EditorVehicleDirectionAngleText = null;
 		if (!m_bME_EditorVehicleEnvelopePreviewActive)
 			return;
 
@@ -1437,6 +1447,106 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		Color fillColor = Color.FromInt(m_iME_EditorVehicleEnvelopeFillColor);
 		fillColor.SetA(48.0 / 255.0);
 		m_ME_EditorVehicleEnvelopeFillShape = Shape.CreateTris(fillColor.PackToInt(), ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE, fillPoints, 36);
+		ME_RefreshEditorVehicleDirectionArrow(origin, yawSin, yawCos, angles[0]);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Builds a terrain-height yellow arrow along local +Z beyond the envelope front, using its yaw transform.
+	//! Строит жёлтую стрелку над рельефом вдоль локальной +Z перед голограммой с тем же поворотом по yaw.
+	protected void ME_RefreshEditorVehicleDirectionArrow(vector origin, float yawSin, float yawCos, float yawDegrees)
+	{
+		float centerX = (m_vME_EditorVehicleEnvelopeLocalMins[0] + m_vME_EditorVehicleEnvelopeLocalMaxs[0]) * 0.5;
+		float arrowY = 0;
+		float startZ = m_vME_EditorVehicleEnvelopeLocalMaxs[2] + 0.25;
+		vector localPoints[7];
+		localPoints[0] = Vector(centerX - 0.16, arrowY, startZ);
+		localPoints[1] = Vector(centerX + 0.16, arrowY, startZ);
+		localPoints[2] = Vector(centerX - 0.16, arrowY, startZ + 1.6);
+		localPoints[3] = Vector(centerX + 0.16, arrowY, startZ + 1.6);
+		localPoints[4] = Vector(centerX - 0.75, arrowY, startZ + 1.6);
+		localPoints[5] = Vector(centerX + 0.75, arrowY, startZ + 1.6);
+		localPoints[6] = Vector(centerX, arrowY, startZ + 2.7);
+
+		vector points[7];
+		for (int pointIndex = 0; pointIndex < 7; pointIndex++)
+		{
+			vector localPoint = localPoints[pointIndex];
+			points[pointIndex] = origin + Vector(
+				localPoint[0] * yawCos + localPoint[2] * yawSin,
+				localPoint[1],
+				localPoint[2] * yawCos - localPoint[0] * yawSin
+			);
+		}
+
+		// Keep the arrow level above the highest terrain sample across its footprint.
+		// Держим стрелку горизонтально над самой высокой выборкой рельефа под ней.
+		BaseWorld world = GetOwner().GetWorld();
+		if (!world)
+			return;
+
+		float groundY = world.GetSurfaceY(points[0][0], points[0][2]);
+		for (int sampleIndex = 1; sampleIndex < 7; sampleIndex++)
+		{
+			float sampleY = world.GetSurfaceY(points[sampleIndex][0], points[sampleIndex][2]);
+			if (sampleY > groundY)
+				groundY = sampleY;
+		}
+
+		// Sample the interior too, so a rise between the corners does not hide the arrow.
+		// Проверяем и внутреннюю область, чтобы подъём между углами не скрывал стрелку.
+		for (int lengthIndex = 0; lengthIndex <= 6; lengthIndex++)
+		{
+			for (int widthIndex = -1; widthIndex <= 1; widthIndex++)
+			{
+				float sampleX = centerX + widthIndex * 0.75;
+				float sampleZ = startZ + lengthIndex * 0.45;
+				float terrainY = world.GetSurfaceY(
+					origin[0] + sampleX * yawCos + sampleZ * yawSin,
+					origin[2] + sampleZ * yawCos - sampleX * yawSin);
+				if (terrainY > groundY)
+					groundY = terrainY;
+			}
+		}
+
+		for (int heightIndex = 0; heightIndex < 7; heightIndex++)
+		{
+			vector point = points[heightIndex];
+			point[1] = groundY + 0.3;
+			points[heightIndex] = point;
+		}
+
+		vector arrowTriangles[] = {
+			points[0], points[1], points[3], points[0], points[3], points[2],
+			points[4], points[5], points[6]
+		};
+		m_ME_EditorVehicleDirectionArrowShape = Shape.CreateTris(
+			Color.FromRGBA(255, 215, 0, 255).PackToInt(), ShapeFlags.DOUBLESIDE, arrowTriangles, 9);
+		// Normalize yaw to 0..359 degrees, rounding to the nearest whole degree.
+		// Нормализуем yaw до 0..359 градусов с округлением до целого градуса.
+		while (yawDegrees < 0)
+			yawDegrees += 360;
+		while (yawDegrees >= 360)
+			yawDegrees -= 360;
+		int headingDegrees = yawDegrees + 0.5;
+		if (headingDegrees >= 360)
+			headingDegrees = 0;
+
+		vector labelTransform[4];
+		GetOwner().GetTransform(labelTransform);
+		float labelX = centerX;
+		float labelZ = startZ + 1.35;
+		vector labelPosition = origin + Vector(labelX * yawCos + labelZ * yawSin, 0, labelZ * yawCos - labelX * yawSin);
+		float labelGroundY = world.GetSurfaceY(labelPosition[0], labelPosition[2]);
+		if (labelGroundY < groundY)
+			labelGroundY = groundY;
+		labelPosition[1] = labelGroundY + 1.0;
+		labelTransform[3] = labelPosition;
+		m_ME_EditorVehicleDirectionAngleText = DebugTextWorldSpace.CreateInWorld(
+			world, string.Format("%1 deg", headingDegrees),
+			DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA,
+			labelTransform, ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
+			Color.FromRGBA(255, 215, 0, 255).PackToInt(),
+			Color.FromRGBA(0, 0, 0, 178).PackToInt(), 1000);
 	}
 
 	//------------------------------------------------------------------------------------------------
