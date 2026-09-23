@@ -12,15 +12,6 @@ class ME_EditableEntityLabelsSnapshotPrefab
 	[Attribute("")]
 	string m_sPrefabPath;
 
-	//! Catalog entry index for this prefab within its scope.
-	//! Индекс catalog entry для этого prefab внутри его scope.
-	[Attribute("0")]
-	int m_iCatalogIndex;
-
-	//! Catalog entry name for this prefab.
-	//! Имя catalog entry для этого prefab.
-	[Attribute("")]
-	string m_sEntityName;
 }
 
 //------------------------------------------------------------------------------------------------
@@ -29,8 +20,8 @@ class ME_EditableEntityLabelsSnapshotPrefab
 [BaseContainerProps(namingConvention: NamingConvention.NC_MUST_HAVE_NAME)]
 class ME_EditableEntityLabelsSnapshotLabel
 {
-	//! EEditableEntityLabel enum value name.
-	//! Имя enum-значения EEditableEntityLabel.
+	//! EEditableEntityLabel enum name, or __NO_LABELS__ for catalog entries without labels.
+	//! Имя enum-значения EEditableEntityLabel либо __NO_LABELS__ для записей без меток.
 	[Attribute("")]
 	string m_sLabelName;
 
@@ -41,13 +32,13 @@ class ME_EditableEntityLabelsSnapshotLabel
 }
 
 //------------------------------------------------------------------------------------------------
-//! One scope group containing label groups for the global or one faction catalog.
-//! Одна группа scope, содержащая группы label для глобального каталога или каталога одной фракции.
+//! One scope group containing label groups for one faction catalog.
+//! Одна группа scope, содержащая группы label для каталога одной фракции.
 [BaseContainerProps(namingConvention: NamingConvention.NC_MUST_HAVE_NAME)]
 class ME_EditableEntityLabelsSnapshotScope
 {
-	//! Scope identifier: "__ME_GLOBAL_VEHICLE_CATALOG__" or faction key.
-	//! Идентификатор scope: "__ME_GLOBAL_VEHICLE_CATALOG__" или ключ фракции.
+	//! Scope identifier: faction key.
+	//! Идентификатор scope: ключ фракции.
 	[Attribute("")]
 	string m_sScopeKey;
 
@@ -58,14 +49,14 @@ class ME_EditableEntityLabelsSnapshotScope
 }
 
 //------------------------------------------------------------------------------------------------
-//! Root schema for deterministic editable-entity-labels snapshot across global and faction vehicle catalogs.
-//! Корневая schema для детерминированного snapshot editable-entity-labels по глобальному каталогу и каталогам фракций.
+//! Root schema for deterministic editable-entity-labels snapshot across faction vehicle catalogs.
+//! Корневая schema для детерминированного snapshot editable-entity-labels по каталогам фракций.
 [BaseContainerProps(configRoot: true)]
 class ME_EditableEntityLabelsSnapshot
 {
 	//! Schema compatibility version expected by the reader.
 	//! Версия совместимости schema, ожидаемая reader.
-	[Attribute("1")]
+	[Attribute("2")]
 	int m_iSchemaVersion;
 
 	//! Generator implementation version that produced this snapshot payload.
@@ -78,8 +69,8 @@ class ME_EditableEntityLabelsSnapshot
 	[Attribute("")]
 	string m_sGameVersion;
 
-	//! Scope groups sorted lexicographically by scope key (global first, then faction keys).
-	//! Группы scope, отсортированные лексикографически по scope key (сначала global, затем ключи фракций).
+	//! Scope groups sorted lexicographically by scope key.
+	//! Группы scope, отсортированные лексикографически по scope key.
 	[Attribute()]
 	ref array<ref ME_EditableEntityLabelsSnapshotScope> m_aScopes;
 }
