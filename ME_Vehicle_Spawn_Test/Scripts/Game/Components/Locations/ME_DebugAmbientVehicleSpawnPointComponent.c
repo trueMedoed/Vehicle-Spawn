@@ -222,7 +222,10 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
 	// Editor-only warning for conflicting labels, empty filter results, or unavailable catalogs.
 	// Editor-only предупреждение о конфликтующих метках, пустом результате фильтра или недоступном каталоге.
-	ref DebugTextWorldSpace m_ME_EditorEditableLabelConflictWarning;
+	ref array<ref DebugTextWorldSpace> m_aME_EditorFilterWarnings = {};
+	// Last filter diagnostic, excluding position, to suppress repeated editor refresh logs.
+	// Последняя диагностика фильтра без позиции для подавления повторов при обновлении редактора.
+	protected string m_sME_LastEditorFilterDiagnostic;
 	// Editor-only world-space text for excluded and individually colored included vehicle labels.
 	// Editor-only текст в мировом пространстве для исключающих и отдельно окрашенных включающих меток техники.
 	ref DebugTextWorldSpace m_ME_EditorVehicleCategoryExcludedLabel;
@@ -230,6 +233,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	// World-space warning offset above the configured vehicle labels.
 	// Вертикальное смещение предупреждения в мировом пространстве над настроенными метками техники.
 	static const float ME_EDITOR_EDITABLE_LABEL_CONFLICT_WARNING_OFFSET = 1.5;
+	// Vertical separation between independent filter messages in world space.
+	// Вертикальный интервал между отдельными сообщениями фильтра в мировом пространстве.
+	static const float ME_EDITOR_FILTER_WARNING_LINE_SPACING = 0.75;
 	// World-space font size shared by the excluded and included vehicle label texts, kept small enough to stay readable with a close camera.
 	// Размер шрифта в мировом пространстве, общий для текстов исключающих и включающих меток техники, достаточно малый, чтобы оставаться читаемым при близкой камере.
 	static const float ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE = 0.5;
@@ -253,6 +259,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	// Кэшированная editor-only битовая маска категорий wheeled/helicopter для пересоздания метки после изменения преобразования.
 	protected int m_iME_EditorVehicleCategoryMask;
 	protected int m_iME_EditorStaticObjectConflictCount;
+	// Per-point static obstacle descriptions rebuilt during each bounds scan.
+	// Описания статических препятствий этой точки, пересоздаваемые при каждой проверке границ.
+	protected ref array<string> m_aME_EditorStaticObjectConflictDescriptions = {};
 
 	//------------------------------------------------------------------------------------------------
 	//! Suppresses repeated runtime faction-manager mismatch messages for this spawn point until its required key resolves again.
@@ -793,6 +802,10 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			return true;
 
 		m_iME_EditorStaticObjectConflictCount++;
+		string objectName = entity.GetName();
+		if (objectName.IsEmpty())
+			objectName = entity.Type().ToString();
+		m_aME_EditorStaticObjectConflictDescriptions.Insert(string.Format("object=%1 coordinates=%2", objectName, entity.GetOrigin()));
 		ME_AddEditorStaticObjectMarker(entity, mins, maxs);
 		PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 staticCandidate=%3 candidateType=%4 candidateOrigin=%5 boundsMin=%6 boundsMax=%7 editorWarning=static_object_conflict", owner.GetName(), origin, entity.GetName(), entity.Type().ToString(), entity.GetOrigin(), mins, maxs);
 		return true;
@@ -810,6 +823,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	protected void ME_RefreshEditorStaticObjectConflicts(IEntity owner)
 	{
 		m_iME_EditorStaticObjectConflictCount = 0;
+		m_aME_EditorStaticObjectConflictDescriptions.Clear();
 		BaseWorld world = owner.GetWorld();
 		if (world)
 			world.QueryEntitiesBySphere(owner.GetOrigin(), SPAWNING_RADIUS, ME_CollectEditorStaticObjectConflict);
@@ -902,7 +916,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		bool found = SCR_WorldTools.FindEmptyTerrainPosition(candidate, origin, SPAWNING_RADIUS, SPAWNING_RADIUS, 2, TraceFlags.ENTS | TraceFlags.OCEAN, world);
 		SCR_AmbientVehicleSpawnPointComponent overlappingPoint;
 		bool overlap = ME_FindOverlappingEditorSpawnPoint(origin, world, overlappingPoint);
-		bool filterWarning = ME_RefreshEditorEditableLabelConflictWarning(owner);
+		ME_RefreshEditorStaticObjectConflicts(owner);
+		bool filterWarning = ME_RefreshEditorEditableLabelConflictWarning(owner, overlappingPoint);
 		int color = Color.GREEN;
 		if (filterWarning)
 			color = Color.FromRGBA(128, 128, 128, 255).PackToInt();
@@ -913,7 +928,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		colorValue.SetA(0.375);
 		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
 		m_ME_EditorSpawnAreaShape = Shape.CreateSphere(colorValue.PackToInt(), flags, origin, SPAWNING_RADIUS);
-		ME_RefreshEditorStaticObjectConflicts(owner);
 
 		string reason = "none";
 		if (filterWarning)
@@ -949,19 +963,24 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	//! Освобождает editor-only предупреждение этой точки о каталоге и метках.
 	void ME_ClearEditorEditableLabelConflictWarning()
 	{
-		m_ME_EditorEditableLabelConflictWarning = null;
+		for (int warningIndex = 0; warningIndex < m_aME_EditorFilterWarnings.Count(); warningIndex++)
+			m_aME_EditorFilterWarnings[warningIndex] = null;
+
+		m_aME_EditorFilterWarnings.Clear();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Refreshes filter warnings and returns true for conflicting labels, no candidates, or unavailable catalogs.
+	//! Refreshes filter, spawn-point overlap, and static obstacle messages; returns true only for filter or catalog problems.
 	//! The warning explains whether requireAll makes the filter impossible or leaves other labels as candidates.
 	//!
 	//! \param[in] owner Spawn point entity whose transform anchors the warning
-	//! Обновляет предупреждения фильтра и возвращает true при конфликте меток, отсутствии кандидатов или недоступном каталоге.
+	//! \param[in] overlappingPoint First touching or intersecting point, or null
+	//! Обновляет сообщения фильтра, пересечения точек и статических препятствий; возвращает true только при проблемах фильтра или каталога.
 	//! Предупреждение объясняет, делает ли requireAll фильтр невыполнимым или оставляет другие метки кандидатами.
 	//!
 	//! \param[in] owner Сущность точки появления, чьё преобразование задаёт привязку предупреждения
-	bool ME_RefreshEditorEditableLabelConflictWarning(IEntity owner)
+	//! \param[in] overlappingPoint Первая касающаяся или пересекающаяся точка либо null
+	bool ME_RefreshEditorEditableLabelConflictWarning(IEntity owner, SCR_AmbientVehicleSpawnPointComponent overlappingPoint)
 	{
 		ME_ClearEditorEditableLabelConflictWarning();
 		if (!owner)
@@ -972,8 +991,13 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		string catalogReason;
 		bool catalogAvailable = ME_GetEditorVehicleEnvelopeCandidates(entries, catalogReason);
 		bool noCandidates = catalogAvailable && entries.IsEmpty();
-		if (conflictingLabels.IsEmpty() && catalogAvailable && !noCandidates)
-			return false;
+		bool filterWarning = !conflictingLabels.IsEmpty() || !catalogAvailable || noCandidates;
+		if (!filterWarning)
+		{
+			m_sME_LastEditorFilterDiagnostic = "";
+			if (!overlappingPoint && m_iME_EditorStaticObjectConflictCount == 0)
+				return false;
+		}
 
 		vector transform[4];
 		owner.GetTransform(transform);
@@ -983,36 +1007,93 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		if (!conflictingLabels.IsEmpty() && m_bRequireAllIncludedLabels)
 		{
 			warningText = string.Format(
-				"WARNING: conflicting labels [%1] are both included and excluded. requireAll=true: these requirements are impossible; no vehicle can match this filter.",
+				"ERROR: conflicting labels [%1] are both included and excluded. requireAll=true: these requirements are impossible; no vehicle can match this filter.",
 				ME_EditableEntityLabelsToString(conflictingLabels)
 			);
 		}
 		else if (!conflictingLabels.IsEmpty())
 		{
 			warningText = string.Format(
-				"WARNING: conflicting labels [%1] are both included and excluded. requireAll=false: these labels are excluded, but other included labels may still leave candidates.",
+				"ERROR: conflicting labels [%1] are both included and excluded. requireAll=false: these labels are excluded, but other included labels may still leave candidates.",
 				ME_EditableEntityLabelsToString(conflictingLabels)
 			);
 		}
 
+		array<string> warningLines = {};
+		if (!warningText.IsEmpty())
+			warningLines.Insert(warningText);
 		if (noCandidates)
-			warningText += " WARNING: no vehicle candidates match this point's catalog and label filter.";
+		{
+			warningLines.Insert("ERROR: no vehicle candidates match this point's catalog and label filter.");
+			warningLines.Insert(string.Format("include=[%1] exclude=[%2]",
+				ME_EditableEntityLabelsToString(m_aIncludedEditableEntityLabels),
+				ME_EditableEntityLabelsToString(m_aExcludedEditableEntityLabels)));
+		}
 		else if (!catalogAvailable)
-			warningText += string.Format(" WARNING: vehicle candidates could not be checked (%1).", catalogReason);
+			warningLines.Insert(string.Format("WARNING: vehicle candidates could not be checked (%1).", catalogReason));
+
+		warningText = "";
+		foreach (string warningLine : warningLines)
+		{
+			if (!warningText.IsEmpty())
+				warningText += " ";
+			warningText += warningLine;
+		}
+
+		string diagnostic = string.Format("include=[%1] exclude=[%2] requireAll=%3: %4",
+			ME_EditableEntityLabelsToString(m_aIncludedEditableEntityLabels),
+			ME_EditableEntityLabelsToString(m_aExcludedEditableEntityLabels),
+			m_bRequireAllIncludedLabels, warningText);
+		if (filterWarning && diagnostic != m_sME_LastEditorFilterDiagnostic)
+		{
+			string message = string.Format("[ME_DEBUG_AVSP_LABEL] editor entity=%1 coordinates=%2 %3", owner.GetName(), owner.GetOrigin(), diagnostic);
+			if (noCandidates || !conflictingLabels.IsEmpty())
+				PrintFormat("%1", message, level: LogLevel.ERROR);
+			else
+				PrintFormat("%1", message, level: LogLevel.WARNING);
+
+			m_sME_LastEditorFilterDiagnostic = diagnostic;
+		}
+
+		// Add overlap text after filter logging so geometry does not change filter severity or sphere colour.
+		// Добавляем текст пересечения после записи фильтра, сохраняя уровень его диагностики и цвет сферы.
+		if (overlappingPoint)
+		{
+			IEntity overlappingOwner = overlappingPoint.GetOwner();
+			if (overlappingOwner)
+			{
+				warningLines.Insert("ERROR: spawn area overlaps another spawn point's sphere.");
+				warningLines.Insert(string.Format("overlapping point=%1 coordinates=%2", overlappingOwner.GetName(), overlappingOwner.GetOrigin()));
+			}
+		}
+
+		if (m_iME_EditorStaticObjectConflictCount > 0)
+		{
+			warningLines.Insert("ERROR: spawn area intersects static object bounds.");
+			foreach (string objectDescription : m_aME_EditorStaticObjectConflictDescriptions)
+				warningLines.Insert(objectDescription);
+		}
 
 		const DebugTextFlags textFlags = DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA;
 		const int backgroundColor = Color.FromRGBA(0, 0, 0, 178).PackToInt();
-		m_ME_EditorEditableLabelConflictWarning = DebugTextWorldSpace.CreateInWorld(
-			GetGame().GetWorld(),
-			warningText,
-			textFlags,
-			transform,
-			ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
-			Color.FromRGBA(255, 48, 48, 255).PackToInt(),
-			backgroundColor,
-			1000
-		);
-		return true;
+		// Stack separate messages above the labels, with the first diagnostic at the top.
+		// Размещаем отдельные сообщения над метками, начиная с первой диагностики сверху.
+		vector warningOrigin = transform[3];
+		for (int warningIndex = 0; warningIndex < warningLines.Count(); warningIndex++)
+		{
+			transform[3] = warningOrigin + Vector(0, (warningLines.Count() - 1 - warningIndex) * ME_EDITOR_FILTER_WARNING_LINE_SPACING, 0);
+			m_aME_EditorFilterWarnings.Insert(DebugTextWorldSpace.CreateInWorld(
+				GetGame().GetWorld(),
+				warningLines[warningIndex],
+				textFlags,
+				transform,
+				ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
+				Color.FromRGBA(255, 48, 48, 255).PackToInt(),
+				backgroundColor,
+				1000
+			));
+		}
+		return filterWarning;
 	}
 
 	//------------------------------------------------------------------------------------------------
