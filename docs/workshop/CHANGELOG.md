@@ -1,8 +1,30 @@
 # Changelog
 
-История версий `ME_Vehicle_Spawn`, опубликованных в Workshop.
+Список изменений `ME_Vehicle_Spawn`: подготовленный выпуск и история версий, опубликованных в Workshop.
 
 Записи упорядочены от новых к старым. Заголовок записи — номер версии Workshop и дата публикации. Номер версии присваивает Workshop, поля версии в `addon.gproj` нет, поэтому с кодом версию связывает git-тег `vX.Y.Z` на коммите, который был опубликован. Английский блок каждой записи — текст, отправленный в Workshop; русский блок ниже него служит внутренней сверкой и не публикуется.
+
+## 1.0.5 | Подготовлено к публикации
+
+Production проверен пользователем. Публикация и номер версии Workshop пока не подтверждены; дата выпуска и git-тег будут добавлены после публикации.
+
+### English
+
+- Improved obstacle checks to account for object rotation, reducing false intersection warnings near rotated buildings and other objects.
+- Replaced red obstacle spheres with wireframe boxes showing the oriented model bounds used by the checks.
+- Intersections with static object bounds now appear as warnings to recheck placement. Failure to find an empty terrain position produces a separate error; overlapping spawn areas remain errors.
+- Updated the vehicle bounds reference with readable faction groups and source prefabs for each bound.
+- Added ME_EditableEntityLabelsSnapshot.conf, a faction-and-label reference listing vehicle prefabs from Arma Reforger 1.8.0.13 catalogs, plus a guide to interpreting spawn-point filters. This reference does not guarantee runtime spawning and may differ from modded catalogs.
+- Updated the Workshop description with instructions for inspecting existing Conflict scenarios in World Editor and a GitHub link to the source code, test project, and audit reports.
+
+### Русский
+
+- Проверка препятствий теперь учитывает поворот объектов, уменьшая число ложных предупреждений рядом с повёрнутыми зданиями и другими объектами.
+- Красные сферы препятствий заменены каркасами, показывающими ориентированные границы моделей, используемые при проверке.
+- Пересечения с границами статических объектов теперь отображаются как предупреждения с просьбой перепроверить размещение. Если свободная позиция не найдена, выводится отдельная ошибка; пересечения областей появления двух точек остаются ошибками.
+- Обновлён справочник габаритов техники: читаемые группы по фракциям и указание prefab, определивших границы.
+- Добавлен ME_EditableEntityLabelsSnapshot.conf — справочник prefab техники по фракциям и меткам из каталогов Arma Reforger 1.8.0.13, а также инструкция по интерпретации фильтров точек. Справочник не гарантирует появление техники и может отличаться от каталогов с модификациями.
+- В описание Workshop добавлены инструкция по проверке существующих сценариев Conflict в World Editor и ссылка на GitHub с исходным кодом, тестовым проектом и отчётами аудита.
 
 ## 1.0.4 | 2026-09-24
 
