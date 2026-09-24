@@ -714,66 +714,69 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Tests whether an entity's world-space AABB intersects this point's editor spawn-area sphere.
+	//! Tests whether an entity's oriented model bounds intersect this point's editor spawn-area sphere.
 	//! This broad-phase advisory test does not predict or replace the runtime free-space search.
 	//!
-	//! \param[in] mins Minimum corner of the entity's world-space AABB
-	//! \param[in] maxs Maximum corner of the entity's world-space AABB
+	//! \param[in] mins Minimum corner of the entity's local model bounds
+	//! \param[in] maxs Maximum corner of the entity's local model bounds
 	//! \param[in] origin Center of this spawn point's editor spawn area
-	//! \return True when the AABB touches or intersects the spawn-area sphere
-	//! Проверяет пересечение мировой AABB сущности со сферой области появления этой точки в редакторе.
+	//! \return True when the OBB touches or intersects the spawn-area sphere
+	//! Проверяет пересечение локальных границ модели сущности со сферой области появления этой точки в редакторе.
 	//! Эта рекомендательная broad-phase-проверка не предсказывает и не заменяет runtime-поиск свободного места.
 	//!
-	//! \param[in] mins Минимальный угол мировой AABB сущности
-	//! \param[in] maxs Максимальный угол мировой AABB сущности
+	//! \param[in] mins Минимальный угол локальных границ модели сущности
+	//! \param[in] maxs Максимальный угол локальных границ модели сущности
 	//! \param[in] origin Центр области появления этой точки в редакторе
-	//! \return True, когда AABB касается или пересекает сферу области появления
-	protected bool ME_DoBoundsIntersectEditorSpawnArea(vector mins, vector maxs, vector origin)
+	//! \return True, когда OBB касается или пересекает сферу области появления
+	protected bool ME_DoBoundsIntersectEditorSpawnArea(IEntity entity, vector mins, vector maxs, vector origin)
 	{
-		vector closestPoint;
+		vector transform[4];
+		entity.GetTransform(transform);
+		vector offset = origin - transform[3];
+		vector closestPoint = transform[3];
+		// Project onto scaled world axes, then clamp in model coordinates.
+		// Проецируем на масштабированные мировые оси и ограничиваем координатами модели.
 		for (int i = 0; i < 3; i++)
 		{
-			closestPoint[i] = origin[i];
-			if (closestPoint[i] < mins[i])
-				closestPoint[i] = mins[i];
-			else if (closestPoint[i] > maxs[i])
-				closestPoint[i] = maxs[i];
+			vector axis = transform[i];
+			float lengthSquared = vector.Dot(axis, axis);
+			if (lengthSquared <= 0.000001)
+				continue;
+			float coordinate = vector.Dot(offset, axis) / lengthSquared;
+			coordinate = Math.Clamp(coordinate, mins[i], maxs[i]);
+			closestPoint += axis * coordinate;
 		}
-
 		vector delta = closestPoint - origin;
-		float distanceSquared = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2];
-		return distanceSquared <= SPAWNING_RADIUS * SPAWNING_RADIUS;
+		return vector.Dot(delta, delta) <= SPAWNING_RADIUS * SPAWNING_RADIUS;
 	}
 
 	//------------------------------------------------------------------------------------------------
 	//! Creates one shared editor-only marker for a static object, even if several spawn areas intersect it.
-	//! Marker size follows object bounds while remaining a visual advisory rather than another spawn-area probe.
+	//! The wireframe shows the exact oriented model bounds used by the static-object intersection check.
 	//!
 	//! \param[in] entity Static entity represented by the marker
-	//! \param[in] mins Minimum corner of its world-space AABB
-	//! \param[in] maxs Maximum corner of its world-space AABB
+	//! \param[in] mins Minimum corner of its local model bounds
+	//! \param[in] maxs Maximum corner of its local model bounds
 	//! Создаёт один общий marker только для редактора для статического объекта, даже если его пересекают несколько областей появления.
-	//! Размер marker следует границам объекта, оставаясь визуальной рекомендацией, а не второй проверкой области появления.
+	//! Каркас показывает ориентированные границы модели, используемые при проверке пересечения со статическим объектом.
 	//!
 	//! \param[in] entity Статическая сущность, представленная marker
-	//! \param[in] mins Минимальный угол её мировой AABB
-	//! \param[in] maxs Максимальный угол её мировой AABB
+	//! \param[in] mins Минимальный угол её локальных границ модели
+	//! \param[in] maxs Максимальный угол её локальных границ модели
 	static void ME_AddEditorStaticObjectMarker(IEntity entity, vector mins, vector maxs)
 	{
 		if (s_ME_EditorStaticObjectMarkerEntities.Contains(entity))
 			return;
 
-		vector center = (mins + maxs) * 0.5;
-		vector extents = (maxs - mins) * 0.5;
-		float radius = Math.Max(extents[0], Math.Max(extents[1], extents[2]));
-		radius = Math.Max(radius, 0.5);
-		radius = Math.Min(radius, SPAWNING_RADIUS);
-
-		Color color = Color.FromInt(Color.RED);
-		color.SetA(0.375);
-		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
+		// Transform the same local bounds used by the intersection test into world space.
+		// Переводим в мировое пространство те же локальные границы, что используются в проверке.
+		ShapeFlags flags = ShapeFlags.WIREFRAME | ShapeFlags.NOZWRITE;
 		s_ME_EditorStaticObjectMarkerEntities.Insert(entity);
-		s_ME_EditorStaticObjectMarkerShapes.Insert(Shape.CreateSphere(color.PackToInt(), flags, center, radius));
+		Shape marker = Shape.Create(ShapeType.BBOX, Color.RED, flags, mins, maxs);
+		vector transform[4];
+		entity.GetTransform(transform);
+		marker.SetMatrix(transform);
+		s_ME_EditorStaticObjectMarkerShapes.Insert(marker);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -802,9 +805,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 		vector mins;
 		vector maxs;
-		entity.GetWorldBounds(mins, maxs);
+		entity.GetBounds(mins, maxs);
 		vector origin = owner.GetOrigin();
-		if (!ME_DoBoundsIntersectEditorSpawnArea(mins, maxs, origin))
+		if (!ME_DoBoundsIntersectEditorSpawnArea(entity, mins, maxs, origin))
 			return true;
 
 		m_iME_EditorStaticObjectConflictCount++;
@@ -813,7 +816,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			objectName = entity.Type().ToString();
 		m_aME_EditorStaticObjectConflictDescriptions.Insert(string.Format("object=%1 coordinates=%2", objectName, entity.GetOrigin()));
 		ME_AddEditorStaticObjectMarker(entity, mins, maxs);
-		PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 staticCandidate=%3 candidateType=%4 candidateOrigin=%5 boundsMin=%6 boundsMax=%7 editorWarning=static_object_conflict", owner.GetName(), origin, entity.GetName(), entity.Type().ToString(), entity.GetOrigin(), mins, maxs);
+		PrintFormat("[ME_DEBUG_AVSP_POS] entity=%1 origin=%2 staticCandidate=%3 candidateType=%4 candidateOrigin=%5 localBoundsMin=%6 localBoundsMax=%7 editorWarning=static_object_conflict", owner.GetName(), origin, entity.GetName(), entity.Type().ToString(), entity.GetOrigin(), mins, maxs);
 		return true;
 	}
 
@@ -923,7 +926,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		SCR_AmbientVehicleSpawnPointComponent overlappingPoint;
 		bool overlap = ME_FindOverlappingEditorSpawnPoint(origin, world, overlappingPoint);
 		ME_RefreshEditorStaticObjectConflicts(owner);
-		bool filterWarning = ME_RefreshEditorEditableLabelConflictWarning(owner, overlappingPoint);
+		bool filterWarning = ME_RefreshEditorEditableLabelConflictWarning(owner, overlappingPoint, found);
 		int color = Color.GREEN;
 		if (filterWarning)
 			color = Color.FromRGBA(128, 128, 128, 255).PackToInt();
@@ -986,7 +989,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	//!
 	//! \param[in] owner Сущность точки появления, чьё преобразование задаёт привязку предупреждения
 	//! \param[in] overlappingPoint Первая касающаяся или пересекающаяся точка либо null
-	bool ME_RefreshEditorEditableLabelConflictWarning(IEntity owner, SCR_AmbientVehicleSpawnPointComponent overlappingPoint)
+	bool ME_RefreshEditorEditableLabelConflictWarning(IEntity owner, SCR_AmbientVehicleSpawnPointComponent overlappingPoint, bool clearanceFound)
 	{
 		ME_ClearEditorEditableLabelConflictWarning();
 		if (!owner)
@@ -1001,7 +1004,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		if (!filterWarning)
 		{
 			m_sME_LastEditorFilterDiagnostic = "";
-			if (!overlappingPoint && m_iME_EditorStaticObjectConflictCount == 0)
+			if (clearanceFound && !overlappingPoint && m_iME_EditorStaticObjectConflictCount == 0)
 				return false;
 		}
 
@@ -1073,9 +1076,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			}
 		}
 
+		if (!clearanceFound)
+			warningLines.Insert("ERROR: no empty terrain position found; recheck placement.");
+
 		if (m_iME_EditorStaticObjectConflictCount > 0)
 		{
-			warningLines.Insert("ERROR: spawn area intersects static object bounds.");
+			warningLines.Insert("WARNING: spawn area intersects static object bounds; recheck placement.");
 			foreach (string objectDescription : m_aME_EditorStaticObjectConflictDescriptions)
 				warningLines.Insert(objectDescription);
 		}
@@ -1643,5 +1649,110 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_ClearEditorEditableLabelConflictWarning();
 		super._WB_OnDelete(owner, src);
 		ME_RefreshAllEditorDebugShapes();
+	}
+
+	//! Audits labels and catalog without spawning vehicles; error and unavailable flags are independent.
+	//! Проверяет метки и каталог без создания техники; флаги ошибки и недоступности независимы.
+	void ME_AuditEditorVehicleFilter(out bool hasError, out bool unavailable)
+	{
+		hasError = false;
+		unavailable = false;
+		IEntity owner = GetOwner();
+		if (!owner)
+		{
+			unavailable = true;
+			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=UNAVAILABLE reason=owner_unavailable", level: LogLevel.WARNING);
+			return;
+		}
+		string factionKey = "<global>";
+		SCR_FactionAffiliationComponent affiliation = SCR_FactionAffiliationComponent.Cast(owner.FindComponent(SCR_FactionAffiliationComponent));
+		if (affiliation)
+		{
+			factionKey = affiliation.GetDefaultFactionKey();
+			if (factionKey.IsEmpty())
+				factionKey = affiliation.GetAffiliatedFactionKey();
+			if (factionKey.IsEmpty())
+				factionKey = "<global>";
+		}
+		string context = string.Format("entity=%1 coordinates=%2 faction=%3 include=[%4] exclude=[%5] requireAll=%6",
+			owner.GetName(), owner.GetOrigin(), factionKey,
+			ME_EditableEntityLabelsToString(m_aIncludedEditableEntityLabels),
+			ME_EditableEntityLabelsToString(m_aExcludedEditableEntityLabels), m_bRequireAllIncludedLabels);
+		array<EEditableEntityLabel> conflicts = ME_GetConflictingEditableEntityLabels();
+		if (!conflicts.IsEmpty())
+		{
+			hasError = true;
+			string consequence = "other included labels may still leave candidates";
+			if (m_bRequireAllIncludedLabels)
+				consequence = "requirements are impossible; no vehicle can match";
+			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=conflicting_labels conflicts=[%1] consequence=%2 %3",
+				ME_EditableEntityLabelsToString(conflicts), consequence, context, level: LogLevel.ERROR);
+		}
+		array<SCR_EntityCatalogEntry> entries;
+		string reason;
+		if (!ME_GetEditorVehicleEnvelopeCandidates(entries, reason))
+		{
+			unavailable = true;
+			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=UNAVAILABLE reason=%1 %2", reason, context, level: LogLevel.WARNING);
+			return;
+		}
+		if (entries.IsEmpty())
+		{
+			hasError = true;
+			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates %1", context, level: LogLevel.ERROR);
+		}
+	}
+
+	protected ref array<IEntity> m_aME_AuditStaticObjects = {};
+
+	//! Logs clearance failures and advisory sphere/OBB intersections without changing markers or spawning vehicles.
+	//! Пишет ошибки поиска свободной позиции и предупреждения о пересечениях сферы и OBB без изменения маркеров и создания техники.
+	int ME_AuditEditorStaticObjects(out bool unavailable, out bool clearanceFailed)
+	{
+		unavailable = false;
+		clearanceFailed = false;
+		m_aME_AuditStaticObjects.Clear();
+		IEntity owner = GetOwner();
+		if (!owner || !owner.GetWorld())
+		{
+			unavailable = true;
+			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=UNAVAILABLE check=static_bounds reason=owner_or_world_unavailable", level: LogLevel.WARNING);
+			return 0;
+		}
+		vector candidate;
+		clearanceFailed = !SCR_WorldTools.FindEmptyTerrainPosition(candidate, owner.GetOrigin(), SPAWNING_RADIUS, SPAWNING_RADIUS, 2, TraceFlags.ENTS | TraceFlags.OCEAN, owner.GetWorld());
+		if (clearanceFailed)
+			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity=%1 coordinates=%2",
+				owner.GetName(), owner.GetOrigin(), level: LogLevel.ERROR);
+		owner.GetWorld().QueryEntitiesBySphere(owner.GetOrigin(), SPAWNING_RADIUS, ME_CollectAuditStaticObject);
+		int count = m_aME_AuditStaticObjects.Count();
+		m_aME_AuditStaticObjects.Clear();
+		return count;
+	}
+
+	//! Reports each static physics object whose oriented bounds touch the spawn sphere once per point.
+	//! Однократно для каждой точки сообщает о статическом физическом объекте, чьи границы касаются сферы.
+	protected bool ME_CollectAuditStaticObject(IEntity entity)
+	{
+		IEntity owner = GetOwner();
+		if (!owner || !entity || entity == owner || entity.GetWorld() != owner.GetWorld())
+			return true;
+		if (SCR_AmbientVehicleSpawnPointComponent.Cast(entity.FindComponent(SCR_AmbientVehicleSpawnPointComponent)))
+			return true;
+		Physics physics = entity.GetPhysics();
+		if (!physics || physics.IsDynamic() || m_aME_AuditStaticObjects.Contains(entity))
+			return true;
+		vector mins;
+		vector maxs;
+		entity.GetBounds(mins, maxs);
+		if (!ME_DoBoundsIntersectEditorSpawnArea(entity, mins, maxs, owner.GetOrigin()))
+			return true;
+		m_aME_AuditStaticObjects.Insert(entity);
+		string objectName = entity.GetName();
+		if (objectName.IsEmpty())
+			objectName = entity.Type().ToString();
+		PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity=%1 coordinates=%2 object=%3 objectCoordinates=%4 objectId=%5 localBoundsMin=%6 localBoundsMax=%7",
+			owner.GetName(), owner.GetOrigin(), objectName, entity.GetOrigin(), entity.GetID(), mins, maxs, level: LogLevel.WARNING);
+		return true;
 	}
 }
