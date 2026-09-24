@@ -1661,7 +1661,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		if (!owner)
 		{
 			unavailable = true;
-			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=UNAVAILABLE reason=owner_unavailable", level: LogLevel.WARNING);
+			ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=UNAVAILABLE reason=owner_unavailable"), LogLevel.WARNING);
 			return;
 		}
 		string factionKey = "<global>";
@@ -1685,24 +1685,46 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			string consequence = "other included labels may still leave candidates";
 			if (m_bRequireAllIncludedLabels)
 				consequence = "requirements are impossible; no vehicle can match";
-			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=conflicting_labels conflicts=[%1] consequence=%2 %3",
-				ME_EditableEntityLabelsToString(conflicts), consequence, context, level: LogLevel.ERROR);
+			ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=conflicting_labels conflicts=[%1] consequence=%2 %3",
+				ME_EditableEntityLabelsToString(conflicts), consequence, context), LogLevel.ERROR);
 		}
 		array<SCR_EntityCatalogEntry> entries;
 		string reason;
 		if (!ME_GetEditorVehicleEnvelopeCandidates(entries, reason))
 		{
 			unavailable = true;
-			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=UNAVAILABLE reason=%1 %2", reason, context, level: LogLevel.WARNING);
+			ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=UNAVAILABLE reason=%1 %2", reason, context), LogLevel.WARNING);
 			return;
 		}
 		if (entries.IsEmpty())
 		{
 			hasError = true;
-			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates %1", context, level: LogLevel.ERROR);
+			ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates %1", context), LogLevel.ERROR);
 		}
 	}
 
+	//! Reports all touching point spheres from the complete loaded-editor point list.
+	//! Сообщает обо всех касающихся сферах точек из полного списка доступных точек редактора.
+	bool ME_AuditEditorPointOverlaps(array<IEntity> points)
+	{
+		IEntity owner = GetOwner();
+		if (!owner)
+			return false;
+		bool hasOverlap = false;
+		float diameter = 2 * SPAWNING_RADIUS;
+		foreach (IEntity other : points)
+		{
+			if (!other || other == owner || other.GetWorld() != owner.GetWorld())
+				continue;
+			vector delta = other.GetOrigin() - owner.GetOrigin();
+			if (vector.Dot(delta, delta) > diameter * diameter)
+				continue;
+			hasOverlap = true;
+			ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity=%1 coordinates=%2 overlappingCoordinates=%3",
+				owner.GetName(), owner.GetOrigin(), other.GetOrigin()), LogLevel.ERROR);
+		}
+		return hasOverlap;
+	}
 	protected ref array<IEntity> m_aME_AuditStaticObjects = {};
 
 	//! Logs clearance failures and advisory sphere/OBB intersections without changing markers or spawning vehicles.
@@ -1716,14 +1738,14 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		if (!owner || !owner.GetWorld())
 		{
 			unavailable = true;
-			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=UNAVAILABLE check=static_bounds reason=owner_or_world_unavailable", level: LogLevel.WARNING);
+			ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=UNAVAILABLE check=static_bounds reason=owner_or_world_unavailable"), LogLevel.WARNING);
 			return 0;
 		}
 		vector candidate;
 		clearanceFailed = !SCR_WorldTools.FindEmptyTerrainPosition(candidate, owner.GetOrigin(), SPAWNING_RADIUS, SPAWNING_RADIUS, 2, TraceFlags.ENTS | TraceFlags.OCEAN, owner.GetWorld());
 		if (clearanceFailed)
-			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity=%1 coordinates=%2",
-				owner.GetName(), owner.GetOrigin(), level: LogLevel.ERROR);
+			ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity=%1 coordinates=%2",
+				owner.GetName(), owner.GetOrigin()), LogLevel.ERROR);
 		owner.GetWorld().QueryEntitiesBySphere(owner.GetOrigin(), SPAWNING_RADIUS, ME_CollectAuditStaticObject);
 		int count = m_aME_AuditStaticObjects.Count();
 		m_aME_AuditStaticObjects.Clear();
@@ -1751,8 +1773,51 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		string objectName = entity.GetName();
 		if (objectName.IsEmpty())
 			objectName = entity.Type().ToString();
-		PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity=%1 coordinates=%2 object=%3 objectCoordinates=%4 objectId=%5 localBoundsMin=%6 localBoundsMax=%7",
-			owner.GetName(), owner.GetOrigin(), objectName, entity.GetOrigin(), entity.GetID(), mins, maxs, level: LogLevel.WARNING);
+		ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity=%1 coordinates=%2 object=%3 objectCoordinates=%4 objectId=%5 localBoundsMin=%6 localBoundsMax=%7",
+			owner.GetName(), owner.GetOrigin(), objectName, entity.GetOrigin(), entity.GetID(), mins, maxs), LogLevel.WARNING);
 		return true;
+	}
+
+	//! Identifies the actual point prefab, including modded and inherited prefabs.
+	//! Определяет реальный prefab точки, включая модифицированные и наследуемые prefab.
+	string ME_GetAuditPrefabDescription()
+	{
+		string path = m_sME_AuditPrefabPath;
+		IEntity owner = GetOwner();
+		if (path.IsEmpty() && owner)
+		{
+			EntityPrefabData data = owner.GetPrefabData();
+			if (data)
+				path = data.GetPrefabName();
+		}
+		if (path.IsEmpty())
+			return "pointPrefab=<unavailable>";
+		string normalized = path;
+		normalized.Replace("\\", "/");
+		array<string> parts = {};
+		normalized.Split("/", parts, true);
+		string name = normalized;
+		if (!parts.IsEmpty())
+			name = parts[parts.Count() - 1];
+		int guidEnd = name.IndexOf("}");
+		if (guidEnd >= 0)
+			name = name.Substring(guidEnd + 1, name.Length() - guidEnd - 1);
+		if (name.EndsWith(".et"))
+			name = name.Substring(0, name.Length() - 3);
+		return string.Format("pointPrefab=%1", name);
+	}
+
+	// Editor source path is supplied only for the duration of one point audit.
+	// Путь из источника редактора передаётся только на время аудита одной точки.
+	string m_sME_AuditPrefabPath;
+	ref array<string> m_aME_AuditDetails = {};
+
+	//! Keeps identical diagnostics for the log and detailed batch report.
+	//! Сохраняет одинаковую диагностику для лога и подробного пакетного отчёта.
+	protected void ME_WriteAuditDetail(string message, LogLevel level)
+	{
+		message += " " + ME_GetAuditPrefabDescription();
+		m_aME_AuditDetails.Insert(message);
+		PrintFormat("%1", message, level: level);
 	}
 }

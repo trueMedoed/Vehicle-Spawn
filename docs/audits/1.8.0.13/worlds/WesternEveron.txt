@@ -1,0 +1,8 @@
+# Extracted from ME_AmbientAuditBatch_6.txt; game=1.8.0.13; date=2026-09-24; includes point_overlaps
+status=STARTED requested=1
+status=WORLD_LOADING world=worlds/MP/CTI_Campaign_WesternEveron.ent
+status=WORLD_STARTED world=worlds/MP/CTI_Campaign_WesternEveron.ent
+DETAILS world=worlds/MP/CTI_Campaign_WesternEveron.ent
+status=WORLD_FINISHED world=worlds/MP/CTI_Campaign_WesternEveron.ent result=NO_POINTS scope=inspected_points scanned=0 passed=0 errorPoints=0 warningPoints=0 unavailablePoints=0 staticObjectIntersections=0 clearanceErrorPoints=0
+world=worlds/MP/CTI_Campaign_WesternEveron.ent coverage=UNVERIFIED sourceCheck=NOT_TESTED matched=0 missed=0 unresolvedEntities=2556 unresolvedPointSources=0
+status=FINISHED completed=1 requested=1

@@ -1,0 +1,17 @@
+# scope=errors_only
+# Extracted from ME_AmbientAuditBatch_6.txt; game=1.8.0.13; date=2026-09-24; includes point_overlaps
+status=STARTED requested=1
+status=WORLD_LOADING world=worlds/MP/CTI_Campaign_Eden.ent
+status=WORLD_STARTED world=worlds/MP/CTI_Campaign_Eden.ent
+DETAILS world=worlds/MP/CTI_Campaign_Eden.ent
+[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7248.58,136.872,2202.72> overlappingCoordinates=<7241.81,136.754,2204.95> pointPrefab=AmbientVehicleSpawnpoint_CIV
+[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity= coordinates=<6629.61,5.221,3141.22> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity= coordinates=<4454.89,58.633,6221.48> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity= coordinates=<3752.45,58.794,7020.7> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity= coordinates=<7508.81,134.102,4793.76> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7241.81,136.754,2204.95> overlappingCoordinates=<7248.58,136.872,2202.72> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity= coordinates=<5845.2,235.007,7255.72> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity= coordinates=<4015.11,109.168,6695.7> pointPrefab=AmbientVehicleSpawnpoint_FIA
+status=WORLD_FINISHED world=worlds/MP/CTI_Campaign_Eden.ent result=ERRORS_FOUND scope=inspected_points scanned=171 passed=84 errorPoints=8 warningPoints=86 unavailablePoints=0 staticObjectIntersections=270 clearanceErrorPoints=6
+world=worlds/MP/CTI_Campaign_Eden.ent coverage=UNVERIFIED sourceCheck=MATCH matched=171 missed=0 unresolvedEntities=2606 unresolvedPointSources=0
+status=FINISHED completed=1 requested=1

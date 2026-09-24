@@ -1,0 +1,10 @@
+# scope=errors_only
+# Extracted from ME_AmbientAuditBatch_6.txt; game=1.8.0.13; date=2026-09-24; includes point_overlaps
+status=STARTED requested=1
+status=WORLD_LOADING world=worlds/MP/CTI_Campaign_HQC_Arland.ent
+status=WORLD_STARTED world=worlds/MP/CTI_Campaign_HQC_Arland.ent
+DETAILS world=worlds/MP/CTI_Campaign_HQC_Arland.ent
+[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity= coordinates=<3154.16,12.941,2733.72> pointPrefab=AmbientVehicleSpawnpoint_CIV
+status=WORLD_FINISHED world=worlds/MP/CTI_Campaign_HQC_Arland.ent result=ERRORS_FOUND scope=inspected_points scanned=45 passed=17 errorPoints=1 warningPoints=28 unavailablePoints=0 staticObjectIntersections=77 clearanceErrorPoints=1
+world=worlds/MP/CTI_Campaign_HQC_Arland.ent coverage=UNVERIFIED sourceCheck=MATCH matched=45 missed=0 unresolvedEntities=561 unresolvedPointSources=0
+status=FINISHED completed=1 requested=1

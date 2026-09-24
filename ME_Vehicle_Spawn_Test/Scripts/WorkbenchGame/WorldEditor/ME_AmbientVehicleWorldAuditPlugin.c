@@ -3,10 +3,33 @@
 [WorkbenchPluginAttribute(name: "Audit all ambient vehicle spawn points", description: "Checks loaded point filters, catalogs and static object bounds without Game mode; logs problems and a summary.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Diagnostics")]
 class ME_AmbientVehicleWorldAuditPlugin : WorldEditorPlugin
 {
+	string m_sLastSummary;
+	string m_sLastCoverage;
+	bool m_bLastRunCompleted;
+	ref array<string> m_aLastDetails = {};
+	//! Finds the nearest prefab resource in the editor source inheritance chain.
+	//! Находит ближайший ресурс prefab в цепочке наследования источника редактора.
+	protected ResourceName GetPointPrefabPath(IEntitySource source)
+	{
+		BaseContainer current = source;
+		while (current)
+		{
+			ResourceName path = current.GetResourceName();
+			if (!path.IsEmpty() && path.EndsWith(".et"))
+				return path;
+			current = current.GetAncestor();
+		}
+		return string.Empty;
+	}
+
 	//! Enumerates editor entities and reports errors and incomplete catalog checks.
 	//! Обходит сущности редактора и сообщает об ошибках и незавершённых проверках каталогов.
 	override void Run()
 	{
+		m_bLastRunCompleted = false;
+		m_aLastDetails.Clear();
+		m_sLastSummary = string.Empty;
+		m_sLastCoverage = string.Empty;
 		if (!SCR_Global.IsEditMode())
 		{
 			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=ABORTED reason=edit_mode_required", level: LogLevel.WARNING);
@@ -24,7 +47,7 @@ class ME_AmbientVehicleWorldAuditPlugin : WorldEditorPlugin
 			PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=ABORTED reason=world_editor_api_unavailable", level: LogLevel.WARNING);
 			return;
 		}
-		PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=STARTED scope=loaded_editor_entities checks=labels,catalogs,clearance,static_bounds");
+		PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=STARTED scope=loaded_editor_entities checks=labels,catalogs,clearance,static_bounds,point_overlaps");
 		int scanned;
 		int passed;
 		int errorPoints;
@@ -41,6 +64,20 @@ class ME_AmbientVehicleWorldAuditPlugin : WorldEditorPlugin
 		ref map<string, int> unresolvedClasses = new map<string, int>();
 		array<IEntity> visited = {};
 		int entityCount = api.GetEditorEntityCount();
+		// Collect every point before auditing so results do not depend on iteration order or preview registration.
+		// Собираем все точки заранее: результат не зависит от порядка обхода и регистрации preview.
+		array<IEntity> auditPoints = {};
+		for (int pointIndex = 0; pointIndex < entityCount; pointIndex++)
+		{
+			IEntitySource pointSourceForOverlap = api.GetEditorEntity(pointIndex);
+			if (!pointSourceForOverlap)
+				continue;
+			IEntity pointEntity = api.SourceToEntity(pointSourceForOverlap);
+			if (!pointEntity || auditPoints.Contains(pointEntity))
+				continue;
+			if (SCR_AmbientVehicleSpawnPointComponent.Cast(pointEntity.FindComponent(SCR_AmbientVehicleSpawnPointComponent)))
+				auditPoints.Insert(pointEntity);
+		}
 		for (int i = 0; i < entityCount; i++)
 		{
 			IEntitySource source = api.GetEditorEntity(i);
@@ -89,7 +126,11 @@ class ME_AmbientVehicleWorldAuditPlugin : WorldEditorPlugin
 			}
 			bool hasError;
 			bool unavailable;
+			point.m_aME_AuditDetails.Clear();
+			point.m_sME_AuditPrefabPath = GetPointPrefabPath(source);
 			point.ME_AuditEditorVehicleFilter(hasError, unavailable);
+			if (point.ME_AuditEditorPointOverlaps(auditPoints))
+				hasError = true;
 			bool geometryUnavailable;
 			bool clearanceFailed;
 			int objectConflicts = point.ME_AuditEditorStaticObjects(geometryUnavailable, clearanceFailed);
@@ -98,6 +139,14 @@ class ME_AmbientVehicleWorldAuditPlugin : WorldEditorPlugin
 				clearanceErrorPoints++;
 				hasError = true;
 			}
+			if (!point.m_aME_AuditDetails.IsEmpty())
+			{
+				m_aLastDetails.Insert(string.Format("POINT name=%1 coordinates=%2 id=%3 %4", entity.GetName(), entity.GetOrigin(), entity.GetID(), point.ME_GetAuditPrefabDescription()));
+				foreach (string detail : point.m_aME_AuditDetails)
+					m_aLastDetails.Insert(detail);
+			}
+			point.m_aME_AuditDetails.Clear();
+			point.m_sME_AuditPrefabPath = string.Empty;
 			staticObjectIntersections += objectConflicts;
 			if (objectConflicts > 0)
 				warningPoints++;
@@ -136,8 +185,11 @@ class ME_AmbientVehicleWorldAuditPlugin : WorldEditorPlugin
 			sourceCheck = "MISMATCH";
 		PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=SOURCE_CHECK result=%1 knownPoints=%2 matched=%3 missed=%4",
 			sourceCheck, scanned, sourceMatchedPoints, sourceMissedPoints);
-		PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=FINISHED result=%1 scope=inspected_points scanned=%2 passed=%3 errorPoints=%4 warningPoints=%5 unavailablePoints=%6 staticObjectIntersections=%7 clearanceErrorPoints=%8",
+		m_sLastSummary = string.Format("result=%1 scope=inspected_points scanned=%2 passed=%3 errorPoints=%4 warningPoints=%5 unavailablePoints=%6 staticObjectIntersections=%7 clearanceErrorPoints=%8",
 			result, scanned, passed, errorPoints, warningPoints, unavailablePoints, staticObjectIntersections, clearanceErrorPoints);
+		m_sLastCoverage = string.Format("coverage=%1 sourceCheck=%2 matched=%3 missed=%4 unresolvedEntities=%5 unresolvedPointSources=%6", coverage, sourceCheck, sourceMatchedPoints, sourceMissedPoints, unresolvedEntities, unresolvedPointSources);
+		m_bLastRunCompleted = true;
+		PrintFormat("[ME_DEBUG_AVSP_AUDIT] status=FINISHED %1", m_sLastSummary);
 	}
 
 	//! Detects an ambient component in the source or its prefab ancestry without needing a live entity.
