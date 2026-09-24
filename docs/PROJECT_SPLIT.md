@@ -30,3 +30,8 @@ Test сохраняет полный текущий runtime diagnostic набо�
 Каждый addon имеет собственный GUID. `.ent` и `.layer` следует редактировать через Workbench. Production resources нужно зарегистрировать/rebuild в Workbench, чтобы database была создана заново; старый `resourceDatabase.rdb` не переносится. `.meta` демонстрационного мира должна иметь `Name`, соответствующий фактическому resource path.
 
 Цвет Shape показывает только edit-world clearance preflight и не является гарантией runtime spawn.
+
+
+## Справочники каталогов в production
+
+В Configs/Generated добавлен ME_EditableEntityLabelsSnapshot.conf (схема 2, каталоги CIV/FIA/US/USSR игры 1.8.0.13) с классами сериализации. ME_VehicleBoundsSnapshot.conf и его reader перенесены на схему 5 с группами фракций; production GUID габаритов сохранён. Инструкция: [VEHICLE_CATALOG_REFERENCE.md](../ME_Vehicle_Spawn/VEHICLE_CATALOG_REFERENCE.md). Справочник меток помогает интерпретировать include/exclude, но не заменяет текущий каталог и не гарантирует runtime-спавн. Пользователь подтвердил проверку переноса в production Workbench 24.09.2026.

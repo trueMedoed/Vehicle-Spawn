@@ -5,10 +5,6 @@
 [BaseContainerProps(namingConvention: NamingConvention.NC_MUST_HAVE_NAME)]
 class ME_VehicleBoundsSnapshotEntry
 {
-	//! Faction key owning this catalog aggregate.
-	[Attribute("")]
-	string m_sFactionKey;
-
 	//! Editable entity label name identifying this vehicle type.
 	[Attribute("")]
 	string m_sVehicleType;
@@ -51,19 +47,33 @@ class ME_VehicleBoundsSnapshotEntry
 }
 
 //------------------------------------------------------------------------------------------------
+//! One faction group containing vehicle-type aggregates for its catalog.
+[BaseContainerProps(namingConvention: NamingConvention.NC_MUST_HAVE_NAME)]
+class ME_VehicleBoundsSnapshotFaction
+{
+	//! Faction key owning every aggregate in this group.
+	[Attribute("")]
+	string m_sFactionKey;
+
+	//! Aggregate entries sorted lexicographically by vehicle type.
+	[Attribute()]
+	ref array<ref ME_VehicleBoundsSnapshotEntry> m_aEntries;
+}
+
+//------------------------------------------------------------------------------------------------
 //! Root schema for deterministic faction and vehicle-type bounds aggregates.
 [BaseContainerProps(configRoot: true)]
 class ME_VehicleBoundsSnapshot
 {
 	//! Schema compatibility version expected by the reader.
-	[Attribute("4")]
+	[Attribute("5")]
 	int m_iSchemaVersion;
 
 	//! Generator implementation version that produced this aggregate payload.
 	[Attribute("")]
 	string m_sGeneratorVersion;
 
-	//! Entries sorted lexicographically by faction key and vehicle type.
+	//! Faction groups sorted lexicographically by faction key.
 	[Attribute()]
-	ref array<ref ME_VehicleBoundsSnapshotEntry> m_aEntries;
+	ref array<ref ME_VehicleBoundsSnapshotFaction> m_aFactions;
 }

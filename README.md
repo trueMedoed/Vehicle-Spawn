@@ -41,3 +41,8 @@ Vehicle-bounds workflow разделён по ответственности:
 VBT является единственным владельцем per-prefab regression. Test владеет aggregate filter/preview contract. Production `ME_Vehicle_Spawn` не зависит от VBT.
 
 Подробный процесс описан в `ME_Vehicle_Spawn_Test/VEHICLE_BOUNDS_REGRESSION.md`.
+
+
+## Справочники каталогов в production
+
+В Configs/Generated добавлен ME_EditableEntityLabelsSnapshot.conf (схема 2, каталоги CIV/FIA/US/USSR игры 1.8.0.13) с классами сериализации. ME_VehicleBoundsSnapshot.conf и его reader перенесены на схему 5 с группами фракций; production GUID габаритов сохранён. Инструкция: [VEHICLE_CATALOG_REFERENCE.md](ME_Vehicle_Spawn/VEHICLE_CATALOG_REFERENCE.md). Справочник меток помогает интерпретировать include/exclude, но не заменяет текущий каталог и не гарантирует runtime-спавн. Пользователь подтвердил проверку переноса в production Workbench 24.09.2026.

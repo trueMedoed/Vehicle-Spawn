@@ -23,7 +23,7 @@ Features
   - green: an empty terrain position was found and no filter or overlap warning is active;
   - red: no valid terrain position was found, or another ambient spawn area overlaps it;
   - grey: labels conflict, no vehicle matches the filter, or the catalog cannot be checked. Grey takes priority over the terrain/overlap colour.
-• Marks static physics objects whose bounds intersect a spawn area and displays separate messages for object-bound intersections and overlapping spawn areas, with names and coordinates.
+• Marks static physics objects with oriented red wireframes when their model bounds intersect a spawn area. These intersections produce placement warnings with names and coordinates. Failure to find an empty terrain position and overlapping spawn areas produce separate errors.
 • Shows a translucent, faction-coloured box representing conservative vehicle bounds for the point's catalog and label filter. The preview updates when the point is moved or rotated.
 • Shows a yellow direction arrow above the terrain with a heading label such as 90 deg. Both follow point movement and rotation.
 • Displays conflicting-label and empty-filter errors as separate messages above the point. Empty results include the configured include/exclude labels; an unavailable catalog is shown as a warning.
@@ -48,3 +48,11 @@ How to use
 5. Place a vanilla Ambient Vehicle Spawnpoint prefab.
 6. Use the visual indicators and warning dialogs to correct placement or configuration issues.
 7. For a manual check of the current world, open Workbench Plugins and run “Check ambient vehicle spawning”.
+
+Checking existing Conflict scenarios
+You can also use the mod to inspect existing Conflict scenarios. Open a scenario in World Editor with the mod loaded: visual indicators help identify conflicting labels, overlapping spawn areas, and potential obstacles near vehicle spawn points. You do not need to enter Game mode to view these indicators.
+
+Source code and test project
+Source code, the test project, and vanilla-world audit reports are available on GitHub:
+https://github.com/trueMedoed/Vehicle-Spawn
+The test project is intended for Workbench and may contain experimental changes not yet included in the Workshop release.

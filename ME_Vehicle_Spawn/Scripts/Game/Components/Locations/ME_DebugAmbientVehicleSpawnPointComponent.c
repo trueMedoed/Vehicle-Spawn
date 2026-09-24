@@ -586,47 +586,47 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Tests whether an entity's world-space AABB intersects an editor spawn-area sphere.
+	//! Tests whether an entity's oriented model bounds intersects an editor spawn-area sphere.
 	//!
 	//! This is a broad-phase editor warning and is not a guaranteed runtime spawn failure.
-	protected bool ME_DoBoundsIntersectEditorSpawnArea(vector mins, vector maxs, vector origin)
+	protected bool ME_DoBoundsIntersectEditorSpawnArea(IEntity entity, vector mins, vector maxs, vector origin)
 	{
-		vector closestPoint;
+		vector transform[4];
+		entity.GetTransform(transform);
+		vector offset = origin - transform[3];
+		vector closestPoint = transform[3];
+		// Project onto scaled world axes, then clamp in model coordinates.
 		for (int i = 0; i < 3; i++)
 		{
-			closestPoint[i] = origin[i];
-			if (closestPoint[i] < mins[i])
-				closestPoint[i] = mins[i];
-			else if (closestPoint[i] > maxs[i])
-				closestPoint[i] = maxs[i];
+			vector axis = transform[i];
+			float lengthSquared = vector.Dot(axis, axis);
+			if (lengthSquared <= 0.000001)
+				continue;
+			float coordinate = vector.Dot(offset, axis) / lengthSquared;
+			coordinate = Math.Clamp(coordinate, mins[i], maxs[i]);
+			closestPoint += axis * coordinate;
 		}
-
 		vector delta = closestPoint - origin;
-		float distanceSquared = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2];
-		return distanceSquared <= SPAWNING_RADIUS * SPAWNING_RADIUS;
+		return vector.Dot(delta, delta) <= SPAWNING_RADIUS * SPAWNING_RADIUS;
 	}
 
 	//------------------------------------------------------------------------------------------------
 	//! Creates one shared marker for an object, even when several spawn areas intersect its bounds.
 	//!
-	//! The marker size follows the object's bounds but remains visible for small objects and bounded
-	//! for large objects so it remains an editor warning rather than a second spawn-area visualization.
+	//! The wireframe displays the same oriented local model bounds used by the intersection check.
 	static void ME_AddEditorStaticObjectMarker(IEntity entity, vector mins, vector maxs)
 	{
 		if (s_ME_EditorStaticObjectMarkerEntities.Contains(entity))
 			return;
 
-		vector center = (mins + maxs) * 0.5;
-		vector extents = (maxs - mins) * 0.5;
-		float radius = Math.Max(extents[0], Math.Max(extents[1], extents[2]));
-		radius = Math.Max(radius, 0.5);
-		radius = Math.Min(radius, SPAWNING_RADIUS);
-
-		Color color = Color.FromInt(Color.RED);
-		color.SetA(0.375);
-		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
+		// Transform the same local bounds used by the intersection test into world space.
+		ShapeFlags flags = ShapeFlags.WIREFRAME | ShapeFlags.NOZWRITE;
 		s_ME_EditorStaticObjectMarkerEntities.Insert(entity);
-		s_ME_EditorStaticObjectMarkerShapes.Insert(Shape.CreateSphere(color.PackToInt(), flags, center, radius));
+		Shape marker = Shape.Create(ShapeType.BBOX, Color.RED, flags, mins, maxs);
+		vector transform[4];
+		entity.GetTransform(transform);
+		marker.SetMatrix(transform);
+		s_ME_EditorStaticObjectMarkerShapes.Insert(marker);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -648,9 +648,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 		vector mins;
 		vector maxs;
-		entity.GetWorldBounds(mins, maxs);
+		entity.GetBounds(mins, maxs);
 		vector origin = owner.GetOrigin();
-		if (!ME_DoBoundsIntersectEditorSpawnArea(mins, maxs, origin))
+		if (!ME_DoBoundsIntersectEditorSpawnArea(entity, mins, maxs, origin))
 			return true;
 
 		m_iME_EditorStaticObjectConflictCount++;
@@ -742,7 +742,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		SCR_AmbientVehicleSpawnPointComponent overlappingPoint;
 		bool overlap = ME_FindOverlappingEditorSpawnPoint(origin, world, overlappingPoint);
 		ME_RefreshEditorStaticObjectConflicts(owner);
-		bool filterWarning = ME_RefreshEditorEditableLabelConflictWarning(owner, overlappingPoint);
+		bool filterWarning = ME_RefreshEditorEditableLabelConflictWarning(owner, overlappingPoint, found);
 		int color = Color.GREEN;
 		if (filterWarning)
 			color = Color.FromRGBA(128, 128, 128, 255).PackToInt();
@@ -825,7 +825,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Shows separate filter and intersection messages; returns true for catalog or filter problems.
-	bool ME_RefreshEditorEditableLabelConflictWarning(IEntity owner, SCR_AmbientVehicleSpawnPointComponent overlappingPoint)
+	bool ME_RefreshEditorEditableLabelConflictWarning(IEntity owner, SCR_AmbientVehicleSpawnPointComponent overlappingPoint, bool clearanceFound)
 	{
 		ME_ClearEditorEditableLabelConflictWarning();
 		if (!owner)
@@ -839,7 +839,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		bool filterWarning = !conflictingLabels.IsEmpty() || !catalogAvailable || noCandidates;
 		if (!filterWarning)
 		{
-			if (!overlappingPoint && m_iME_EditorStaticObjectConflictCount == 0)
+			if (clearanceFound && !overlappingPoint && m_iME_EditorStaticObjectConflictCount == 0)
 				return false;
 		}
 
@@ -887,9 +887,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			}
 		}
 
+		if (!clearanceFound)
+			warningLines.Insert("ERROR: no empty terrain position found; recheck placement.");
+
 		if (m_iME_EditorStaticObjectConflictCount > 0)
 		{
-			warningLines.Insert("ERROR: spawn area intersects static object bounds.");
+			warningLines.Insert("WARNING: spawn area intersects static object bounds; recheck placement.");
 			foreach (string objectDescription : m_aME_EditorStaticObjectConflictDescriptions)
 				warningLines.Insert(objectDescription);
 		}
