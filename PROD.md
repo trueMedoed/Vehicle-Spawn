@@ -1,6 +1,6 @@
 # Production addon
 
-`ME_Vehicle_Spawn` содержит editor-only marker-визуализацию, предпросмотр габаритов техники, метки фильтра и Workbench warning plugin для ambient vehicle spawn points. Runtime diagnostic overrides сюда не входят.
+`ME_Vehicle_Spawn` содержит editor-only marker-визуализацию, предпросмотр габаритов техники, метки фильтра и Workbench warning plugin для ambient vehicle spawn points. Расширенная runtime-инструментация Test сюда не переносится; существующая диагностика пустого результата фильтра в Update сохранена.
 
 ## Требования
 
@@ -13,3 +13,7 @@
 Shape — визуальная проверка edit-world clearance, а не обещание runtime spawn.
 
 Production нельзя загружать одновременно с `ME_Vehicle_Spawn_Test`.
+
+## Перенос от 2026-09-24
+
+Перенесены проверенные в Test серые сферы, раздельные сообщения о фильтре и пересечениях с именами/координатами, стрелка над рельефом и подпись deg. Исправлены число треугольников габаритов и запись глубины прозрачных фигур. Пользователь подтвердил финальную проверку Test и отдельную проверку Prod в Workbench 2026-09-24. Чек-лист: docs/PRODUCTION_TRANSFER_PLAN.md.

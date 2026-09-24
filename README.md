@@ -18,6 +18,8 @@
 3. Откройте демонстрационный мир, проверьте GameMode, FactionManager, флаг Spawn Vehicles и ambient spawn point.
 4. В Edit mode используйте `Check ambient vehicle spawning`, затем войдите в Game mode.
 
+В редакторе доступны серые сферы при проблемах фильтра/каталога, отдельные сообщения об ошибках меток и пересечениях, а также стрелка направления над рельефом с подписью угла (`deg`).
+
 Цвет Shape — только edit-world clearance preflight. Он не гарантирует будущий runtime spawn.
 
 Подробности: `docs/PROJECT_SPLIT.md` и `docs/PRODUCTION_WORKFLOW.md`.

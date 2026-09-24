@@ -8,6 +8,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 {
 	ref Shape m_ME_EditorSpawnAreaShape;
 	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
+	ref Shape m_ME_EditorVehicleDirectionArrowShape;
+	ref DebugTextWorldSpace m_ME_EditorVehicleDirectionAngleText;
+	ref array<ref DebugTextWorldSpace> m_aME_EditorFilterWarnings = {};
+	// Vertical offset above category labels and spacing between diagnostic lines.
+	static const float ME_EDITOR_EDITABLE_LABEL_CONFLICT_WARNING_OFFSET = 1.5;
+	static const float ME_EDITOR_FILTER_WARNING_LINE_SPACING = 0.75;
 	ref DebugTextWorldSpace m_ME_EditorVehicleCategoryExcludedLabel;
 	ref array<ref DebugTextWorldSpace> m_aME_EditorVehicleCategoryIncludedLabels = {};
 	// World-space font size shared by the excluded and included vehicle label texts, kept small enough to stay readable with a close camera.
@@ -23,6 +29,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	static ref array<ref Shape> s_ME_EditorStaticObjectMarkerShapes = {};
 	protected int m_iME_EditorVehicleCategoryMask;
 	protected int m_iME_EditorStaticObjectConflictCount;
+	protected ref array<string> m_aME_EditorStaticObjectConflictDescriptions = {};
 	protected vector m_vME_EditorVehicleEnvelopeLocalMins;
 	protected vector m_vME_EditorVehicleEnvelopeLocalMaxs;
 	protected bool m_bME_EditorVehicleEnvelopePreviewActive;
@@ -457,6 +464,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	void ME_ClearEditorVehicleEnvelopePreview()
 	{
 		m_ME_EditorVehicleEnvelopeFillShape = null;
+		m_ME_EditorVehicleDirectionArrowShape = null;
+		m_ME_EditorVehicleDirectionAngleText = null;
 		m_bME_EditorVehicleEnvelopePreviewActive = false;
 	}
 
@@ -484,6 +493,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	void ME_RefreshEditorVehicleEnvelopePreview()
 	{
 		m_ME_EditorVehicleEnvelopeFillShape = null;
+		m_ME_EditorVehicleDirectionArrowShape = null;
+		m_ME_EditorVehicleDirectionAngleText = null;
 		if (!m_bME_EditorVehicleEnvelopePreviewActive)
 			return;
 
@@ -512,7 +523,11 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		for (int cornerIndex = 0; cornerIndex < 8; cornerIndex++)
 		{
 			vector localCorner = localCorners[cornerIndex];
-			corners[cornerIndex] = origin + Vector(localCorner[0] * yawCos + localCorner[2] * yawSin, localCorner[1], localCorner[2] * yawCos - localCorner[0] * yawSin);
+			corners[cornerIndex] = origin + Vector(
+				localCorner[0] * yawCos + localCorner[2] * yawSin,
+				localCorner[1],
+				localCorner[2] * yawCos - localCorner[0] * yawSin
+			);
 		}
 
 		vector fillPoints[] = {
@@ -523,9 +538,13 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			corners[0], corners[4], corners[5], corners[0], corners[5], corners[1],
 			corners[2], corners[3], corners[7], corners[2], corners[7], corners[6]
 		};
+
+		// Translucent overlays must not write depth and hide other overlapping debug shapes.
 		Color fillColor = Color.FromInt(m_iME_EditorVehicleEnvelopeFillColor);
 		fillColor.SetA(48.0 / 255.0);
-		m_ME_EditorVehicleEnvelopeFillShape = Shape.CreateTris(fillColor.PackToInt(), ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE, fillPoints, 36);
+		// CreateTris takes triangle count: 36 vertices form 12 triangles.
+		m_ME_EditorVehicleEnvelopeFillShape = Shape.CreateTris(fillColor.PackToInt(), ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE, fillPoints, 12);
+		ME_RefreshEditorVehicleDirectionArrow(origin, yawSin, yawCos, angles[0]);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -605,7 +624,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 		Color color = Color.FromInt(Color.RED);
 		color.SetA(0.375);
-		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
+		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
 		s_ME_EditorStaticObjectMarkerEntities.Insert(entity);
 		s_ME_EditorStaticObjectMarkerShapes.Insert(Shape.CreateSphere(color.PackToInt(), flags, center, radius));
 	}
@@ -635,8 +654,11 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			return true;
 
 		m_iME_EditorStaticObjectConflictCount++;
+		string objectName = entity.GetName();
+		if (objectName.IsEmpty())
+			objectName = entity.Type().ToString();
+		m_aME_EditorStaticObjectConflictDescriptions.Insert(string.Format("object=%1 coordinates=%2", objectName, entity.GetOrigin()));
 		ME_AddEditorStaticObjectMarker(entity, mins, maxs);
-		
 		return true;
 	}
 
@@ -645,6 +667,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	protected void ME_RefreshEditorStaticObjectConflicts(IEntity owner)
 	{
 		m_iME_EditorStaticObjectConflictCount = 0;
+		m_aME_EditorStaticObjectConflictDescriptions.Clear();
 		BaseWorld world = owner.GetWorld();
 		if (world)
 			world.QueryEntitiesBySphere(owner.GetOrigin(), SPAWNING_RADIUS, ME_CollectEditorStaticObjectConflict);
@@ -718,16 +741,19 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		bool found = SCR_WorldTools.FindEmptyTerrainPosition(candidate, origin, SPAWNING_RADIUS, SPAWNING_RADIUS, 2, TraceFlags.ENTS | TraceFlags.OCEAN, world);
 		SCR_AmbientVehicleSpawnPointComponent overlappingPoint;
 		bool overlap = ME_FindOverlappingEditorSpawnPoint(origin, world, overlappingPoint);
-		bool red = !found || overlap;
+		ME_RefreshEditorStaticObjectConflicts(owner);
+		bool filterWarning = ME_RefreshEditorEditableLabelConflictWarning(owner, overlappingPoint);
 		int color = Color.GREEN;
-		if (red)
+		if (filterWarning)
+			color = Color.FromRGBA(128, 128, 128, 255).PackToInt();
+		else if (!found || overlap)
 			color = Color.RED;
 
 		Color colorValue = Color.FromInt(color);
 		colorValue.SetA(0.375);
-		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
+		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
 		m_ME_EditorSpawnAreaShape = Shape.CreateSphere(colorValue.PackToInt(), flags, origin, SPAWNING_RADIUS);
-		ME_RefreshEditorStaticObjectConflicts(owner);
+
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -767,6 +793,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_ClearEditorDebugShape();
 		ME_ClearEditorVehicleEnvelopePreview();
 		ME_ClearEditorVehicleCategoryLabel();
+		ME_ClearEditorEditableLabelConflictWarning();
 		super.OnDelete(owner);
 		ME_RefreshAllEditorDebugShapes();
 	}
@@ -781,7 +808,207 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		ME_ClearEditorDebugShape();
 		ME_ClearEditorVehicleEnvelopePreview();
 		ME_ClearEditorVehicleCategoryLabel();
+		ME_ClearEditorEditableLabelConflictWarning();
 		super._WB_OnDelete(owner, src);
 		ME_RefreshAllEditorDebugShapes();
 	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Releases all editor diagnostic text objects.
+	void ME_ClearEditorEditableLabelConflictWarning()
+	{
+		for (int warningIndex = 0; warningIndex < m_aME_EditorFilterWarnings.Count(); warningIndex++)
+			m_aME_EditorFilterWarnings[warningIndex] = null;
+
+		m_aME_EditorFilterWarnings.Clear();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Shows separate filter and intersection messages; returns true for catalog or filter problems.
+	bool ME_RefreshEditorEditableLabelConflictWarning(IEntity owner, SCR_AmbientVehicleSpawnPointComponent overlappingPoint)
+	{
+		ME_ClearEditorEditableLabelConflictWarning();
+		if (!owner)
+			return false;
+
+		array<EEditableEntityLabel> conflictingLabels = ME_GetConflictingEditableEntityLabels();
+		array<SCR_EntityCatalogEntry> entries;
+		string catalogReason;
+		bool catalogAvailable = ME_GetEditorVehicleEnvelopeCandidates(entries, catalogReason);
+		bool noCandidates = catalogAvailable && entries.IsEmpty();
+		bool filterWarning = !conflictingLabels.IsEmpty() || !catalogAvailable || noCandidates;
+		if (!filterWarning)
+		{
+			if (!overlappingPoint && m_iME_EditorStaticObjectConflictCount == 0)
+				return false;
+		}
+
+		vector transform[4];
+		owner.GetTransform(transform);
+		transform[3] = transform[3] + Vector(0, 8 + ME_EDITOR_EDITABLE_LABEL_CONFLICT_WARNING_OFFSET, 0);
+
+		string warningText;
+		if (!conflictingLabels.IsEmpty() && m_bRequireAllIncludedLabels)
+		{
+			warningText = string.Format(
+				"ERROR: conflicting labels [%1] are both included and excluded. requireAll=true: these requirements are impossible; no vehicle can match this filter.",
+				ME_EditableEntityLabelsToString(conflictingLabels)
+			);
+		}
+		else if (!conflictingLabels.IsEmpty())
+		{
+			warningText = string.Format(
+				"ERROR: conflicting labels [%1] are both included and excluded. requireAll=false: these labels are excluded, but other included labels may still leave candidates.",
+				ME_EditableEntityLabelsToString(conflictingLabels)
+			);
+		}
+
+		array<string> warningLines = {};
+		if (!warningText.IsEmpty())
+			warningLines.Insert(warningText);
+		if (noCandidates)
+		{
+			warningLines.Insert("ERROR: no vehicle candidates match this point's catalog and label filter.");
+			warningLines.Insert(string.Format("include=[%1] exclude=[%2]",
+				ME_EditableEntityLabelsToString(m_aIncludedEditableEntityLabels),
+				ME_EditableEntityLabelsToString(m_aExcludedEditableEntityLabels)));
+		}
+		else if (!catalogAvailable)
+			warningLines.Insert(string.Format("WARNING: vehicle candidates could not be checked (%1).", catalogReason));
+
+		// Geometry messages do not change the filter status or sphere colour.
+		if (overlappingPoint)
+		{
+			IEntity overlappingOwner = overlappingPoint.GetOwner();
+			if (overlappingOwner)
+			{
+				warningLines.Insert("ERROR: spawn area overlaps another spawn point's sphere.");
+				warningLines.Insert(string.Format("overlapping point=%1 coordinates=%2", overlappingOwner.GetName(), overlappingOwner.GetOrigin()));
+			}
+		}
+
+		if (m_iME_EditorStaticObjectConflictCount > 0)
+		{
+			warningLines.Insert("ERROR: spawn area intersects static object bounds.");
+			foreach (string objectDescription : m_aME_EditorStaticObjectConflictDescriptions)
+				warningLines.Insert(objectDescription);
+		}
+
+		const DebugTextFlags textFlags = DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA;
+		const int backgroundColor = Color.FromRGBA(0, 0, 0, 178).PackToInt();
+		// Stack separate messages above the labels, with the first diagnostic at the top.
+		vector warningOrigin = transform[3];
+		for (int warningIndex = 0; warningIndex < warningLines.Count(); warningIndex++)
+		{
+			transform[3] = warningOrigin + Vector(0, (warningLines.Count() - 1 - warningIndex) * ME_EDITOR_FILTER_WARNING_LINE_SPACING, 0);
+			m_aME_EditorFilterWarnings.Insert(DebugTextWorldSpace.CreateInWorld(
+				GetGame().GetWorld(),
+				warningLines[warningIndex],
+				textFlags,
+				transform,
+				ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
+				Color.FromRGBA(255, 48, 48, 255).PackToInt(),
+				backgroundColor,
+				1000
+			));
+		}
+		return filterWarning;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Builds the yellow direction arrow above terrain and displays its heading in degrees.
+	protected void ME_RefreshEditorVehicleDirectionArrow(vector origin, float yawSin, float yawCos, float yawDegrees)
+	{
+		float centerX = (m_vME_EditorVehicleEnvelopeLocalMins[0] + m_vME_EditorVehicleEnvelopeLocalMaxs[0]) * 0.5;
+		float arrowY = 0;
+		float startZ = m_vME_EditorVehicleEnvelopeLocalMaxs[2] + 0.25;
+		vector localPoints[7];
+		localPoints[0] = Vector(centerX - 0.16, arrowY, startZ);
+		localPoints[1] = Vector(centerX + 0.16, arrowY, startZ);
+		localPoints[2] = Vector(centerX - 0.16, arrowY, startZ + 1.6);
+		localPoints[3] = Vector(centerX + 0.16, arrowY, startZ + 1.6);
+		localPoints[4] = Vector(centerX - 0.75, arrowY, startZ + 1.6);
+		localPoints[5] = Vector(centerX + 0.75, arrowY, startZ + 1.6);
+		localPoints[6] = Vector(centerX, arrowY, startZ + 2.7);
+
+		vector points[7];
+		for (int pointIndex = 0; pointIndex < 7; pointIndex++)
+		{
+			vector localPoint = localPoints[pointIndex];
+			points[pointIndex] = origin + Vector(
+				localPoint[0] * yawCos + localPoint[2] * yawSin,
+				localPoint[1],
+				localPoint[2] * yawCos - localPoint[0] * yawSin
+			);
+		}
+
+		// Keep the arrow level above the highest terrain sample across its footprint.
+		BaseWorld world = GetOwner().GetWorld();
+		if (!world)
+			return;
+
+		float groundY = world.GetSurfaceY(points[0][0], points[0][2]);
+		for (int sampleIndex = 1; sampleIndex < 7; sampleIndex++)
+		{
+			float sampleY = world.GetSurfaceY(points[sampleIndex][0], points[sampleIndex][2]);
+			if (sampleY > groundY)
+				groundY = sampleY;
+		}
+
+		// Sample the interior too, so a rise between the corners does not hide the arrow.
+		for (int lengthIndex = 0; lengthIndex <= 6; lengthIndex++)
+		{
+			for (int widthIndex = -1; widthIndex <= 1; widthIndex++)
+			{
+				float sampleX = centerX + widthIndex * 0.75;
+				float sampleZ = startZ + lengthIndex * 0.45;
+				float terrainY = world.GetSurfaceY(
+					origin[0] + sampleX * yawCos + sampleZ * yawSin,
+					origin[2] + sampleZ * yawCos - sampleX * yawSin);
+				if (terrainY > groundY)
+					groundY = terrainY;
+			}
+		}
+
+		for (int heightIndex = 0; heightIndex < 7; heightIndex++)
+		{
+			vector point = points[heightIndex];
+			point[1] = groundY + 0.3;
+			points[heightIndex] = point;
+		}
+
+		vector arrowTriangles[] = {
+			points[0], points[1], points[3], points[0], points[3], points[2],
+			points[4], points[5], points[6]
+		};
+		// Nine vertices form three triangles; the API does not take vertex count.
+		m_ME_EditorVehicleDirectionArrowShape = Shape.CreateTris(
+			Color.FromRGBA(255, 215, 0, 255).PackToInt(), ShapeFlags.DOUBLESIDE, arrowTriangles, 3);
+		// Normalize yaw to 0..359 degrees, rounding to the nearest whole degree.
+		while (yawDegrees < 0)
+			yawDegrees += 360;
+		while (yawDegrees >= 360)
+			yawDegrees -= 360;
+		int headingDegrees = yawDegrees + 0.5;
+		if (headingDegrees >= 360)
+			headingDegrees = 0;
+
+		vector labelTransform[4];
+		GetOwner().GetTransform(labelTransform);
+		float labelX = centerX;
+		float labelZ = startZ + 1.35;
+		vector labelPosition = origin + Vector(labelX * yawCos + labelZ * yawSin, 0, labelZ * yawCos - labelX * yawSin);
+		float labelGroundY = world.GetSurfaceY(labelPosition[0], labelPosition[2]);
+		if (labelGroundY < groundY)
+			labelGroundY = groundY;
+		labelPosition[1] = labelGroundY + 1.0;
+		labelTransform[3] = labelPosition;
+		m_ME_EditorVehicleDirectionAngleText = DebugTextWorldSpace.CreateInWorld(
+			world, string.Format("%1 deg", headingDegrees),
+			DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA,
+			labelTransform, ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
+			Color.FromRGBA(255, 215, 0, 255).PackToInt(),
+			Color.FromRGBA(0, 0, 0, 178).PackToInt(), 1000);
+	}
+
 }

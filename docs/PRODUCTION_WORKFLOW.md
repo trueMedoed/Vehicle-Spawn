@@ -6,7 +6,7 @@
 4. Откройте `worlds/ME_TestWorld.ent` через World Editor.
 5. В слоях проверьте `SCR_BaseGameMode`, `m_eTestGameFlags` с `SpawnVehicles`, `SCR_FactionManager` и ambient vehicle spawn point.
 6. В Edit mode откройте `Check ambient vehicle spawning`. Проверьте guards и editor sphere. Цвет Shape — clearance preflight, не гарантия runtime spawn.
-7. Переместите spawn point и убедитесь, что preview sphere следует за точкой и не дублируется.
+7. Переместите и поверните spawn point: сфера, габариты, стрелка над рельефом и подпись deg должны обновляться без дубликатов. Проверьте серую сферу и отдельные строки при конфликте меток/пустом каталожном результате, сообщения пересечений с другой точкой и статическим объектом. Исправьте причины и удалите точку: старые подсказки должны исчезнуть, соседние — обновиться. Смените ракурс: сфера внутри габаритов не исчезает, посторонних полигонов нет.
 8. Войдите в Game mode и проверьте базовый ambient spawn flow.
 9. Остановите Game mode, проверьте `error.log` и при использовании EnfusionMCP выполните `wb_cleanup` для production addon.
 

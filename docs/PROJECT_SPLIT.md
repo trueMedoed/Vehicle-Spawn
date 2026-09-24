@@ -11,7 +11,7 @@
 
 ## Production contents
 
-- `Scripts/Game/Components/Locations/ME_DebugAmbientVehicleSpawnPointComponent.c` с editor-only marker-визуализацией, предпросмотром габаритов и метками фильтра;
+- `Scripts/Game/Components/Locations/ME_DebugAmbientVehicleSpawnPointComponent.c` с editor-only marker-визуализацией, предпросмотром габаритов, стрелкой направления с углом, метками фильтра и раздельными сообщениями об ошибках/пересечениях;
 - `Scripts/Game/Systems/ME_DebugAmbientVehicleSystem.c`;
 - `Scripts/Game/Faction/ME_DebugFactionCatalogInitialization.c` для editor-only доступа к каталогу;
 - `Scripts/Game/Configs/ME_VehicleBoundsSnapshot.c` и `ME_VehicleBoundsSnapshotHelper.c`;

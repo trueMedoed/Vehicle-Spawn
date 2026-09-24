@@ -4,6 +4,26 @@
 
 Записи упорядочены от новых к старым. Заголовок записи — номер версии Workshop и дата публикации. Номер версии присваивает Workshop, поля версии в `addon.gproj` нет, поэтому с кодом версию связывает git-тег `vX.Y.Z` на коммите, который был опубликован. Английский блок каждой записи — текст, отправленный в Workshop; русский блок ниже него служит внутренней сверкой и не публикуется.
 
+## 1.0.4 | 2026-09-24
+
+Проверка production и публикация версии 1.0.4 подтверждены пользователем 2026-09-24.
+
+### English
+
+- Spawn-area spheres now turn grey when labels conflict, no vehicle matches the filter, or the catalog cannot be checked.
+- Filter errors appear as separate messages above the spawn point. Empty results also show the included and excluded labels.
+- Added on-point error messages for overlapping spawn areas and intersections with static object bounds, including names and coordinates.
+- Added a yellow direction arrow above the terrain, with a heading label in degrees (for example, 90 deg). The arrow and label follow point movement and rotation.
+- Fixed stray polygons in the vehicle bounds preview and spheres disappearing inside translucent bounds when changing the viewing angle.
+
+### Русский
+
+- Сферы области появления становятся серыми при конфликте меток, отсутствии подходящей техники или невозможности проверить каталог.
+- Ошибки фильтра отображаются отдельными сообщениями над точкой. При пустом результате также показаны включающие и исключающие метки.
+- Добавлены сообщения над точкой о пересечениях областей появления и границ статических объектов, с именами и координатами.
+- Добавлена жёлтая стрелка направления над рельефом с подписью угла в градусах (например, 90 deg). Стрелка и подпись обновляются при перемещении и повороте точки.
+- Исправлены посторонние полигоны предпросмотра габаритов и исчезновение сфер внутри полупрозрачных габаритов при смене ракурса.
+
 ## 1.0.3 | 2026-09-10
 
 ### English
