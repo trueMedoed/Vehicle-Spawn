@@ -134,7 +134,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 		Color colorValue = Color.FromInt(color);
 		colorValue.SetA(0.375);
-		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
+		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
 		m_ME_EditorSpawnAreaShape = Shape.CreateSphere(colorValue.PackToInt(), flags, position, 5);
 
 		PrintFormat("[ME_DEBUG_AVSP_EDITOR] entity=%1 position=%2 found=%3 candidate=%4 status=%5", GetOwner().GetName(), position, found, candidate, status);
@@ -771,7 +771,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 		Color color = Color.FromInt(Color.RED);
 		color.SetA(0.375);
-		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
+		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
 		s_ME_EditorStaticObjectMarkerEntities.Insert(entity);
 		s_ME_EditorStaticObjectMarkerShapes.Insert(Shape.CreateSphere(color.PackToInt(), flags, center, radius));
 	}
@@ -932,7 +932,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 		Color colorValue = Color.FromInt(color);
 		colorValue.SetA(0.375);
-		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
+		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
 		m_ME_EditorSpawnAreaShape = Shape.CreateSphere(colorValue.PackToInt(), flags, origin, SPAWNING_RADIUS);
 
 		string reason = "none";
@@ -1444,9 +1444,13 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			corners[2], corners[3], corners[7], corners[2], corners[7], corners[6]
 		};
 
+		// Translucent overlays must not write depth and hide other overlapping debug shapes.
+		// Полупрозрачные подсказки не должны записывать глубину и скрывать другие пересекающиеся фигуры.
 		Color fillColor = Color.FromInt(m_iME_EditorVehicleEnvelopeFillColor);
 		fillColor.SetA(48.0 / 255.0);
-		m_ME_EditorVehicleEnvelopeFillShape = Shape.CreateTris(fillColor.PackToInt(), ShapeFlags.TRANSP | ShapeFlags.DOUBLESIDE, fillPoints, 36);
+		// CreateTris takes triangle count: 36 vertices form 12 triangles.
+		// CreateTris принимает число треугольников: 36 вершин образуют 12 треугольников.
+		m_ME_EditorVehicleEnvelopeFillShape = Shape.CreateTris(fillColor.PackToInt(), ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE, fillPoints, 12);
 		ME_RefreshEditorVehicleDirectionArrow(origin, yawSin, yawCos, angles[0]);
 	}
 
@@ -1519,8 +1523,10 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			points[0], points[1], points[3], points[0], points[3], points[2],
 			points[4], points[5], points[6]
 		};
+		// Nine vertices form three triangles; the API does not take vertex count.
+		// Девять вершин образуют три треугольника; API не принимает число вершин.
 		m_ME_EditorVehicleDirectionArrowShape = Shape.CreateTris(
-			Color.FromRGBA(255, 215, 0, 255).PackToInt(), ShapeFlags.DOUBLESIDE, arrowTriangles, 9);
+			Color.FromRGBA(255, 215, 0, 255).PackToInt(), ShapeFlags.DOUBLESIDE, arrowTriangles, 3);
 		// Normalize yaw to 0..359 degrees, rounding to the nearest whole degree.
 		// Нормализуем yaw до 0..359 градусов с округлением до целого градуса.
 		while (yawDegrees < 0)
