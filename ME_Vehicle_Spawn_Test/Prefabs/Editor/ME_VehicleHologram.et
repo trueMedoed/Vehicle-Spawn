@@ -1,0 +1,6 @@
+SCR_BasePreviewEntity {
+ components {
+  ParametricMaterialInstanceComponent "{5D65A52FBD72F00A}" {
+  }
+ }
+}

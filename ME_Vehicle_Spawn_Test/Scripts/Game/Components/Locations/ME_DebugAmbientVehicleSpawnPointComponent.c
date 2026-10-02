@@ -208,24 +208,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 //! Diagnostics for ambient vehicle spawn points whose label configuration cannot select a vehicle.
 //! The override preserves vanilla spawning: super.Update(faction) selects the prefab, then this code
 //! repeats the catalog filter only to diagnose an empty result during the spawn-time callback.
-//! Editor-only registry, overlap, static-object, and Shape checks are advisory visual diagnostics;
+//! Editor-only registry, overlap, and static-object checks are advisory visual diagnostics;
 //! they neither replace nor guarantee the result of runtime spawning.
 //! Диагностика точек появления ambient-техники, конфигурация меток которых не может выбрать технику.
 //! Override сохраняет ванильное появление: super.Update(faction) выбирает префаб, после чего этот код
 //! повторяет фильтрацию каталога только для диагностики пустого результата при callback во время появления.
-//! Реестр редактора, проверки пересечений и статических объектов, а также Shape-визуализация —
+//! Реестр редактора, проверки пересечений и статических объектов —
 //! рекомендательные визуальные диагностики; они не заменяют и не гарантируют результат runtime-появления.
 
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
-	ref Shape m_ME_EditorSpawnAreaShape;
-	ref Shape m_ME_EditorVehicleEnvelopeFillShape;
-	// Editor-only arrow indicating the vehicle envelope's local forward direction.
-	// Стрелка локального направления вперёд для голограммы техники в редакторе.
-	ref Shape m_ME_EditorVehicleDirectionArrowShape;
-	// Camera-facing heading label above the direction arrow.
-	// Подпись угла направления над стрелкой, развёрнутая к камере.
-	ref DebugTextWorldSpace m_ME_EditorVehicleDirectionAngleText;
 	// Editor-only warning for conflicting labels, empty filter results, or unavailable catalogs.
 	// Editor-only предупреждение о конфликтующих метках, пустом результате фильтра или недоступном каталоге.
 	ref array<ref DebugTextWorldSpace> m_aME_EditorFilterWarnings = {};
@@ -242,6 +234,10 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	// Vertical separation between independent filter messages in world space.
 	// Вертикальный интервал между отдельными сообщениями фильтра в мировом пространстве.
 	static const float ME_EDITOR_FILTER_WARNING_LINE_SPACING = 0.75;
+	// Height and font size of the compact filter-status marker near a point without a usable preview.
+	// Высота и размер шрифта короткой метки проблемы с фильтром рядом с точкой без подходящего preview.
+	static const float ME_EDITOR_FILTER_STATUS_OFFSET = 2.5;
+	static const float ME_EDITOR_FILTER_STATUS_FONT_SIZE = 1.0;
 	// World-space font size shared by the excluded and included vehicle label texts, kept small enough to stay readable with a close camera.
 	// Размер шрифта в мировом пространстве, общий для текстов исключающих и включающих меток техники, достаточно малый, чтобы оставаться читаемым при близкой камере.
 	static const float ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE = 0.5;
@@ -257,14 +253,14 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	static ref array<SCR_AmbientVehicleSpawnPointComponent> s_ME_EditorSpawnPoints = {};
 	static ref array<IEntity> s_ME_EditorStaticObjectMarkerEntities = {};
 	static ref array<ref Shape> s_ME_EditorStaticObjectMarkerShapes = {};
-	protected vector m_vME_EditorVehicleEnvelopeLocalMins;
-	protected vector m_vME_EditorVehicleEnvelopeLocalMaxs;
-	protected bool m_bME_EditorVehicleEnvelopePreviewActive;
-	protected int m_iME_EditorVehicleEnvelopeFillColor;
 	// Cached editor-only wheeled/helicopter category mask for recreating the label after transform changes.
 	// Кэшированная editor-only битовая маска категорий wheeled/helicopter для пересоздания метки после изменения преобразования.
 	protected int m_iME_EditorVehicleCategoryMask;
 	protected int m_iME_EditorStaticObjectConflictCount;
+	// Cached editor advisory result for tinting the mesh preview without repeating the scan every frame.
+	// Кэшированный результат проверок редактора для окраски мешей без повторного сканирования каждый кадр.
+	protected bool m_bME_EditorHologramChecked;
+	protected bool m_bME_EditorHologramPlacementError;
 	// Per-point static obstacle descriptions rebuilt during each bounds scan.
 	// Описания статических препятствий этой точки, пересоздаваемые при каждой проверке границ.
 	protected ref array<string> m_aME_EditorStaticObjectConflictDescriptions = {};
@@ -407,47 +403,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		return conflictingLabels;
 	}
 	
-	//------------------------------------------------------------------------------------------------
-	//! Resolves the spawn point faction color used by the editor-only vehicle envelope fill.
-	//! The fallback uses a neutral diagnostic yellow when no faction is assigned to this point.
-	//! Получает цвет фракции точки появления для editor-only заливки vehicle-envelope.
-	//! Fallback использует нейтральный диагностический жёлтый цвет, когда точке не назначена фракция.
-	protected int ME_GetEditorVehicleEnvelopeFillColor()
-	{
-		const int fallbackColor = Color.FromRGBA(255, 215, 0, 255).PackToInt();
-		IEntity owner = GetOwner();
-		if (!owner)
-			return fallbackColor;
-
-		SCR_FactionAffiliationComponent affiliation = SCR_FactionAffiliationComponent.Cast(owner.FindComponent(SCR_FactionAffiliationComponent));
-		if (!affiliation)
-			return fallbackColor;
-
-		FactionKey factionKey = affiliation.GetDefaultFactionKey();
-		if (factionKey.IsEmpty())
-			factionKey = affiliation.GetAffiliatedFactionKey();
-		if (factionKey.IsEmpty())
-			return fallbackColor;
-
-		FactionManager factionManager = GetGame().GetFactionManager();
-		if (!factionManager)
-			return fallbackColor;
-
-		SCR_Faction faction = SCR_Faction.Cast(factionManager.GetFactionByKey(factionKey));
-		if (!faction)
-			return fallbackColor;
-
-		return faction.GetFactionColor().PackToInt();
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Stores the resolved faction color before rebuilding the validated envelope.
-	//! Сохраняет разрешённый цвет фракции перед перестроением проверенного envelope.
-	void ME_SetEditorVehicleEnvelopeFillColor()
-	{
-		m_iME_EditorVehicleEnvelopeFillColor = ME_GetEditorVehicleEnvelopeFillColor();
-	}
-
 	//------------------------------------------------------------------------------------------------
 	//! Collects the vehicle-catalog candidates that vanilla Update() would filter for this point in the World Editor.
 	//! This diagnostic does not select a prefab, spawn an entity, or change the editable world.
@@ -839,11 +794,11 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Rebuilds every registered editor-only shape after clearing shared static-object markers.
+	//! Rebuilds every registered editor diagnostic after clearing shared static-object markers.
 	//! This visual refresh is advisory and does not invoke or replace runtime spawning.
-	//! Перестраивает каждую зарегистрированную форму только для редактора после очистки общих marker статических объектов.
+	//! Перестраивает диагностику каждой зарегистрированной точки после очистки общих marker статических объектов.
 	//! Это визуальное обновление рекомендательное и не вызывает и не заменяет runtime-появление.
-	void ME_RefreshAllEditorDebugShapes()
+	void ME_RefreshAllEditorDiagnostics()
 	{
 		ME_ClearEditorStaticObjectMarkers();
 		foreach (SCR_AmbientVehicleSpawnPointComponent spawnPoint: s_ME_EditorSpawnPoints)
@@ -853,7 +808,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 			IEntity owner = spawnPoint.GetOwner();
 			if (owner)
-				spawnPoint.ME_RefreshEditorDebugShape(owner);
+				spawnPoint.ME_RefreshEditorDiagnostics(owner);
 		}
 	}
 
@@ -899,26 +854,16 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Releases this point's editor-only spawn-area Shape.
-	//! Освобождает Shape области появления этой точки, используемую только редактором.
-	void ME_ClearEditorDebugShape()
-	{
-		m_ME_EditorSpawnAreaShape = null;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Probes the vanilla empty-terrain search and refreshes advisory editor Shapes for area overlaps and static objects.
+	//! Probes the vanilla empty-terrain search and refreshes advisory editor diagnostics for area overlaps and static objects.
 	//! These visual checks do not alter or guarantee the result of the vanilla runtime spawning probe.
 	//!
 	//! \param[in] owner Spawn point entity whose origin and world are inspected
-	//! Проверяет ванильный поиск свободного места и обновляет рекомендательные Shape редактора для пересечений областей и статических объектов.
+	//! Проверяет ванильный поиск свободного места и обновляет диагностику редактора для пересечений областей и статических объектов.
 	//! Эти визуальные проверки не изменяют и не гарантируют результат ванильной runtime-проверки появления.
 	//!
 	//! \param[in] owner Сущность точки появления, чьи позиция и мир проверяются
-	void ME_RefreshEditorDebugShape(IEntity owner)
+	void ME_RefreshEditorDiagnostics(IEntity owner)
 	{
-		ME_ClearEditorDebugShape();
-
 		vector origin = owner.GetOrigin();
 		BaseWorld world = owner.GetWorld();
 		vector candidate;
@@ -927,16 +872,10 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 		bool overlap = ME_FindOverlappingEditorSpawnPoint(origin, world, overlappingPoint);
 		ME_RefreshEditorStaticObjectConflicts(owner);
 		bool filterWarning = ME_RefreshEditorEditableLabelConflictWarning(owner, overlappingPoint, found);
-		int color = Color.GREEN;
-		if (filterWarning)
-			color = Color.FromRGBA(128, 128, 128, 255).PackToInt();
-		else if (!found || overlap)
-			color = Color.RED;
-
-		Color colorValue = Color.FromInt(color);
-		colorValue.SetA(0.375);
-		ShapeFlags flags = ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE | ShapeFlags.NOOUTLINE;
-		m_ME_EditorSpawnAreaShape = Shape.CreateSphere(colorValue.PackToInt(), flags, origin, SPAWNING_RADIUS);
+		// Area overlaps and static bounds intersections are advisory; only failed clearance makes the preview red.
+		// Пересечения областей и границ статических объектов — предупреждения; красный цвет даёт лишь отсутствие свободной позиции.
+		m_bME_EditorHologramPlacementError = !found;
+		m_bME_EditorHologramChecked = true;
 
 		string reason = "none";
 		if (filterWarning)
@@ -1064,14 +1003,14 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			m_sME_LastEditorFilterDiagnostic = diagnostic;
 		}
 
-		// Add overlap text after filter logging so geometry does not change filter severity or sphere colour.
-		// Добавляем текст пересечения после записи фильтра, сохраняя уровень его диагностики и цвет сферы.
+		// Add overlap text after filter logging so geometry does not change filter severity.
+		// Добавляем текст пересечения после записи фильтра, сохраняя уровень его диагностики.
 		if (overlappingPoint)
 		{
 			IEntity overlappingOwner = overlappingPoint.GetOwner();
 			if (overlappingOwner)
 			{
-				warningLines.Insert("ERROR: spawn area overlaps another spawn point's sphere.");
+				warningLines.Insert("WARNING: spawn areas overlap; recheck simultaneous placement.");
 				warningLines.Insert(string.Format("overlapping point=%1 coordinates=%2", overlappingOwner.GetName(), overlappingOwner.GetOrigin()));
 			}
 		}
@@ -1088,9 +1027,44 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 
 		const DebugTextFlags textFlags = DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA;
 		const int backgroundColor = Color.FromRGBA(0, 0, 0, 178).PackToInt();
+		// Keep the filter failure visible at the point even when no vehicle hologram can be created.
+		// Показываем проблему фильтра у самой точки, даже когда голограмму техники создать нельзя.
+		if (filterWarning)
+		{
+			string statusText;
+			int statusColor = Color.FromRGBA(255, 48, 48, 255).PackToInt();
+			if (noCandidates)
+				statusText = "ERROR: NO VEHICLE CANDIDATES";
+			else if (!conflictingLabels.IsEmpty())
+				statusText = "ERROR: LABEL CONFLICT";
+			else
+			{
+				statusText = "WARNING: CATALOG UNAVAILABLE";
+				statusColor = Color.FromRGBA(255, 190, 0, 255).PackToInt();
+			}
+
+			vector statusTransform[4];
+			owner.GetTransform(statusTransform);
+			statusTransform[3] = statusTransform[3] + Vector(0, ME_EDITOR_FILTER_STATUS_OFFSET, 0);
+			m_aME_EditorFilterWarnings.Insert(DebugTextWorldSpace.CreateInWorld(
+				GetGame().GetWorld(),
+				statusText,
+				textFlags,
+				statusTransform,
+				ME_EDITOR_FILTER_STATUS_FONT_SIZE,
+				statusColor,
+				backgroundColor,
+				1000
+			));
+		}
 		// Stack separate messages above the labels, with the first diagnostic at the top.
 		// Размещаем отдельные сообщения над метками, начиная с первой диагностики сверху.
 		vector warningOrigin = transform[3];
+		// Use warning yellow when there is no filter or clearance error at this point.
+		// Используем жёлтый цвет предупреждений, если у точки нет ошибки фильтра или поиска свободного места.
+		int warningColor = Color.FromRGBA(255, 48, 48, 255).PackToInt();
+		if (conflictingLabels.IsEmpty() && !noCandidates && clearanceFound)
+			warningColor = Color.FromRGBA(255, 190, 0, 255).PackToInt();
 		for (int warningIndex = 0; warningIndex < warningLines.Count(); warningIndex++)
 		{
 			transform[3] = warningOrigin + Vector(0, (warningLines.Count() - 1 - warningIndex) * ME_EDITOR_FILTER_WARNING_LINE_SPACING, 0);
@@ -1100,7 +1074,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 				textFlags,
 				transform,
 				ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
-				Color.FromRGBA(255, 48, 48, 255).PackToInt(),
+				warningColor,
 				backgroundColor,
 				1000
 			));
@@ -1362,224 +1336,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Releases this point's cached editor-only vehicle-envelope fill Shape and bounds.
-	//! Освобождает кэшированные fill Shape и границы vehicle-envelope этой точки только для редактора.
-	void ME_ClearEditorVehicleEnvelopePreview()
-	{
-		m_ME_EditorVehicleEnvelopeFillShape = null;
-		m_ME_EditorVehicleDirectionArrowShape = null;
-		m_ME_EditorVehicleDirectionAngleText = null;
-		m_bME_EditorVehicleEnvelopePreviewActive = false;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Calculates this point's selected faction and vehicle-type aggregate envelope and refreshes it only after strict snapshot validation.
-	//! Рассчитывает aggregate-envelope выбранных фракции и типов техники этой точки и обновляет его только после строгой проверки snapshot.
-	void ME_RefreshValidatedEditorVehicleEnvelopePreview()
-	{
-		string factionKey;
-		array<string> vehicleTypeNames;
-		array<SCR_EntityCatalogEntry> entries;
-		string reason;
-		if (!ME_GetEditorVehicleAggregateSelection(factionKey, vehicleTypeNames, entries, reason))
-		{
-			PrintFormat("[ME_DEBUG_AVSP_WB] status=UNVERIFIABLE operation=ambient_vehicle_envelope_auto_preview reason=%1 entity=%2", reason, GetOwner().GetName());
-			return;
-		}
-
-		vector aggregateMins;
-		vector aggregateMaxs;
-		if (!ME_VehicleBoundsSnapshotHelper.ME_GetValidatedAggregateBounds(factionKey, vehicleTypeNames, aggregateMins, aggregateMaxs, reason))
-		{
-			PrintFormat("[ME_DEBUG_AVSP_WB] status=UNVERIFIABLE operation=ambient_vehicle_envelope_auto_preview reason=%1 entity=%2", reason, GetOwner().GetName());
-			return;
-		}
-
-		ME_ShowEditorVehicleEnvelopePreview(aggregateMins, aggregateMaxs);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Rebuilds this conservative vehicle envelope at its current editor origin, applying only yaw to local X/Z while preserving local Y.
-	//! Перестраивает этот консервативный vehicle-envelope в текущей editor-позиции, применяя только yaw к локальным X/Z и сохраняя локальный Y.
-	void ME_RefreshEditorVehicleEnvelopePreview()
-	{
-		m_ME_EditorVehicleEnvelopeFillShape = null;
-		m_ME_EditorVehicleDirectionArrowShape = null;
-		m_ME_EditorVehicleDirectionAngleText = null;
-		if (!m_bME_EditorVehicleEnvelopePreviewActive)
-			return;
-
-		IEntity owner = GetOwner();
-		if (!owner)
-			return;
-
-		vector origin = owner.GetOrigin();
-		vector transform[4];
-		owner.GetTransform(transform);
-		vector angles = Math3D.MatrixToAngles(transform);
-		float yawRadians = angles[0] * Math.DEG2RAD;
-		float yawSin = Math.Sin(yawRadians);
-		float yawCos = Math.Cos(yawRadians);
-		vector localCorners[8];
-		localCorners[0] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
-		localCorners[1] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
-		localCorners[2] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
-		localCorners[3] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMins[2]);
-		localCorners[4] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
-		localCorners[5] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMins[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
-		localCorners[6] = Vector(m_vME_EditorVehicleEnvelopeLocalMins[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
-		localCorners[7] = Vector(m_vME_EditorVehicleEnvelopeLocalMaxs[0], m_vME_EditorVehicleEnvelopeLocalMaxs[1], m_vME_EditorVehicleEnvelopeLocalMaxs[2]);
-
-		vector corners[8];
-		for (int cornerIndex = 0; cornerIndex < 8; cornerIndex++)
-		{
-			vector localCorner = localCorners[cornerIndex];
-			corners[cornerIndex] = origin + Vector(
-				localCorner[0] * yawCos + localCorner[2] * yawSin,
-				localCorner[1],
-				localCorner[2] * yawCos - localCorner[0] * yawSin
-			);
-		}
-
-		vector fillPoints[] = {
-			corners[0], corners[1], corners[3], corners[0], corners[3], corners[2],
-			corners[4], corners[6], corners[7], corners[4], corners[7], corners[5],
-			corners[0], corners[2], corners[6], corners[0], corners[6], corners[4],
-			corners[1], corners[5], corners[7], corners[1], corners[7], corners[3],
-			corners[0], corners[4], corners[5], corners[0], corners[5], corners[1],
-			corners[2], corners[3], corners[7], corners[2], corners[7], corners[6]
-		};
-
-		// Translucent overlays must not write depth and hide other overlapping debug shapes.
-		// Полупрозрачные подсказки не должны записывать глубину и скрывать другие пересекающиеся фигуры.
-		Color fillColor = Color.FromInt(m_iME_EditorVehicleEnvelopeFillColor);
-		fillColor.SetA(48.0 / 255.0);
-		// CreateTris takes triangle count: 36 vertices form 12 triangles.
-		// CreateTris принимает число треугольников: 36 вершин образуют 12 треугольников.
-		m_ME_EditorVehicleEnvelopeFillShape = Shape.CreateTris(fillColor.PackToInt(), ShapeFlags.TRANSP | ShapeFlags.NOZWRITE | ShapeFlags.DOUBLESIDE, fillPoints, 12);
-		ME_RefreshEditorVehicleDirectionArrow(origin, yawSin, yawCos, angles[0]);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Builds a terrain-height yellow arrow along local +Z beyond the envelope front, using its yaw transform.
-	//! Строит жёлтую стрелку над рельефом вдоль локальной +Z перед голограммой с тем же поворотом по yaw.
-	protected void ME_RefreshEditorVehicleDirectionArrow(vector origin, float yawSin, float yawCos, float yawDegrees)
-	{
-		float centerX = (m_vME_EditorVehicleEnvelopeLocalMins[0] + m_vME_EditorVehicleEnvelopeLocalMaxs[0]) * 0.5;
-		float arrowY = 0;
-		float startZ = m_vME_EditorVehicleEnvelopeLocalMaxs[2] + 0.25;
-		vector localPoints[7];
-		localPoints[0] = Vector(centerX - 0.16, arrowY, startZ);
-		localPoints[1] = Vector(centerX + 0.16, arrowY, startZ);
-		localPoints[2] = Vector(centerX - 0.16, arrowY, startZ + 1.6);
-		localPoints[3] = Vector(centerX + 0.16, arrowY, startZ + 1.6);
-		localPoints[4] = Vector(centerX - 0.75, arrowY, startZ + 1.6);
-		localPoints[5] = Vector(centerX + 0.75, arrowY, startZ + 1.6);
-		localPoints[6] = Vector(centerX, arrowY, startZ + 2.7);
-
-		vector points[7];
-		for (int pointIndex = 0; pointIndex < 7; pointIndex++)
-		{
-			vector localPoint = localPoints[pointIndex];
-			points[pointIndex] = origin + Vector(
-				localPoint[0] * yawCos + localPoint[2] * yawSin,
-				localPoint[1],
-				localPoint[2] * yawCos - localPoint[0] * yawSin
-			);
-		}
-
-		// Keep the arrow level above the highest terrain sample across its footprint.
-		// Держим стрелку горизонтально над самой высокой выборкой рельефа под ней.
-		BaseWorld world = GetOwner().GetWorld();
-		if (!world)
-			return;
-
-		float groundY = world.GetSurfaceY(points[0][0], points[0][2]);
-		for (int sampleIndex = 1; sampleIndex < 7; sampleIndex++)
-		{
-			float sampleY = world.GetSurfaceY(points[sampleIndex][0], points[sampleIndex][2]);
-			if (sampleY > groundY)
-				groundY = sampleY;
-		}
-
-		// Sample the interior too, so a rise between the corners does not hide the arrow.
-		// Проверяем и внутреннюю область, чтобы подъём между углами не скрывал стрелку.
-		for (int lengthIndex = 0; lengthIndex <= 6; lengthIndex++)
-		{
-			for (int widthIndex = -1; widthIndex <= 1; widthIndex++)
-			{
-				float sampleX = centerX + widthIndex * 0.75;
-				float sampleZ = startZ + lengthIndex * 0.45;
-				float terrainY = world.GetSurfaceY(
-					origin[0] + sampleX * yawCos + sampleZ * yawSin,
-					origin[2] + sampleZ * yawCos - sampleX * yawSin);
-				if (terrainY > groundY)
-					groundY = terrainY;
-			}
-		}
-
-		for (int heightIndex = 0; heightIndex < 7; heightIndex++)
-		{
-			vector point = points[heightIndex];
-			point[1] = groundY + 0.3;
-			points[heightIndex] = point;
-		}
-
-		vector arrowTriangles[] = {
-			points[0], points[1], points[3], points[0], points[3], points[2],
-			points[4], points[5], points[6]
-		};
-		// Nine vertices form three triangles; the API does not take vertex count.
-		// Девять вершин образуют три треугольника; API не принимает число вершин.
-		m_ME_EditorVehicleDirectionArrowShape = Shape.CreateTris(
-			Color.FromRGBA(255, 215, 0, 255).PackToInt(), ShapeFlags.DOUBLESIDE, arrowTriangles, 3);
-		// Normalize yaw to 0..359 degrees, rounding to the nearest whole degree.
-		// Нормализуем yaw до 0..359 градусов с округлением до целого градуса.
-		while (yawDegrees < 0)
-			yawDegrees += 360;
-		while (yawDegrees >= 360)
-			yawDegrees -= 360;
-		int headingDegrees = yawDegrees + 0.5;
-		if (headingDegrees >= 360)
-			headingDegrees = 0;
-
-		vector labelTransform[4];
-		GetOwner().GetTransform(labelTransform);
-		float labelX = centerX;
-		float labelZ = startZ + 1.35;
-		vector labelPosition = origin + Vector(labelX * yawCos + labelZ * yawSin, 0, labelZ * yawCos - labelX * yawSin);
-		float labelGroundY = world.GetSurfaceY(labelPosition[0], labelPosition[2]);
-		if (labelGroundY < groundY)
-			labelGroundY = groundY;
-		labelPosition[1] = labelGroundY + 1.0;
-		labelTransform[3] = labelPosition;
-		m_ME_EditorVehicleDirectionAngleText = DebugTextWorldSpace.CreateInWorld(
-			world, string.Format("%1 deg", headingDegrees),
-			DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA,
-			labelTransform, ME_EDITOR_VEHICLE_CATEGORY_LABEL_FONT_SIZE,
-			Color.FromRGBA(255, 215, 0, 255).PackToInt(),
-			Color.FromRGBA(0, 0, 0, 178).PackToInt(), 1000);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Stores this point's validated conservative local vehicle envelope and refreshes only this point's Shapes.
-	//! Сохраняет проверенный консервативный локальный vehicle-envelope этой точки и обновляет Shape только этой точки.
-	void ME_ShowEditorVehicleEnvelopePreview(vector localMins, vector localMaxs)
-	{
-		m_vME_EditorVehicleEnvelopeLocalMins = localMins;
-		m_vME_EditorVehicleEnvelopeLocalMaxs = localMaxs;
-		ME_SetEditorVehicleEnvelopeFillColor();
-		m_bME_EditorVehicleEnvelopePreviewActive = true;
-		ME_RefreshEditorVehicleEnvelopePreview();
-	}
-
-
-	//! Registers the point, refreshes advisory Shapes, and creates its validated envelope and category label during Workbench initialization.
+	//! Registers the point and refreshes advisory diagnostics and category labels during Workbench initialization.
 	//!
 	//! \param[in] owner Spawn point entity being initialized
 	//! \param[in,out] mat Spawn point transform matrix
 	//! \param[in] src Spawn point entity source
-	//! Регистрирует точку, обновляет рекомендательные Shape и создаёт её проверенный envelope и метку категории при инициализации Workbench.
+	//! Регистрирует точку и обновляет диагностику и метки категорий при инициализации Workbench.
 	//!
 	//! \param[in] owner Инициализируемая сущность точки появления
 	//! \param[in,out] mat Матрица преобразования точки появления
@@ -1588,18 +1350,17 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	{
 		super._WB_OnInit(owner, mat, src);
 		ME_RegisterEditorDebugSpawnPoint();
-		ME_RefreshAllEditorDebugShapes();
-		ME_RefreshValidatedEditorVehicleEnvelopePreview();
+		ME_RefreshAllEditorDiagnostics();
 		ME_UpdateEditorVehicleCategoryLabel();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Refreshes every editor-only advisory Shape and category label after Workbench changes a spawn point transform.
+	//! Refreshes every editor-only diagnostic and category label after Workbench changes a spawn point transform.
 	//!
 	//! \param[in] owner Moved spawn point entity
 	//! \param[in,out] mat Updated spawn point transform matrix
 	//! \param[in] src Spawn point entity source
-	//! Обновляет каждую рекомендательную Shape и метку категории только для редактора после изменения Workbench преобразования точки появления.
+	//! Обновляет диагностику и метки категорий после изменения Workbench преобразования точки появления.
 	//!
 	//! \param[in] owner Перемещённая сущность точки появления
 	//! \param[in,out] mat Обновлённая матрица преобразования точки появления
@@ -1607,48 +1368,42 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 	override void _WB_SetTransform(IEntity owner, inout vector mat[4], IEntitySource src)
 	{
 		super._WB_SetTransform(owner, mat, src);
-		ME_RefreshAllEditorDebugShapes();
-		if (m_bME_EditorVehicleEnvelopePreviewActive)
-			ME_RefreshEditorVehicleEnvelopePreview();
+		ME_RefreshAllEditorDiagnostics();
 		ME_RefreshEditorVehicleCategoryLabel(owner);
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Unregisters the point, releases its editor-only Shapes and category label, and refreshes the remaining advisory Shapes during entity deletion.
+	//! Unregisters the point, releases its editor-only markers and category label, and refreshes the remaining diagnostics during entity deletion.
 	//!
 	//! \param[in] owner Spawn point entity being deleted
-	//! Удаляет точку из реестра, освобождает её Shape и метку категории только для редактора и обновляет оставшиеся рекомендательные Shape при удалении сущности.
+	//! Удаляет точку из реестра, освобождает её маркеры и метку категории и обновляет диагностику остальных точек при удалении сущности.
 	//!
 	//! \param[in] owner Удаляемая сущность точки появления
 	override void OnDelete(IEntity owner)
 	{
 		ME_UnregisterEditorDebugSpawnPoint();
-		ME_ClearEditorDebugShape();
-		ME_ClearEditorVehicleEnvelopePreview();
 		ME_ClearEditorVehicleCategoryLabel();
 		ME_ClearEditorEditableLabelConflictWarning();
 		super.OnDelete(owner);
-		ME_RefreshAllEditorDebugShapes();
+		ME_RefreshAllEditorDiagnostics();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Unregisters the point before Workbench removes it, releases its editor-only Shapes and category label, and refreshes remaining advisory Shapes.
+	//! Unregisters the point before Workbench removes it, releases its editor-only markers and category label, and refreshes remaining diagnostics.
 	//!
 	//! \param[in] owner Spawn point entity being removed
 	//! \param[in] src Spawn point entity source
-	//! Удаляет точку из реестра до её удаления Workbench, освобождает её Shape и метку категории только для редактора и обновляет оставшиеся рекомендательные Shape.
+	//! Удаляет точку из реестра до её удаления Workbench, освобождает её маркеры и метку категории и обновляет диагностику остальных точек.
 	//!
 	//! \param[in] owner Удаляемая сущность точки появления
 	//! \param[in] src Источник сущности точки появления
 	override void _WB_OnDelete(IEntity owner, IEntitySource src)
 	{
 		ME_UnregisterEditorDebugSpawnPoint();
-		ME_ClearEditorDebugShape();
-		ME_ClearEditorVehicleEnvelopePreview();
 		ME_ClearEditorVehicleCategoryLabel();
 		ME_ClearEditorEditableLabelConflictWarning();
 		super._WB_OnDelete(owner, src);
-		ME_RefreshAllEditorDebugShapes();
+		ME_RefreshAllEditorDiagnostics();
 	}
 
 	//! Audits labels and catalog without spawning vehicles; error and unavailable flags are independent.
@@ -1720,8 +1475,8 @@ modded class SCR_AmbientVehicleSpawnPointComponent
 			if (vector.Dot(delta, delta) > diameter * diameter)
 				continue;
 			hasOverlap = true;
-			ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity=%1 coordinates=%2 overlappingCoordinates=%3",
-				owner.GetName(), owner.GetOrigin(), other.GetOrigin()), LogLevel.ERROR);
+			ME_WriteAuditDetail(string.Format("[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity=%1 coordinates=%2 overlappingCoordinates=%3",
+				owner.GetName(), owner.GetOrigin(), other.GetOrigin()), LogLevel.WARNING);
 		}
 		return hasOverlap;
 	}

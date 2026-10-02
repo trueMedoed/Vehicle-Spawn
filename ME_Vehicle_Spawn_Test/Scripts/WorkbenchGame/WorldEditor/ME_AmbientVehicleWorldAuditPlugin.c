@@ -129,8 +129,7 @@ class ME_AmbientVehicleWorldAuditPlugin : WorldEditorPlugin
 			point.m_aME_AuditDetails.Clear();
 			point.m_sME_AuditPrefabPath = GetPointPrefabPath(source);
 			point.ME_AuditEditorVehicleFilter(hasError, unavailable);
-			if (point.ME_AuditEditorPointOverlaps(auditPoints))
-				hasError = true;
+			bool pointOverlap = point.ME_AuditEditorPointOverlaps(auditPoints);
 			bool geometryUnavailable;
 			bool clearanceFailed;
 			int objectConflicts = point.ME_AuditEditorStaticObjects(geometryUnavailable, clearanceFailed);
@@ -148,14 +147,14 @@ class ME_AmbientVehicleWorldAuditPlugin : WorldEditorPlugin
 			point.m_aME_AuditDetails.Clear();
 			point.m_sME_AuditPrefabPath = string.Empty;
 			staticObjectIntersections += objectConflicts;
-			if (objectConflicts > 0)
+			if (pointOverlap || objectConflicts > 0)
 				warningPoints++;
 			unavailable = unavailable || geometryUnavailable;
 			if (hasError)
 				errorPoints++;
 			if (unavailable)
 				unavailablePoints++;
-			if (!hasError && !unavailable && objectConflicts == 0)
+			if (!hasError && !unavailable && !pointOverlap && objectConflicts == 0)
 				passed++;
 		}
 		string result = "PASS";

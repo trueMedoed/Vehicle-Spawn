@@ -1,4 +1,5 @@
 # Extracted from ME_AmbientAuditBatch_6.txt; game=1.8.0.13; date=2026-09-24; includes point_overlaps
+# Reclassified overlapping_spawn_area ERROR -> WARNING on 2026-10-03 from Batch 6; not a fresh seven-world run.
 status=STARTED requested=1
 status=WORLD_LOADING world=worlds/MP/CTI_Campaign_Cain.ent
 status=WORLD_STARTED world=worlds/MP/CTI_Campaign_Cain.ent
@@ -108,11 +109,11 @@ POINT name= coordinates=<10521.2,22.407,9725.95> id=3446 pointPrefab=AmbientVehi
 [ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_empty_terrain_position action=RECHECK_PLACEMENT entity= coordinates=<10521.2,22.407,9725.95> pointPrefab=AmbientVehicleSpawnpoint_USSR
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<10521.2,22.407,9725.95> object=GenericEntity objectCoordinates=<10521.4,22.336,9731.65> objectId=0x0000000000108420 {} localBoundsMin=<-1.93,-0.112161,-0.963888> localBoundsMax=<1.93,0.111881,0.969034> pointPrefab=AmbientVehicleSpawnpoint_USSR
 POINT name= coordinates=<7123.8,314.488,6047.73> id=3448 pointPrefab=AmbientVehicleSpawnpoint_USSR
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7123.8,314.488,6047.73> overlappingCoordinates=<7132.75,314.456,6051.48> pointPrefab=AmbientVehicleSpawnpoint_USSR
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7123.8,314.488,6047.73> overlappingCoordinates=<7132.75,314.456,6051.48> pointPrefab=AmbientVehicleSpawnpoint_USSR
 POINT name= coordinates=<7113.65,314.462,6043.78> id=3449 pointPrefab=AmbientVehicleSpawnpoint_USSR
 [ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates entity= coordinates=<7113.65,314.462,6043.78> faction=USSR include=[VEHICLE_APC] exclude=[TRAIT_ARMED] requireAll=0 pointPrefab=AmbientVehicleSpawnpoint_USSR
 POINT name= coordinates=<7132.75,314.456,6051.48> id=3450 pointPrefab=AmbientVehicleSpawnpoint_USSR
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7132.75,314.456,6051.48> overlappingCoordinates=<7123.8,314.488,6047.73> pointPrefab=AmbientVehicleSpawnpoint_USSR
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7132.75,314.456,6051.48> overlappingCoordinates=<7123.8,314.488,6047.73> pointPrefab=AmbientVehicleSpawnpoint_USSR
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<7132.75,314.456,6051.48> object=SCR_DestructibleBuildingEntity objectCoordinates=<7119.35,314.724,6057.69> objectId=0x00000000001796C0 {} localBoundsMin=<-15.5622,-1.9,-5.52702> localBoundsMax=<15.4594,5.2269,5.71696> pointPrefab=AmbientVehicleSpawnpoint_USSR
 POINT name= coordinates=<2635.64,24.218,5467.07> id=3451 pointPrefab=AmbientVehicleSpawnpoint_USSR
 [ME_DEBUG_AVSP_AUDIT] status=ERROR reason=conflicting_labels conflicts=[TRAIT_ARMED] consequence=requirements are impossible; no vehicle can match entity= coordinates=<2635.64,24.218,5467.07> faction=USSR include=[VEHICLE_HELICOPTER, TRAIT_ARMED] exclude=[TRAIT_ARMED] requireAll=1 pointPrefab=AmbientVehicleSpawnpoint_USSR
@@ -239,6 +240,6 @@ POINT name= coordinates=<6118.97,417.147,6219.08> id=7780 pointPrefab=AmbientVeh
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<6118.97,417.147,6219.08> object=Tree objectCoordinates=<6109.69,417.634,6211.58> objectId=0x0000000000094F35 {} localBoundsMin=<-10.6124,-3.3468,-13.0455> localBoundsMax=<9.93426,28.1708,11.0377> pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<6118.97,417.147,6219.08> object=Tree objectCoordinates=<6122,416.769,6215.06> objectId=0x0000000000158FC8 {} localBoundsMin=<-0.626794,-0.123714,-0.5246> localBoundsMax=<0.622718,1.01531,0.544739> pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<6118.97,417.147,6219.08> object=StaticModelEntity objectCoordinates=<6125.22,416.882,6224.1> objectId=0x00000000000F2858 {} localBoundsMin=<-0.85371,-3.96103,-2.27308> localBoundsMax=<0.852857,0.000188,5.40002> pointPrefab=AmbientVehicleSpawnpoint_FIA
-status=WORLD_FINISHED world=worlds/MP/CTI_Campaign_Cain.ent result=ERRORS_FOUND scope=inspected_points scanned=62 passed=16 errorPoints=19 warningPoints=43 unavailablePoints=0 staticObjectIntersections=169 clearanceErrorPoints=12
+status=WORLD_FINISHED world=worlds/MP/CTI_Campaign_Cain.ent result=ERRORS_FOUND scope=inspected_points scanned=62 passed=16 errorPoints=17 warningPoints=44 unavailablePoints=0 staticObjectIntersections=169 clearanceErrorPoints=12
 world=worlds/MP/CTI_Campaign_Cain.ent coverage=UNVERIFIED sourceCheck=MATCH matched=62 missed=0 unresolvedEntities=3371 unresolvedPointSources=0
 status=FINISHED completed=1 requested=1

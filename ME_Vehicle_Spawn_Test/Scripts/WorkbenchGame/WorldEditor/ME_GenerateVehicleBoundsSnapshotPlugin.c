@@ -118,8 +118,8 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 	protected ME_VehicleBoundsSnapshot ME_CreateAggregateSnapshot()
 	{
 		ME_VehicleBoundsSnapshot snapshot = new ME_VehicleBoundsSnapshot();
-		snapshot.m_iSchemaVersion = 5;
-		snapshot.m_sGeneratorVersion = "catalog-aggregate-generator-v5-faction-groups-provenance";
+		snapshot.m_iSchemaVersion = 6;
+		snapshot.m_sGeneratorVersion = "catalog-aggregate-generator-v6-largest-footprint";
 		snapshot.m_aFactions = {};
 		return snapshot;
 	}
@@ -354,6 +354,8 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 	//! Обновляет один aggregate фракции/типа уникальным VBT prefab и детерминированным provenance.
 	protected void ME_AccumulateCandidate(ME_VehicleBoundsSnapshot snapshot, string factionKey, string vehicleType, string prefabPath, vector localMins, vector localMaxs)
 	{
+		float footprintArea = (localMaxs[0] - localMins[0]) * (localMaxs[2] - localMins[2]);
+		float footprintHeight = localMaxs[1] - localMins[1];
 		ME_VehicleBoundsSnapshotFaction faction = ME_FindFaction(snapshot, factionKey);
 		if (!faction)
 		{
@@ -371,6 +373,9 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 			aggregate.m_vLocalMins = localMins;
 			aggregate.m_vLocalMaxs = localMaxs;
 			aggregate.m_iCandidateCount = 1;
+			aggregate.m_fLargestFootprintArea = footprintArea;
+			aggregate.m_fLargestFootprintHeight = footprintHeight;
+			aggregate.m_sLargestFootprintSourcePrefab = prefabPath;
 			aggregate.m_sMinXSourcePrefab = prefabPath;
 			aggregate.m_sMaxXSourcePrefab = prefabPath;
 			aggregate.m_sMinYSourcePrefab = prefabPath;
@@ -382,6 +387,12 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 		}
 
 		aggregate.m_iCandidateCount++;
+		if (footprintArea > aggregate.m_fLargestFootprintArea || footprintArea == aggregate.m_fLargestFootprintArea && (footprintHeight > aggregate.m_fLargestFootprintHeight || footprintHeight == aggregate.m_fLargestFootprintHeight && prefabPath < aggregate.m_sLargestFootprintSourcePrefab))
+		{
+			aggregate.m_fLargestFootprintArea = footprintArea;
+			aggregate.m_fLargestFootprintHeight = footprintHeight;
+			aggregate.m_sLargestFootprintSourcePrefab = prefabPath;
+		}
 		for (int axis = 0; axis < 3; axis++)
 		{
 			string minSource = ME_GetSourcePrefab(aggregate, axis, false);
@@ -454,7 +465,7 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 					return false;
 				}
 
-				if (!ME_ValidateAggregateSource(entry, prefix, entry.m_sMinXSourcePrefab, 0, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxXSourcePrefab, 0, true, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMinYSourcePrefab, 1, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxYSourcePrefab, 1, true, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMinZSourcePrefab, 2, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxZSourcePrefab, 2, true, reason))
+				if (!ME_ValidateAggregateSource(entry, prefix, entry.m_sMinXSourcePrefab, 0, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxXSourcePrefab, 0, true, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMinYSourcePrefab, 1, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxYSourcePrefab, 1, true, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMinZSourcePrefab, 2, false, reason) || !ME_ValidateAggregateSource(entry, prefix, entry.m_sMaxZSourcePrefab, 2, true, reason) || !ME_ValidateLargestFootprintSource(entry, prefix, reason))
 					return false;
 				previousVehicleType = entry.m_sVehicleType;
 			}
@@ -526,6 +537,38 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 		if (Math.AbsFloat(sourceValue - aggregateValue) > 0.0011)
 		{
 			reason = string.Format("aggregate_source_extreme_mismatch path=%1 axis=%2", sourcePrefab, axis);
+			return false;
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Checks that the stored representative is the largest actual candidate in this group.
+	//! Проверяет, что сохранённый prefab действительно крупнейший в этой группе.
+	protected bool ME_ValidateLargestFootprintSource(ME_VehicleBoundsSnapshotEntry entry, string prefix, out string reason)
+	{
+		reason = "";
+		float bestArea = -1;
+		float bestHeight = -1;
+		string bestPrefab;
+		foreach (ME_VehicleBoundsVbtCandidateIndexRecord record : m_aVbtRecords)
+		{
+			string path = record.m_Entry.m_sPrefab;
+			if (!m_aProcessedCandidates.Contains(prefix + path)) continue;
+			vector mins = record.m_Entry.m_vLocalMins;
+			vector maxs = record.m_Entry.m_vLocalMaxs;
+			float area = (maxs[0] - mins[0]) * (maxs[2] - mins[2]);
+			float height = maxs[1] - mins[1];
+			if (area > bestArea || area == bestArea && (height > bestHeight || height == bestHeight && path < bestPrefab))
+			{
+				bestArea = area;
+				bestHeight = height;
+				bestPrefab = path;
+			}
+		}
+		if (bestPrefab != entry.m_sLargestFootprintSourcePrefab || Math.AbsFloat(bestArea - entry.m_fLargestFootprintArea) > 0.0011 || Math.AbsFloat(bestHeight - entry.m_fLargestFootprintHeight) > 0.0011)
+		{
+			reason = string.Format("aggregate_largest_footprint_mismatch type=%1", entry.m_sVehicleType);
 			return false;
 		}
 		return true;
@@ -873,7 +916,7 @@ class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 			{
 				ME_VehicleBoundsSnapshotEntry expected = expectedFaction.m_aEntries[entryIndex];
 				ME_VehicleBoundsSnapshotEntry actual = actualFaction.m_aEntries[entryIndex];
-				if (!actual || expected.m_sVehicleType != actual.m_sVehicleType || expected.m_iCandidateCount != actual.m_iCandidateCount || expected.m_sMinXSourcePrefab != actual.m_sMinXSourcePrefab || expected.m_sMaxXSourcePrefab != actual.m_sMaxXSourcePrefab || expected.m_sMinYSourcePrefab != actual.m_sMinYSourcePrefab || expected.m_sMaxYSourcePrefab != actual.m_sMaxYSourcePrefab || expected.m_sMinZSourcePrefab != actual.m_sMinZSourcePrefab || expected.m_sMaxZSourcePrefab != actual.m_sMaxZSourcePrefab || !ME_AreVectorsClose(expected.m_vLocalMins, actual.m_vLocalMins) || !ME_AreVectorsClose(expected.m_vLocalMaxs, actual.m_vLocalMaxs))
+				if (!actual || expected.m_sVehicleType != actual.m_sVehicleType || expected.m_iCandidateCount != actual.m_iCandidateCount || expected.m_sLargestFootprintSourcePrefab != actual.m_sLargestFootprintSourcePrefab || Math.AbsFloat(expected.m_fLargestFootprintArea - actual.m_fLargestFootprintArea) > 0.0011 || Math.AbsFloat(expected.m_fLargestFootprintHeight - actual.m_fLargestFootprintHeight) > 0.0011 || expected.m_sMinXSourcePrefab != actual.m_sMinXSourcePrefab || expected.m_sMaxXSourcePrefab != actual.m_sMaxXSourcePrefab || expected.m_sMinYSourcePrefab != actual.m_sMinYSourcePrefab || expected.m_sMaxYSourcePrefab != actual.m_sMaxYSourcePrefab || expected.m_sMinZSourcePrefab != actual.m_sMinZSourcePrefab || expected.m_sMaxZSourcePrefab != actual.m_sMaxZSourcePrefab || !ME_AreVectorsClose(expected.m_vLocalMins, actual.m_vLocalMins) || !ME_AreVectorsClose(expected.m_vLocalMaxs, actual.m_vLocalMaxs))
 				{
 					reason = "reload_entry_mismatch";
 					return false;

@@ -1,4 +1,5 @@
 # Extracted from ME_AmbientAuditBatch_6.txt; game=1.8.0.13; date=2026-09-24; includes point_overlaps
+# Reclassified overlapping_spawn_area ERROR -> WARNING on 2026-10-03 from Batch 6; not a fresh seven-world run.
 status=STARTED requested=1
 status=WORLD_LOADING world=worlds/MP/CTI_Campaign_HQC_Eden.ent
 status=WORLD_STARTED world=worlds/MP/CTI_Campaign_HQC_Eden.ent
@@ -113,7 +114,7 @@ POINT name= coordinates=<7228.17,136.625,2321.68> id=1778 pointPrefab=AmbientVeh
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<7228.17,136.625,2321.68> object=GenericEntity objectCoordinates=<7226.55,136.5,2320.77> objectId=0x2000000000001E76 {} localBoundsMin=<-1.16402,0.34612,-1.87398> localBoundsMax=<1.10833,1.97975,2.21205> pointPrefab=AmbientVehicleSpawnpoint_CIV
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<7228.17,136.625,2321.68> object=GenericEntity objectCoordinates=<7224.45,136.962,2320.52> objectId=0x0000000000101AA5 {} localBoundsMin=<-0.004352,0.028919,-0.017813> localBoundsMax=<1.55506,2.46593,0.047896> pointPrefab=AmbientVehicleSpawnpoint_CIV
 POINT name= coordinates=<7248.58,136.872,2202.72> id=1779 pointPrefab=AmbientVehicleSpawnpoint_CIV
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7248.58,136.872,2202.72> overlappingCoordinates=<7241.81,136.754,2204.95> pointPrefab=AmbientVehicleSpawnpoint_CIV
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7248.58,136.872,2202.72> overlappingCoordinates=<7241.81,136.754,2204.95> pointPrefab=AmbientVehicleSpawnpoint_CIV
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<7248.58,136.872,2202.72> object=SCR_DestructibleBuildingEntity objectCoordinates=<7258.44,136.713,2216.07> objectId=0x0000000000126541 {} localBoundsMin=<-10.3152,-4.50401,-9.53446> localBoundsMax=<5.86759,11.2537,11.6766> pointPrefab=AmbientVehicleSpawnpoint_CIV
 POINT name= coordinates=<8148.71,202.385,3913.96> id=1781 pointPrefab=AmbientVehicleSpawnpoint_CIV
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<8148.71,202.385,3913.96> object=Tree objectCoordinates=<8137.82,203.764,3916.82> objectId=0x00000000000DBEE9 {} localBoundsMin=<-5.39062,-1.14745,-5.08201> localBoundsMax=<5.68883,16.7965,5.48684> pointPrefab=AmbientVehicleSpawnpoint_CIV
@@ -165,18 +166,18 @@ POINT name= coordinates=<6528.23,86.793,5291> id=1814 pointPrefab=AmbientVehicle
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<6528.23,86.793,5291> object=Tree objectCoordinates=<6540.94,86.2091,5296.57> objectId=0x00000000000BDE2A {} localBoundsMin=<-10.8413,-1.76125,-10.8108> localBoundsMax=<10.1908,26.4578,9.92245> pointPrefab=AmbientVehicleSpawnpoint_CIV
 POINT name= coordinates=<10041.3,2.688,1588.38> id=12569 pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates entity= coordinates=<10041.3,2.688,1588.38> faction=FIA include=[TRAIT_AMPHIBIOUS] exclude=[TRAIT_ARMED] requireAll=1 pointPrefab=AmbientVehicleSpawnpoint_FIA
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10041.3,2.688,1588.38> overlappingCoordinates=<10049.1,2.704,1584.87> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10041.3,2.688,1588.38> overlappingCoordinates=<10049.1,2.704,1584.87> pointPrefab=AmbientVehicleSpawnpoint_FIA
 POINT name= coordinates=<10049.1,2.704,1584.87> id=12570 pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates entity= coordinates=<10049.1,2.704,1584.87> faction=FIA include=[TRAIT_AMPHIBIOUS] exclude=[TRAIT_ARMED] requireAll=1 pointPrefab=AmbientVehicleSpawnpoint_FIA
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10049.1,2.704,1584.87> overlappingCoordinates=<10041.3,2.688,1588.38> pointPrefab=AmbientVehicleSpawnpoint_FIA
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10049.1,2.704,1584.87> overlappingCoordinates=<10055.2,2.801,1582.01> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10049.1,2.704,1584.87> overlappingCoordinates=<10041.3,2.688,1588.38> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10049.1,2.704,1584.87> overlappingCoordinates=<10055.2,2.801,1582.01> pointPrefab=AmbientVehicleSpawnpoint_FIA
 POINT name= coordinates=<10055.2,2.801,1582.01> id=12571 pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates entity= coordinates=<10055.2,2.801,1582.01> faction=FIA include=[TRAIT_AMPHIBIOUS] exclude=[TRAIT_ARMED] requireAll=1 pointPrefab=AmbientVehicleSpawnpoint_FIA
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10055.2,2.801,1582.01> overlappingCoordinates=<10049.1,2.704,1584.87> pointPrefab=AmbientVehicleSpawnpoint_FIA
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10055.2,2.801,1582.01> overlappingCoordinates=<10061.2,2.801,1577.97> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10055.2,2.801,1582.01> overlappingCoordinates=<10049.1,2.704,1584.87> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10055.2,2.801,1582.01> overlappingCoordinates=<10061.2,2.801,1577.97> pointPrefab=AmbientVehicleSpawnpoint_FIA
 POINT name= coordinates=<10061.2,2.801,1577.97> id=12572 pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates entity= coordinates=<10061.2,2.801,1577.97> faction=FIA include=[TRAIT_AMPHIBIOUS] exclude=[TRAIT_ARMED] requireAll=1 pointPrefab=AmbientVehicleSpawnpoint_FIA
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10061.2,2.801,1577.97> overlappingCoordinates=<10055.2,2.801,1582.01> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<10061.2,2.801,1577.97> overlappingCoordinates=<10055.2,2.801,1582.01> pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<10061.2,2.801,1577.97> object=SCR_DestructibleBuildingEntity objectCoordinates=<10085.6,3.15807,1576.45> objectId=0x000000000001036F {} localBoundsMin=<-20.4626,-3.95,-8.27775> localBoundsMax=<20.7938,7.10827,10.9497> pointPrefab=AmbientVehicleSpawnpoint_FIA
 POINT name= coordinates=<5607.05,90.546,5905.68> id=18877 pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates entity= coordinates=<5607.05,90.546,5905.68> faction=FIA include=[FACTION_FIA, VEHICLE_APC] exclude=[TRAIT_ARMED] requireAll=1 pointPrefab=AmbientVehicleSpawnpoint_FIA
@@ -371,7 +372,7 @@ POINT name= coordinates=<5545.94,89.563,5901.06> id=18918 pointPrefab=AmbientVeh
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<5545.94,89.563,5901.06> object=GenericEntity objectCoordinates=<5550.3,89.288,5902.88> objectId=0x200000000000417B {} localBoundsMin=<-0.622088,-0.011512,-0.601461> localBoundsMax=<0.60882,0.887842,0.624082> pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<5545.94,89.563,5901.06> object=GenericEntity objectCoordinates=<5552.7,89.188,5899.28> objectId=0x2000000000004182 {} localBoundsMin=<-3.79858,-0.247267,-2.1958> localBoundsMax=<3.79856,12.5063,4.38534> pointPrefab=AmbientVehicleSpawnpoint_FIA
 POINT name= coordinates=<7241.81,136.754,2204.95> id=18919 pointPrefab=AmbientVehicleSpawnpoint_FIA
-[ME_DEBUG_AVSP_AUDIT] status=ERROR reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7241.81,136.754,2204.95> overlappingCoordinates=<7248.58,136.872,2202.72> pointPrefab=AmbientVehicleSpawnpoint_FIA
+[ME_DEBUG_AVSP_AUDIT] status=WARNING reason=overlapping_spawn_area action=RECHECK_PLACEMENT entity= coordinates=<7241.81,136.754,2204.95> overlappingCoordinates=<7248.58,136.872,2202.72> pointPrefab=AmbientVehicleSpawnpoint_FIA
 POINT name= coordinates=<9115.88,76.614,2281.87> id=18921 pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<9115.88,76.614,2281.87> object=StaticModelEntity objectCoordinates=<9111.95,78.6914,2293.74> objectId=0x00000000000C58F8 {} localBoundsMin=<-2.25782,-6,-2.37554> localBoundsMax=<2.33844,0.024795,7.33344> pointPrefab=AmbientVehicleSpawnpoint_FIA
 POINT name= coordinates=<5845.2,235.007,7255.72> id=18923 pointPrefab=AmbientVehicleSpawnpoint_FIA
@@ -460,6 +461,6 @@ POINT name= coordinates=<5373.13,19.296,9978.16> id=18946 pointPrefab=AmbientVeh
 POINT name= coordinates=<5106.09,40.154,10426.5> id=18950 pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=ERROR reason=no_vehicle_candidates entity= coordinates=<5106.09,40.154,10426.5> faction=FIA include=[VEHICLE_APC] exclude=[TRAIT_ARMED] requireAll=0 pointPrefab=AmbientVehicleSpawnpoint_FIA
 [ME_DEBUG_AVSP_AUDIT] status=WARNING reason=static_object_bounds_intersection boundsType=OBB action=RECHECK_PLACEMENT entity= coordinates=<5106.09,40.154,10426.5> object=Tree objectCoordinates=<5111.23,38.767,10427.8> objectId=0x00000000000E05CD {} localBoundsMin=<-1.13833,-0.360146,-1.08912> localBoundsMax=<1.09428,1.802,1.24184> pointPrefab=AmbientVehicleSpawnpoint_FIA
-status=WORLD_FINISHED world=worlds/MP/CTI_Campaign_HQC_Eden.ent result=ERRORS_FOUND scope=inspected_points scanned=181 passed=83 errorPoints=18 warningPoints=93 unavailablePoints=0 staticObjectIntersections=335 clearanceErrorPoints=9
+status=WORLD_FINISHED world=worlds/MP/CTI_Campaign_HQC_Eden.ent result=ERRORS_FOUND scope=inspected_points scanned=181 passed=83 errorPoints=16 warningPoints=97 unavailablePoints=0 staticObjectIntersections=335 clearanceErrorPoints=9
 world=worlds/MP/CTI_Campaign_HQC_Eden.ent coverage=UNVERIFIED sourceCheck=MATCH matched=181 missed=0 unresolvedEntities=2556 unresolvedPointSources=0
 status=FINISHED completed=1 requested=1
