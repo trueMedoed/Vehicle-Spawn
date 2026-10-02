@@ -1,6 +1,6 @@
 # Справочник техники по фракциям и меткам
 
-Генератор `Generate entity labels snapshots` находится в категории `ME_Vehicle_Spawn/Entity Labels` плагинов World Editor тестового аддона.
+Генератор `Generate entity labels snapshots` находится в категории `[ME] Vehicle Spawn/Entity Labels` плагинов World Editor тестового аддона.
 
 Результат: `ME_Vehicle_Spawn_Test/Configs/Generated/ME_EditableEntityLabelsSnapshot.conf`.
 

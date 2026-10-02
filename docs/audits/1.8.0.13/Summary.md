@@ -22,7 +22,7 @@
 
 ## Повторная проверка
 
-Сохранить работу в World Editor, выполнить Reload WB Scripts и запустить Batch audit ambient vehicle scenarios для тех же семи миров. Затем из корня проекта сравнить новый отчёт, указав фактическую версию игры из console.log:
+Сохранить работу в World Editor, выполнить Reload WB Scripts и запустить `Batch audit ambient vehicle scenarios` в категории `[ME] Vehicle Spawn/Diagnostics` для тех же семи миров. Затем из корня проекта сравнить новый отчёт, указав фактическую версию игры из console.log:
 
 ```powershell
 .\tools\Compare-AmbientAudit.ps1 `

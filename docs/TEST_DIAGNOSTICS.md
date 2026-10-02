@@ -33,7 +33,7 @@ Shape marker — только edit-world clearance preflight и не гаран�
 
 ## Массовая проверка меток ambient-точек (Test)
 
-В Edit mode откройте World Editor Plugins → ME_Vehicle_Spawn/Diagnostics → Audit all ambient vehicle spawn points. Выделять точку, создавать персонажа и запускать Game mode не требуется. Проверяется текущий открытый мир, доступный через GetEditorEntityCount/GetEditorEntity; незагруженные миры не проверяются. Для ванильной кампании открывайте сценарий (например worlds/MP/CTI_Campaign_Eden.ent), а не только terrain.
+В Edit mode откройте World Editor Plugins → [ME] Vehicle Spawn/Diagnostics → Audit all ambient vehicle spawn points. Выделять точку, создавать персонажа и запускать Game mode не требуется. Проверяется текущий открытый мир, доступный через GetEditorEntityCount/GetEditorEntity; незагруженные миры не проверяются. Для ванильной кампании открывайте сценарий (например worlds/MP/CTI_Campaign_Eden.ent), а не только terrain.
 
 Лог фильтруется по `[ME_DEBUG_AVSP_AUDIT]`. Между STARTED и FINISHED каждая проблема содержит имя точки, координаты, фракцию, include/exclude и requireAll. Команда при каждом запуске повторяет диагностику независимо от логирования визуальных подсказок.
 
@@ -75,7 +75,7 @@ FINISHED: warningPoints — число точек с такими предупр
 
 ## Пакетная проверка сценариев (Test, первая версия)
 
-Команда: Plugins → ME_Vehicle_Spawn/Diagnostics → Batch audit ambient vehicle scenarios. Перед запуском сохраните текущую работу: команда переключает открытые миры; последний обработанный мир остаётся открытым. Game mode не запускается. Автоматического сохранения карт нет.
+Команда: Plugins → [ME] Vehicle Spawn/Diagnostics → Batch audit ambient vehicle scenarios. Перед запуском сохраните текущую работу: команда переключает открытые миры; последний обработанный мир остаётся открытым. Game mode не запускается. Автоматического сохранения карт нет.
 
 1. Выполните Plugins → Settings → Reload WB Scripts.
 2. Первый запуск команды создаёт `$profile:ME_AmbientAuditWorlds.txt` с Cain и Eden и завершает работу без переключения карты.

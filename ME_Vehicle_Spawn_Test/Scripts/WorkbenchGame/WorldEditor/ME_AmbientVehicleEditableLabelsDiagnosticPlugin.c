@@ -18,7 +18,7 @@ class ME_AmbientVehicleRawEditableLabelsResult
 //------------------------------------------------------------------------------------------------
 //! Reads filtered catalog labels and investigates their raw prefab metadata without editing the world.
 //! Читает метки отфильтрованного каталога и исследует raw metadata prefab без изменения мира.
-[WorkbenchPluginAttribute(name: "Diagnose ambient vehicle editable labels", description: "Logs resolved catalog labels and raw authored/auto prefab metadata for one selected ambient spawn point.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Diagnostics")]
+[WorkbenchPluginAttribute(name: "Diagnose ambient vehicle editable labels", description: "Logs resolved catalog labels and raw authored/auto prefab metadata for one selected ambient spawn point.", wbModules: { "WorldEditor" }, category: "[ME] Vehicle Spawn/Diagnostics")]
 class ME_AmbientVehicleEditableLabelsDiagnosticPlugin : WorldEditorPlugin
 {
 	//------------------------------------------------------------------------------------------------

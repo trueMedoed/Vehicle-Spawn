@@ -1,7 +1,7 @@
 //! Test plugin to extract editable entity labels from a single vehicle prefab.
 //! Тестовый плагин для извлечения editable entity labels из одного vehicle prefab.
 
-[WorkbenchPluginAttribute(name: "Approach B prefab labels", description: "Tests label extraction from one vehicle prefab", category: "ME_Vehicle_Spawn/Diagnostics")]
+[WorkbenchPluginAttribute(name: "Approach B prefab labels", description: "Tests label extraction from one vehicle prefab", category: "[ME] Vehicle Spawn/Diagnostics")]
 class ME_TestSinglePrefabLabelsPlugin : WorkbenchPlugin
 {
 	//------------------------------------------------------------------------------------------------

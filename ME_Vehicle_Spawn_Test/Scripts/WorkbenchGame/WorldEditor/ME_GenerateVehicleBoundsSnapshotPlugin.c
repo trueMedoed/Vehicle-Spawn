@@ -14,7 +14,7 @@ class ME_VehicleBoundsVbtCandidateIndexRecord
 //------------------------------------------------------------------------------------------------
 //! Builds aggregate bounds from the VBT Candidate while preserving the Test spawn-point filter contract.
 //! Создаёт aggregate bounds из VBT Candidate, сохраняя контракт фильтров spawn point в Test.
-[WorkbenchPluginAttribute(name: "Generate bounds snapshots", description: "Generates and reload-validates the canonical VBT-backed aggregate bounds snapshot.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Vehicle Bounds")]
+[WorkbenchPluginAttribute(name: "Generate bounds snapshots", description: "Generates and reload-validates the canonical VBT-backed aggregate bounds snapshot.", wbModules: { "WorldEditor" }, category: "[ME] Vehicle Spawn/Vehicle Bounds")]
 class ME_GenerateVehicleBoundsSnapshotPlugin : WorldEditorPlugin
 {
 	protected const string SNAPSHOT_PATH = "Configs/Generated/ME_VehicleBoundsSnapshot.conf";

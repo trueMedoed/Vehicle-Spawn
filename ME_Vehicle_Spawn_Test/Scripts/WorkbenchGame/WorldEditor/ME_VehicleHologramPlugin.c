@@ -1,6 +1,6 @@
 //! Switches the selected point's mesh example and clears all previews on game-mode transitions.
 //! Переключает пример выбранной точки и удаляет все preview при смене игрового режима.
-[WorkbenchPluginAttribute(name: "Next vehicle hologram", description: "Next catalog candidate for the selected ambient point.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Preview")]
+[WorkbenchPluginAttribute(name: "Next vehicle hologram", description: "Next catalog candidate for the selected ambient point.", wbModules: { "WorldEditor" }, category: "[ME] Vehicle Spawn/Preview")]
 class ME_VehicleHologramPlugin : WorldEditorPlugin
 {
  //! Resolves the currently selected ambient point for switching its preview.
@@ -39,7 +39,7 @@ class ME_VehicleHologramPlugin : WorldEditorPlugin
 
 //! Enables or disables vehicle mesh previews.
 //! Включает или отключает предпросмотр мешей техники.
-[WorkbenchPluginAttribute(name: "Toggle vehicle hologram", description: "Show or hide vehicle examples at all loaded ambient points.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Preview")]
+[WorkbenchPluginAttribute(name: "Toggle vehicle hologram", description: "Show or hide vehicle examples at all loaded ambient points.", wbModules: { "WorldEditor" }, category: "[ME] Vehicle Spawn/Preview")]
 class ME_VehicleHologramTogglePlugin : WorldEditorPlugin
 {
  //! Toggles only transient visualization.

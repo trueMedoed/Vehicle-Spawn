@@ -1,6 +1,6 @@
 //! Test-only audit of ambient points exposed by the open World Editor world.
 //! Проверка только для Test ambient-точек, доступных в открытом мире World Editor.
-[WorkbenchPluginAttribute(name: "Audit all ambient vehicle spawn points", description: "Checks loaded point filters, catalogs and static object bounds without Game mode; logs problems and a summary.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Diagnostics")]
+[WorkbenchPluginAttribute(name: "Audit all ambient vehicle spawn points", description: "Checks loaded point filters, catalogs and static object bounds without Game mode; logs problems and a summary.", wbModules: { "WorldEditor" }, category: "[ME] Vehicle Spawn/Diagnostics")]
 class ME_AmbientVehicleWorldAuditPlugin : WorldEditorPlugin
 {
 	string m_sLastSummary;

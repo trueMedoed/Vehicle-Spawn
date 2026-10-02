@@ -105,7 +105,7 @@ class ME_AmbientSpawnPointCheck
 //! It examines the GameMode count, GameMode layer state, Test Game Flags, and FactionManager presence without changing the world.
 //! Проверяет предварительные условия точек появления ambient-техники в редакторе мира до размещения и по явной команде.
 //! Он анализирует количество GameMode, состояние слоя GameMode, Test Game Flags и наличие FactionManager, не изменяя мир.
-[WorkbenchPluginAttribute(name: "Check ambient vehicle spawning", description: "Checks the open world's ambient vehicle spawn points and GameMode test flags.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn")]
+[WorkbenchPluginAttribute(name: "Check ambient vehicle spawning", description: "Checks the open world's ambient vehicle spawn points and GameMode test flags.", wbModules: { "WorldEditor" }, category: "[ME] Vehicle Spawn")]
 class ME_AmbientVehicleSpawnPointWarningPlugin : WorldEditorPlugin
 {
 	private const string MESSAGE_TITLE = "Ambient vehicle spawn points";

@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------------------------
 //! Generates deterministic snapshot of vehicle editable entity labels from faction catalogs.
 //! Генерирует детерминированный snapshot меток editable entity техники из faction-каталогов.
-[WorkbenchPluginAttribute(name: "Generate entity labels snapshots", description: "Generates and reload-validates the canonical vehicle entity labels snapshot.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Entity Labels")]
+[WorkbenchPluginAttribute(name: "Generate entity labels snapshots", description: "Generates and reload-validates the canonical vehicle entity labels snapshot.", wbModules: { "WorldEditor" }, category: "[ME] Vehicle Spawn/Entity Labels")]
 class ME_GenerateEditableEntityLabelsSnapshotPlugin : WorldEditorPlugin
 {
 	protected const string SNAPSHOT_PATH = "Configs/Generated/ME_EditableEntityLabelsSnapshot.conf";

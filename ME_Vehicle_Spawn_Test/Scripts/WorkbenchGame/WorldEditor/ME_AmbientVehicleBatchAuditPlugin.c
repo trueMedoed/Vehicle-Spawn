@@ -1,6 +1,6 @@
 //! Runs the existing editor audit sequentially for a manifest of scenario worlds.
 //! Последовательно запускает существующий аудит редактора для списка миров сценариев.
-[WorkbenchPluginAttribute(name: "Batch audit ambient vehicle scenarios", description: "Loads worlds from $profile:ME_AmbientAuditWorlds.txt and writes a numbered summary report. Save your work before running.", wbModules: { "WorldEditor" }, category: "ME_Vehicle_Spawn/Diagnostics")]
+[WorkbenchPluginAttribute(name: "Batch audit ambient vehicle scenarios", description: "Loads worlds from $profile:ME_AmbientAuditWorlds.txt and writes a numbered summary report. Save your work before running.", wbModules: { "WorldEditor" }, category: "[ME] Vehicle Spawn/Diagnostics")]
 class ME_AmbientVehicleBatchAuditPlugin : WorldEditorPlugin
 {
 	protected static bool s_Running;
