@@ -1,6 +1,8 @@
 # Аудит 1.8.0.13 — Batch 6, пересчитанная классификация
 
-Исходный пакетный аудит выполнен 24.09.2026 на версии игры 1.8.0.13: завершено 7/7 миров, включая проверку пересечений областей появления точек. 03.10.2026 сохранённый Batch 6 пересчитан по текущему правилу: `overlapping_spawn_area` перенесён из ERROR в WARNING, а счётчики уникальных точек пересчитаны. Это производный эталон, не новый запуск семи миров. Одиночный аудит Cain 03.10.2026 независимо подтвердил его новые уровни и счётчики; для остальных миров нужен свежий пакетный прогон.
+Исходный пакетный аудит выполнен 24.09.2026 на версии игры 1.8.0.13: завершено 7/7 миров, включая проверку пересечений областей появления точек. 03.10.2026 сохранённый Batch 6 пересчитан по текущему правилу: `overlapping_spawn_area` перенесён из ERROR в WARNING, а счётчики уникальных точек пересчитаны. Сохранённые файлы эталона остаются производными от Batch 6.
+
+Свежий Batch 7 выполнен 03.10.2026 на той же версии игры: `FINISHED completed=7 requested=7`. Сравнение полного отчёта с `worlds` и выборки ошибок с `errors` дало 0 изменений по счётчикам, покрытию и замечаниям; пересчитанная классификация подтверждена для всех семи миров.
 
 | Мир | Точек | С ошибками | С предупреждениями | Пересекающихся пар |
 |---|---:|---:|---:|---:|
@@ -25,8 +27,11 @@
 Сохранить работу в World Editor, выполнить Reload WB Scripts и запустить `Batch audit ambient vehicle scenarios` в категории `[ME] Vehicle Spawn/Diagnostics` для тех же семи миров. Затем из корня проекта сравнить новый отчёт, указав фактическую версию игры из console.log:
 
 ```powershell
+$report = Get-ChildItem "$env:USERPROFILE\Documents\My Games\ArmaReforgerWorkbench\profile\ME_AmbientAuditBatch_*.txt" |
+  Sort-Object LastWriteTime -Descending |
+  Select-Object -First 1 -ExpandProperty FullName
 .\tools\Compare-AmbientAudit.ps1 `
-  -Report "$env:USERPROFILE\Documents\My Games\ArmaReforgerWorkbench\profile\ME_AmbientAuditBatch_7.txt" `
+  -Report $report `
   -GameVersion "НОВАЯ_ВЕРСИЯ" -ErrorsOnly `
   -Output "$env:TEMP\AmbientAudit-errors-comparison.md"
 ```

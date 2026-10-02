@@ -36,16 +36,17 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  protected int m_ME_HologramAppliedColor;
  protected vector m_ME_HologramLastOrigin;
  protected vector m_ME_HologramLastAngles;
- protected static bool s_ME_HologramTickLogged;
+ protected string m_ME_HologramFailedPrefab;
  protected string m_ME_LastHologramStatus;
 
- //! Reports status changes without flooding the editor log.
- //! Пишет изменения состояния без повторов в каждом кадре.
+ //! Reports actionable preview issues once per state, with coordinates for unnamed points.
+ //! Пишет существенные проблемы предпросмотра один раз на состояние, с координатами для безымянных точек.
  protected void ME_LogHologramStatus(string status)
  {
   if (status == m_ME_LastHologramStatus) return;
   m_ME_LastHologramStatus = status;
-  PrintFormat("[ME_VEHICLE_HOLOGRAM] entity=%1 status=%2", GetOwner().GetName(), status);
+  IEntity owner = GetOwner();
+  if (owner) PrintFormat("[ME_VEHICLE_HOLOGRAM] entity=%1 coordinates=%2 %3", owner.GetName(), owner.GetOrigin(), status);
  }
 
  //! Releases the preview hierarchy, faction tag, and resource reference.
@@ -110,6 +111,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
   {
    if (!point) continue;
    point.ME_ClearHologram();
+   point.m_ME_HologramFailedPrefab = string.Empty;
    point.m_ME_HologramTimerInitialized = false;
   }
  }
@@ -120,6 +122,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  {
   m_ME_HologramIndex++;
   ME_ClearHologram();
+  m_ME_HologramFailedPrefab = string.Empty;
   if (SCR_Global.IsEditMode() && s_ME_HologramEnabled)
   {
    ME_RebuildHologram(GetOwner());
@@ -173,11 +176,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
   if (paths.IsEmpty())
   {
    ME_ClearHologram();
+   m_ME_HologramFailedPrefab = string.Empty;
    m_ME_HologramPaths = null;
    m_ME_HologramSnapshotFaction = string.Empty;
    m_ME_HologramTypeSignature = string.Empty;
    m_ME_HologramCaption = "Vehicle preview unavailable / " + reason;
-   ME_LogHologramStatus(m_ME_HologramCaption);
+   ME_LogHologramStatus("status=UNAVAILABLE reason=" + reason);
    return;
   }
   paths.Sort();
@@ -212,6 +216,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
   if (changed)
   {
    ME_ClearHologram();
+   m_ME_HologramFailedPrefab = string.Empty;
    m_ME_HologramFactionFallback = factionFallback;
    m_ME_HologramFallbackType = fallbackType;
    m_ME_HologramFallbackReason = fallbackCause;
@@ -224,7 +229,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
    m_ME_HologramSelectionNote = "Example";
 
    if (factionFallback)
-    ME_LogHologramStatus(string.Format("FACTION_FALLBACK faction=%1 type=%2 prefab=%3 reason=%4", factionKey, fallbackType, paths[0], fallbackCause));
+    ME_LogHologramStatus(string.Format("status=FALLBACK reason=%1 faction=%2 type=%3 prefab=%4", fallbackCause, factionKey, fallbackType, paths[0]));
    else if (selectionAvailable && vehicleTypes && !vehicleTypes.IsEmpty())
    {
     array<string> selectedTypes = {};
@@ -247,7 +252,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
      m_ME_HologramBestIndex = paths.Find(snapshotPrefab);
      m_ME_HologramSnapshotSelected = true;
      m_ME_HologramSelectionNote = "Largest " + snapshotType;
-     ME_LogHologramStatus(string.Format("SNAPSHOT_SELECTED faction=%1 type=%2 prefab=%3", factionKey, snapshotType, snapshotPrefab));
     }
     else
     {
@@ -278,10 +282,11 @@ modded class SCR_AmbientVehicleSpawnPointComponent
       matchingPaths.Sort();
       m_ME_HologramBestIndex = paths.Find(matchingPaths[0]);
      }
-     ME_LogHologramStatus(string.Format("SNAPSHOT_FALLBACK type=%1 reason=%2", snapshotType, snapshotReason));
+     if (snapshotReason != "snapshot_largest_prefab_filtered_out")
+      ME_LogHologramStatus(string.Format("status=SELECTION_FALLBACK reason=%1 type=%2", snapshotReason, snapshotType));
     }
    }
-   else ME_LogHologramStatus("SNAPSHOT_FALLBACK reason=" + selectionReason);
+   else if (!factionFallback && !selectionReason.IsEmpty()) ME_LogHologramStatus("status=SELECTION_FALLBACK reason=" + selectionReason);
   }
 
   m_ME_HologramIndex = m_ME_HologramIndex % paths.Count();
@@ -294,6 +299,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
    ME_UpdateHologramTint();
    return;
   }
+  // Retry unavailable prefab data only after the candidate set changes or an explicit Next/Toggle action.
+  // Повторяем загрузку недоступных данных prefab только после изменения кандидатов или явной команды Next/Toggle.
+  if (path == m_ME_HologramFailedPrefab) return;
   ME_ClearHologram();
   m_ME_HologramFactionFallback = factionFallback;
   m_ME_HologramFallbackType = fallbackType;
@@ -301,12 +309,19 @@ modded class SCR_AmbientVehicleSpawnPointComponent
   m_ME_HologramResource = Resource.Load(path);
   if (!m_ME_HologramResource || !m_ME_HologramResource.IsValid())
   {
+   m_ME_HologramFailedPrefab = path;
    m_ME_HologramCaption = "Vehicle preview: resource unavailable / " + path;
-   ME_LogHologramStatus(m_ME_HologramCaption);
+   ME_LogHologramStatus("status=UNAVAILABLE reason=resource_load_failed prefab=" + path);
    return;
   }
   IEntitySource source = SCR_BaseContainerTools.FindEntitySource(m_ME_HologramResource);
-  if (!source) { m_ME_HologramCaption = "Vehicle preview: entity source unavailable"; ME_LogHologramStatus(m_ME_HologramCaption); return; }
+  if (!source)
+  {
+   m_ME_HologramFailedPrefab = path;
+   m_ME_HologramCaption = "Vehicle preview: entity source unavailable";
+   ME_LogHologramStatus("status=UNAVAILABLE reason=entity_source_unavailable prefab=" + path);
+   return;
+  }
   array<ref SCR_BasePreviewEntry> previewEntries = {};
   SCR_PrefabPreviewEntity.GetPreviewEntries(source, previewEntries);
   bool partial;
@@ -321,8 +336,9 @@ modded class SCR_AmbientVehicleSpawnPointComponent
   }
   if (previewEntries.IsEmpty())
   {
+   m_ME_HologramFailedPrefab = path;
    m_ME_HologramCaption = "Vehicle preview: no mesh entries";
-   ME_LogHologramStatus(m_ME_HologramCaption);
+   ME_LogHologramStatus("status=UNAVAILABLE reason=no_mesh_entries prefab=" + path);
    return;
   }
   EntitySpawnParams params = new EntitySpawnParams();
@@ -333,17 +349,19 @@ modded class SCR_AmbientVehicleSpawnPointComponent
   if (!m_ME_Hologram)
   {
    m_ME_HologramCaption = "Vehicle preview: creation failed";
-   ME_LogHologramStatus(m_ME_HologramCaption);
+   ME_LogHologramStatus("status=UNAVAILABLE reason=preview_creation_failed prefab=" + path);
    return;
   }
   m_ME_Hologram.SetFlags(EntityFlags.EDITOR_ONLY, true);
   m_ME_Hologram.ClearFlags(EntityFlags.TRACEABLE, true);
   m_ME_HologramPrefab = path;
+  m_ME_HologramFailedPrefab = string.Empty;
   m_ME_HologramPartial = partial;
   ME_SetHologramCaption(path, paths.Count());
   ME_PositionHologram(owner);
   ME_UpdateHologramTint();
-  ME_LogHologramStatus("CREATED " + m_ME_HologramCaption);
+  if (m_ME_LastHologramStatus.StartsWith("status=UNAVAILABLE")) m_ME_LastHologramStatus = string.Empty;
+  if (partial) ME_LogHologramStatus("status=PARTIAL reason=nested_prefab_mesh_unavailable prefab=" + path);
  }
 
  //! Refreshes the candidate count even if the chosen prefab stays the same.
@@ -483,7 +501,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  override void _WB_AfterWorldUpdate(IEntity owner, float timeSlice)
  {
   super._WB_AfterWorldUpdate(owner, timeSlice);
-  if (!s_ME_HologramTickLogged) { PrintFormat("[ME_VEHICLE_HOLOGRAM] status=FRAME_CALLBACK_ACTIVE"); s_ME_HologramTickLogged = true; }
   if (!SCR_Global.IsEditMode() || !s_ME_HologramEnabled)
   {
    if (m_ME_Hologram || m_ME_HologramFactionTagText) ME_ClearHologram();
