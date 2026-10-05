@@ -1,6 +1,6 @@
 # Workshop page text
 
-Draft text for the next `ME_Vehicle_Spawn` Workshop update; version 1.0.5 was published on 2026-09-24. Preserve the `•` bullets, because the Workshop page has no Markdown formatting. Copy them verbatim; do not convert them to Markdown lists.
+Reference text for the `ME_Vehicle_Spawn` Workshop page; version 1.0.6 was published on 2026-10-05. Preserve the `•` bullets, because the Workshop page has no Markdown formatting. Copy them verbatim; do not convert them to Markdown lists.
 
 The Russian reference translation lives in [RU_DESCRIPTION.md](RU_DESCRIPTION.md) and is not published.
 
