@@ -21,6 +21,18 @@ class ME_VehicleBoundsSnapshotEntry
 	[Attribute("0")]
 	int m_iCandidateCount;
 
+	//! Largest actual horizontal footprint in this faction/type group.
+	[Attribute("0")]
+	float m_fLargestFootprintArea;
+
+	//! Height of the largest-footprint candidate, used for deterministic ties.
+	[Attribute("0")]
+	float m_fLargestFootprintHeight;
+
+	//! Canonical prefab of the largest-footprint candidate.
+	[Attribute("")]
+	string m_sLargestFootprintSourcePrefab;
+
 	//! Canonical prefab producing the aggregate minimum X coordinate.
 	[Attribute("")]
 	string m_sMinXSourcePrefab;
@@ -66,7 +78,7 @@ class ME_VehicleBoundsSnapshotFaction
 class ME_VehicleBoundsSnapshot
 {
 	//! Schema compatibility version expected by the reader.
-	[Attribute("5")]
+	[Attribute("6")]
 	int m_iSchemaVersion;
 
 	//! Generator implementation version that produced this aggregate payload.

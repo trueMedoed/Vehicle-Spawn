@@ -1,10 +1,8 @@
 #ifdef WORKBENCH
 //! Mesh-only vehicle previews for all loaded ambient points; never spawns vehicle prefabs.
-//! Предпросмотр мешей для всех загруженных точек; игровые prefab техники не создаются.
 modded class SCR_AmbientVehicleSpawnPointComponent
 {
  // Use the game's translucent preview material; ParametricMaterialInstanceComponent changes only its color.
- // Используем прозрачный материал предпросмотра игры; компонент меняет только его цвет.
  protected static const ResourceName ME_HOLOGRAM_TINT_MATERIAL = "{58F07022C12D0CF5}Assets/Editor/PlacingPreview/Preview.emat";
  static bool s_ME_HologramEnabled = true;
  protected SCR_BasePreviewEntity m_ME_Hologram;
@@ -46,7 +44,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  protected string m_ME_LastHologramStatus;
 
  //! Reports actionable preview issues once per state, with coordinates for unnamed points.
- //! Пишет существенные проблемы предпросмотра один раз на состояние, с координатами для безымянных точек.
  protected void ME_LogHologramStatus(string status)
  {
   if (status == m_ME_LastHologramStatus) return;
@@ -56,7 +53,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Releases the preview hierarchy, faction tag, and resource reference.
- //! Удаляет иерархию предпросмотра, метку фракции и ссылку на ресурс.
  void ME_ClearHologram()
  {
   if (m_ME_Hologram) delete m_ME_Hologram;
@@ -75,7 +71,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Applies one advisory color to every mesh preview in this point's hierarchy.
- //! Окрашивает каждый preview-меш этой точки в цвет результата проверок редактора.
  protected void ME_TintHologramHierarchy(SCR_BasePreviewEntity preview, int color)
  {
   if (!preview) return;
@@ -88,7 +83,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! White means no detected problem; overlapping preview bounds are red, while area-only and static-bounds warnings stay white.
- //! Белый цвет означает отсутствие найденной проблемы; пересечение габаритов самих голограмм окрашивает их в красный, а пересечение только областей и статических границ — нет.
  protected int ME_GetHologramTintColor()
  {
   if (m_ME_HologramFactionFallback || !m_bME_EditorHologramChecked || m_bME_EditorHologramPlacementError)
@@ -100,7 +94,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Tests one horizontal separating axis of two oriented preview bounds.
- //! Проверяет разделяющую горизонтальную ось двух повёрнутых габаритов предпросмотра.
  protected bool ME_DoHologramBoundsOverlapOnAxis(SCR_AmbientVehicleSpawnPointComponent other, vector axis)
  {
   float ownX = vector.Dot(m_ME_HologramBoundsAxisX, axis);
@@ -115,7 +108,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Detects a visible preview-bounds conflict without treating spawn-area contact as a failed runtime spawn.
- //! Находит пересечение показанных габаритов, не объявляя касание областей появления неудачным игровым спавном.
  protected bool ME_HasOverlappingHologramBounds()
  {
   if (!m_ME_HologramBoundsValid) return false;
@@ -137,7 +129,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Recolors the existing preview only when its advisory result changes.
- //! Перекрашивает существующий preview только при изменении результата проверки.
  void ME_UpdateHologramTint()
  {
   if (!m_ME_Hologram) return;
@@ -149,7 +140,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Clears every registered editor preview on mode changes or plugin commands.
- //! Удаляет все зарегистрированные preview при смене режима или команде плагина.
  static void ME_ClearAllHolograms()
  {
   foreach (SCR_AmbientVehicleSpawnPointComponent point : s_ME_EditorSpawnPoints)
@@ -162,7 +152,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Advances the planning example without modifying point configuration.
- //! Переключает пример без изменения настроек точки.
  void ME_NextHologram()
  {
   m_ME_HologramIndex++;
@@ -176,7 +165,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Chooses a snapshot representative from the filtered catalog, or a red same-faction example when candidates are absent or unavailable.
- //! Выбирает представителя snapshot по фильтру или красный пример той же фракции, когда кандидатов нет или их нельзя проверить.
  protected void ME_RebuildHologram(IEntity owner)
  {
   array<string> paths;
@@ -301,7 +289,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
     else
     {
      // Preserve type preference when the snapshot representative was excluded by another label.
-     // Сохраняем приоритет типа, если другие метки исключили prefab из snapshot.
      if (!snapshotType.IsEmpty())
      {
       selectedTypes.Clear();
@@ -345,7 +332,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
    return;
   }
   // Retry unavailable prefab data only after the candidate set changes or an explicit Next/Toggle action.
-  // Повторяем загрузку недоступных данных prefab только после изменения кандидатов или явной команды Next/Toggle.
   if (path == m_ME_HologramFailedPrefab) return;
   ME_ClearHologram();
   m_ME_HologramFactionFallback = factionFallback;
@@ -390,7 +376,7 @@ modded class SCR_AmbientVehicleSpawnPointComponent
   params.TransformMode = ETransformMode.WORLD;
   Math3D.AnglesToMatrix(owner.GetYawPitchRoll(), params.Transform);
   params.Transform[3] = owner.GetOrigin();
-  m_ME_Hologram = SCR_BasePreviewEntity.SpawnPreview(previewEntries, "{C784B29A5106D3EF}Prefabs/Editor/ME_VehicleHologram.et", owner.GetWorld(), params, ME_HOLOGRAM_TINT_MATERIAL, EPreviewEntityFlag.IGNORE_TERRAIN);
+  m_ME_Hologram = SCR_BasePreviewEntity.SpawnPreview(previewEntries, "{A96835FEA7B04418}Prefabs/Editor/ME_VehicleHologram.et", owner.GetWorld(), params, ME_HOLOGRAM_TINT_MATERIAL, EPreviewEntityFlag.IGNORE_TERRAIN);
   if (!m_ME_Hologram)
   {
    m_ME_HologramCaption = "Vehicle preview: creation failed";
@@ -410,7 +396,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Refreshes the candidate count even if the chosen prefab stays the same.
- //! Обновляет число вариантов, даже если выбранный prefab не изменился.
  protected void ME_SetHologramCaption(string path, int count)
  {
   array<string> parts = {};
@@ -431,7 +416,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Finds the lowest and highest transformed mesh corners, including preview children.
- //! Находит нижнюю и верхнюю мировые границы мешей, включая дочерние элементы preview.
  protected void ME_MeasureHologramVerticalBounds(IEntity entity, inout bool found, inout float bottom, inout float top)
  {
   if (entity.GetVObject())
@@ -461,7 +445,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Projects every visible preview mesh into the point's horizontal axes and world height.
- //! Проецирует каждый видимый меш голограммы на горизонтальные оси точки и мировую высоту.
  protected void ME_MeasureHologramProjectedBounds(IEntity entity, vector axisX, vector axisZ, inout bool found, inout vector mins, inout vector maxs)
  {
   if (entity.GetVObject())
@@ -503,7 +486,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Places the visual bottom at terrain/marker height without simulating suspension.
- //! Ставит низ визуальной модели на высоту рельефа/точки без симуляции подвески.
  protected void ME_PositionHologram(IEntity owner)
  {
   if (!m_ME_Hologram) return;
@@ -538,7 +520,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Resolves the configured point faction and its game-defined color for the editor caption.
- //! Определяет настроенную фракцию точки и её игровой цвет для подписи в редакторе.
  protected void ME_GetHologramFactionTag(IEntity owner, out string tag, out int color)
  {
   tag = "FACTION UNKNOWN";
@@ -558,7 +539,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Keeps one persistent, slightly larger faction tag just above each preview instead of creating text every frame.
- //! Поддерживает одну постоянную метку фракции чуть крупнее над каждым preview без создания текста в каждом кадре.
  protected void ME_RefreshHologramFactionTag(IEntity owner)
  {
   if (!owner) return;
@@ -583,14 +563,12 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Keeps preview updates active for every loaded editor point.
- //! Поддерживает обновление preview каждой загруженной точки редактора.
  override int _WB_GetAfterWorldUpdateSpecs(IEntity owner, IEntitySource src)
  {
   return super._WB_GetAfterWorldUpdateSpecs(owner, src) | EEntityFrameUpdateSpecs.CALL_ALWAYS;
  }
 
  //! Builds previews and persistent faction tags for all points; the detailed caption remains selection-only.
- //! Создаёт preview и постоянные метки фракции для всех точек; подробная подпись остаётся только у выделенной точки.
  override void _WB_AfterWorldUpdate(IEntity owner, float timeSlice)
  {
   super._WB_AfterWorldUpdate(owner, timeSlice);
@@ -657,7 +635,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Releases the transient preview before entity deletion.
- //! Удаляет временный preview перед удалением сущности.
  override void OnDelete(IEntity owner)
  {
   ME_ClearHologram();
@@ -665,7 +642,6 @@ modded class SCR_AmbientVehicleSpawnPointComponent
  }
 
  //! Clears previews before editor deletion as well.
- //! Очищает preview также перед удалением в редакторе.
  override void _WB_OnDelete(IEntity owner, IEntitySource src)
  {
   ME_ClearHologram();

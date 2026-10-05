@@ -1,12 +1,12 @@
 # Workshop page text
 
-Source text for the two Workshop fields of `ME_Vehicle_Spawn`. Release: 1.0.4 (2026-09-24). Preserve the `•` and `-` bullets, because the Workshop page has no Markdown formatting. Copy them verbatim; do not convert them to Markdown lists.
+Draft text for the next `ME_Vehicle_Spawn` Workshop update; version 1.0.5 was published on 2026-09-24. Preserve the `•` bullets, because the Workshop page has no Markdown formatting. Copy them verbatim; do not convert them to Markdown lists.
 
 The Russian reference translation lives in [RU_DESCRIPTION.md](RU_DESCRIPTION.md) and is not published.
 
 ## Summary
 
-Workbench diagnostics for ambient vehicle spawn points: configuration warnings, visual spawn-area checks, overlap detection, and static-object conflict markers.
+Preview example vehicles at ambient spawn points in Workbench and spot filter, clearance, and placement problems before running a mission.
 
 ## Description
 
@@ -19,15 +19,13 @@ Features
 • Checks that exactly one editable GameMode is available.
 • Warns when the GameMode layer is locked.
 • Checks that Spawn Vehicles is enabled in the GameMode Test Game Flags.
-• Shows the spawn area in the World Editor:
-  - green: an empty terrain position was found and no filter or overlap warning is active;
-  - red: no valid terrain position was found, or another ambient spawn area overlaps it;
-  - grey: labels conflict, no vehicle matches the filter, or the catalog cannot be checked. Grey takes priority over the terrain/overlap colour.
-• Marks static physics objects with oriented red wireframes when their model bounds intersect a spawn area. These intersections produce placement warnings with names and coordinates. Failure to find an empty terrain position and overlapping spawn areas produce separate errors.
-• Shows a translucent, faction-coloured box representing conservative vehicle bounds for the point's catalog and label filter. The preview updates when the point is moved or rotated.
-• Shows a yellow direction arrow above the terrain with a heading label such as 90 deg. Both follow point movement and rotation.
+• Shows a translucent hologram of an example vehicle at every loaded ambient spawn point. The example comes from the point's filtered catalog and the vehicle-bounds reference; it is not a prediction of the exact vehicle that will spawn.
+• Keeps the hologram white when no clear problem is detected, or turns it red for a filter, catalog, free-position, or visible vehicle-preview overlap. A same-faction example is marked as a fallback if matching candidates cannot be used.
+• Shows the point's faction above each hologram in the faction colour. The hologram follows point movement and rotation.
+• Marks static physics objects with oriented red wireframes when their model bounds intersect a spawn area. Static-object and spawn-area overlaps produce placement warnings with coordinates; failure to find an empty terrain position is a separate error. Spawn-area warnings alone do not turn a hologram red; overlapping example-vehicle bounds do. Preview overlap is advisory and does not prove runtime spawn failure.
+• Provides Next and Toggle vehicle hologram commands under Plugins → [ME] Vehicle Spawn → Preview.
 • Displays conflicting-label and empty-filter errors as separate messages above the point. Empty results include the configured include/exclude labels; an unavailable catalog is shown as a warning.
-• Draws the configured labels of a point above it: included labels each in their own colour, excluded labels in red, and ALL when a list is empty.
+• Draws the configured labels of a point above it: included labels in their own colours, excluded labels in red, and ALL when a list is empty. The two passenger-capacity labels share one comma-separated line.
 • Includes worlds/ME_TestWorld.ent with valid and intentionally invalid examples for testing the diagnostics.
 • Checks that a FactionManager is present in the world.
 • Validates the faction affiliation of incoming ambient vehicle spawn-point prefabs.

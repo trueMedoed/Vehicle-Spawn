@@ -18,9 +18,9 @@
 3. Откройте демонстрационный мир, проверьте GameMode, FactionManager, флаг Spawn Vehicles и ambient spawn point.
 4. В Edit mode используйте `Check ambient vehicle spawning`, затем войдите в Game mode.
 
-В редакторе доступны серые сферы при проблемах фильтра/каталога, отдельные сообщения об ошибках меток и пересечениях, а также стрелка направления над рельефом с подписью угла (`deg`).
+В Edit mode над загруженными точками отображаются полупрозрачные голограммы примеров техники и цветные метки фракций. Белая голограмма означает, что предварительная проверка не нашла проблемы; красная указывает на проблему фильтра, каталога, поиска свободного места или пересечение объёмных границ самих показанных голограмм. Простое пересечение областей появления и границ статических объектов остаётся предупреждением без смены цвета. Команды `Next vehicle hologram` и `Toggle vehicle hologram` находятся в Plugins → `[ME] Vehicle Spawn/Preview`.
 
-Цвет Shape — только edit-world clearance preflight. Он не гарантирует будущий runtime spawn.
+Голограмма — только подсказка редактора, а не прогноз конкретной техники или гарантия runtime spawn.
 
 Подробности: `docs/PROJECT_SPLIT.md` и `docs/PRODUCTION_WORKFLOW.md`.
 
@@ -45,4 +45,4 @@ VBT является единственным владельцем per-prefab re
 
 ## Справочники каталогов в production
 
-В Configs/Generated добавлен ME_EditableEntityLabelsSnapshot.conf (схема 2, каталоги CIV/FIA/US/USSR игры 1.8.0.13) с классами сериализации. ME_VehicleBoundsSnapshot.conf и его reader перенесены на схему 5 с группами фракций; production GUID габаритов сохранён. Инструкция: [VEHICLE_CATALOG_REFERENCE.md](ME_Vehicle_Spawn/VEHICLE_CATALOG_REFERENCE.md). Справочник меток помогает интерпретировать include/exclude, но не заменяет текущий каталог и не гарантирует runtime-спавн. Пользователь подтвердил проверку переноса в production Workbench 24.09.2026.
+В Configs/Generated находится ME_EditableEntityLabelsSnapshot.conf (схема 2, каталоги CIV/FIA/US/USSR игры 1.8.0.13) и ME_VehicleBoundsSnapshot.conf (схема 6, включая prefab с наибольшей площадью для каждого типа техники). GUID production-конфига сохранён. Инструкция: [VEHICLE_CATALOG_REFERENCE.md](ME_Vehicle_Spawn/VEHICLE_CATALOG_REFERENCE.md). Справочники помогают читать фильтры и выбирать пример голограммы, но не заменяют текущий каталог и не гарантируют runtime spawn. Пользователь подтвердил проверку схемы 6 в Prod Workbench 05.10.2026.

@@ -4,6 +4,28 @@
 
 Записи упорядочены от новых к старым. Заголовок записи — номер версии Workshop и дата публикации. Номер версии присваивает Workshop, поля версии в `addon.gproj` нет, поэтому с кодом версию связывает git-тег `vX.Y.Z` на коммите, который был опубликован. Английский блок каждой записи — текст, отправленный в Workshop; русский блок ниже него служит внутренней сверкой и не публикуется.
 
+## Unreleased — черновик
+
+Перенесено из проверенной Test-версии в production; публикация и номер Workshop пока не подтверждены. Пользователь подтвердил проверку production, включая отображение пассажирских меток, в Workbench 05.10.2026.
+
+### English
+
+- Added translucent example-vehicle holograms to loaded ambient spawn points, with persistent faction labels in faction colours.
+- The representative vehicle is chosen from the point's filtered catalog and the largest-footprint snapshot; Next cycles candidates and Toggle hides or restores all holograms.
+- Holograms stay white when no clear issue is detected and turn red for filter, catalog, free-position, or visible vehicle-preview overlap problems. Static-object and spawn-area overlaps remain placement warnings and do not change the hologram colour on their own.
+- Removed the old spawn-area spheres, vehicle-bounds boxes, and direction arrows. Updated the vehicle-bounds snapshot to schema 6 for representative prefab selection.
+- Grouped the World Editor commands under the `[ME] Vehicle Spawn` menu.
+- Restored one comma-separated label for points that include both passenger-capacity traits.
+
+### Русский
+
+- Добавлены полупрозрачные голограммы примеров техники у загруженных ambient-точек и постоянные подписи фракций их цветом.
+- Представитель выбирается по фильтру каталога точки и snapshot с наибольшей площадью; Next перебирает кандидатов, Toggle скрывает или возвращает все голограммы.
+- Голограмма остаётся белой без явной проблемы и становится красной при проблеме фильтра, каталога, поиска свободной позиции или пересечении габаритов показанных машин. Пересечения со статическими объектами и областями других точек остаются предупреждениями и сами по себе цвет не меняют.
+- Убраны старые сферы областей появления, габаритные параллелепипеды и стрелки направления. Snapshot габаритов обновлён до схемы 6 для выбора представителя.
+- Команды World Editor сгруппированы в меню `[ME] Vehicle Spawn`.
+- Восстановлена общая строка через запятую для точек с обеими метками пассажирской вместимости.
+
 ## 1.0.5 | 2026-09-24
 
 Проверка production и публикация версии 1.0.5 подтверждены пользователем 2026-09-24. Обновлено изображение мода.

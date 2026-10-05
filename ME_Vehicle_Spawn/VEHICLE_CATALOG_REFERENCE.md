@@ -3,7 +3,7 @@
 Open these resources in Workbench Resource Browser under Configs/Generated:
 
 - ME_EditableEntityLabelsSnapshot.conf: faction → label → vehicle prefabs. Schema 2, captured from Arma Reforger 1.8.0.13 catalogs (CIV, FIA, US, USSR).
-- ME_VehicleBoundsSnapshot.conf: faction → vehicle type → conservative bounds and source prefabs. Schema 5, used by the editor preview.
+- ME_VehicleBoundsSnapshot.conf: faction → vehicle type → conservative bounds, source prefabs, and the largest-footprint representative prefab. Schema 6, used by the editor hologram.
 
 To interpret a spawn point, use its faction catalog. With Require All Included Labels enabled, intersect the prefab lists for the included labels; otherwise, take their union. Remove prefabs carrying excluded labels. For example, VEHICLE_APC with TRAIT_ARMED excluded means APC candidates without the armed label in that faction catalog. An empty include list must be checked against the live catalog rather than interpreted as an empty candidate set.
 

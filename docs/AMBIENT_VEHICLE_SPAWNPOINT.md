@@ -91,7 +91,7 @@ Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_Base.et
 
 ## Terrain и свободное пространство
 
-В editor/test diagnostics используется `SCR_WorldTools.FindEmptyTerrainPosition` как отдельная проверка, может ли рядом с transform точки быть найден подходящий свободный terrain position. В текущем preview вызов использует ограниченный поиск и trace flags для terrain/entities/ocean, а Shape рисуется в transform точки и окрашивается по результату.
+В editor/test diagnostics используется `SCR_WorldTools.FindEmptyTerrainPosition` как отдельная проверка, может ли рядом с transform точки быть найден подходящий свободный terrain position. Проверка использует ограниченный поиск и trace flags для terrain/entities/ocean. Результат влияет на цвет голограммы; сферу области появления больше не рисуют. Отдельно сравниваются повёрнутые объёмные границы видимых мешей двух голограмм: при заметном пересечении они красные, а при пересечении только радиусов областей появления остаются белыми. Это оценка выбранных примеров техники, а не проверка фактических экземпляров при runtime spawn.
 
 Эта проверка отвечает на более узкий вопрос: удалось ли helper найти candidate position в заданном радиусе и с заданными ограничениями. Она не является копией всего runtime spawn flow. В частности, она не доказывает:
 
@@ -100,7 +100,7 @@ Prefabs/Systems/AmbientVehicles/AmbientVehicleSpawnpoint_Base.et
 - что все collision, physics, terrain, network и entity initialization checks пройдут;
 - что `SpawnEntityPrefabEx` создаст entity и что созданная entity будет корректно работать.
 
-Runtime пытается создать выбранный prefab через `SpawnEntityPrefabEx` на transform точки в рамках vanilla spawn flow. Поэтому зелёный `FindEmptyTerrainPosition`, Shape или editor envelope должны считаться только preflight/visual aid. Единственным наблюдением завершённого создания в этом справочнике является callback `GetOnVehicleSpawned` и связанное с ним runtime evidence.
+Runtime пытается создать выбранный prefab через `SpawnEntityPrefabEx` на transform точки в рамках vanilla spawn flow. Поэтому успешный `FindEmptyTerrainPosition` и белая голограмма должны считаться только preflight/visual aid. Единственным наблюдением завершённого создания в этом справочнике является callback `GetOnVehicleSpawned` и связанное с ним runtime evidence.
 
 ## Production editor diagnostics
 
@@ -113,19 +113,19 @@ Runtime пытается создать выбранный prefab через `Sp
 - доступность и непустоту global `VEHICLE` catalog для factionless points;
 - label configuration и результат чтения применимого catalog;
 - пересечения, static-object conflicts и clearance вокруг point;
-- Shape, label display и conservative vehicle envelope preview.
+- метки фильтра и фракции, голограмму примера техники по результату фильтра и snapshot схемы 6.
 
-Сфера становится серой при конфликте include/exclude, отсутствии подходящих кандидатов или недоступном каталоге. Над точкой отображаются отдельные строки ERROR для конфликта меток и пустого результата (с include/exclude), WARNING для недоступного каталога. Пересечения сфер и границ статических объектов показываются отдельными сообщениями с именами и координатами. Проверка границ объектов остаётся предварительной геометрической диагностикой.
+Голограмма белая, когда явных ошибок предварительной проверки нет, и красная при ошибке фильтра, недоступном каталоге или неудачном поиске свободного места. Если кандидаты отсутствуют или каталог недоступен, берётся явно помеченный пример той же фракции из snapshot, когда он есть. Над точкой отображаются отдельные строки ERROR для конфликта меток и пустого результата (с include/exclude), WARNING для недоступного каталога. Пересечения областей двух точек и границ статических объектов — WARNING с именами и координатами; сами по себе они не меняют белый цвет голограммы. Проверка границ объектов остаётся предварительной геометрической диагностикой.
 
-Перед габаритами показана жёлтая стрелка направления локальной +Z с подписью угла 0–359 в формате `90 deg`. Стрелка расположена на 0,3 м выше максимальной выборки рельефа под ней; подпись — над стрелкой. Подсказки обновляются при перемещении/вращении точки и очищаются при удалении. Прозрачные сферы и габариты используют NOZWRITE с сохранением проверки глубины; габариты состоят из 12 треугольников, стрелка — из 3.
+Голограмма показывает полупрозрачные меши одного кандидата, а не полную коллизионную модель и не конкретный будущий выбор vanilla spawn. При нескольких типах выбирается крупнейший тип по площади; исключённый prefab заменяется примером того же типа. Низ голограммы поднимается до высоты точки или поверхности; наклон подвески по рельефу не моделируется. Направление видно по модели. Метка фракции всегда находится чуть выше неё; подробная подпись примера появляется только при выборе точки. В меню `[ME] Vehicle Spawn/Preview` команды Next и Toggle переключают выбранный пример и видимость всех голограмм.
 
 Команда `Check ambient vehicle spawning` собирает эти наблюдения для открытого мира. Drag-and-drop point может быть заблокирован, если базовые prerequisites явно отсутствуют; это защита от очевидно неполной editor-конфигурации, а не runtime simulation.
 
-Shape/clearance preview, предупреждения overlap/static-object, catalog match, registered point и conservative envelope отвечают на разные диагностические вопросы. Ни один из них по отдельности или в совокупности не гарантирует runtime spawn, корректный transform, успешную инициализацию vehicle или отсутствие последующих runtime ошибок. Production остаётся editor-only tooling и не должен использоваться как замена runtime evidence из Test.
+Clearance probe, предупреждения overlap/static-object, catalog match, зарегистрированная точка и голограмма отвечают на разные диагностические вопросы. Ни один из них по отдельности или в совокупности не гарантирует runtime spawn, корректный transform, успешную инициализацию vehicle или отсутствие последующих runtime ошибок. Production остаётся editor-only tooling и не должен использоваться как замена runtime evidence из Test.
 
 ## Bounds pipeline и canonical aggregate
 
-Для envelope preview применяется разделённый bounds pipeline:
+Для выбора представителя голограммы применяется разделённый bounds pipeline:
 
 1. `ME_Vehicle_Bounds_Toolkit` владеет измерением per-prefab AABB и проверкой своего VBT Candidate/Baseline;
 2. `ME_Vehicle_Spawn_Test` потребляет проверенный VBT Candidate, применяет фактические faction/label filters и агрегирует bounds по faction и catalog labels;
@@ -137,7 +137,7 @@ Canonical aggregate resource имеет путь:
 {1C3AE4A8F2630BF7}Configs/Generated/ME_VehicleBoundsSnapshot.conf
 ```
 
-Этот ресурс нужен для консервативного editor envelope и не является runtime collision model или доказательством spawn. Schema, generator workflow, Candidate/Baseline checks и проверка детерминированности описаны отдельно в `ME_Vehicle_Spawn_Test/VEHICLE_BOUNDS_REGRESSION.md`; здесь они не дублируются.
+Production использует свой GUID `{E3738ADB51674DA6}` для того же пути конфига. Схема 6 хранит консервативные границы и prefab кандидата с наибольшей площадью для каждого типа; ресурс не является runtime collision model или доказательством spawn. Generator workflow, Candidate/Baseline checks и проверка детерминированности описаны отдельно в `ME_Vehicle_Spawn_Test/VEHICLE_BOUNDS_REGRESSION.md`.
 
 ## Test diagnostics и evidence
 
@@ -200,10 +200,10 @@ Markdown-изменения этого справочника не требую�
 | `ProcessSpawnpoint` вызван | point была обработана update loop | обработка завершилась spawn |
 | include/exclude filter вернул entries | есть catalog candidates для текущего filter context | конкретный runtime prefab обязательно создастся |
 | `FindEmptyTerrainPosition` вернул `true` | helper нашёл подходящий candidate position в своих ограничениях | `SpawnEntityPrefabEx` создаст vehicle на transform точки |
-| Shape зелёный или envelope не пересекает видимые объекты | editor preflight не нашёл соответствующую проблему | runtime collision, physics, network и initialization гарантированно пройдут |
+| Голограмма белая | editor preflight не нашёл явную ошибку фильтра или поиска свободной позиции | runtime collision, physics, network и initialization гарантированно пройдут |
 | `GetOnVehicleSpawned` получил `Vehicle` | vehicle entity была создана этим ambient flow | она будет исправна во всех последующих кадрах и для всех условий |
 
-Каноническая формулировка для документации и сообщений: editor diagnostics показывают отсутствие или наличие известных предпосылок и геометрических подозрений; runtime callback подтверждает конкретное завершённое создание. Ни registration, ни catalog match, ни `FindEmptyTerrainPosition`, ни Shape, ни conservative envelope не являются гарантией runtime spawn.
+Каноническая формулировка для документации и сообщений: editor diagnostics показывают отсутствие или наличие известных предпосылок и геометрических подозрений; runtime callback подтверждает конкретное завершённое создание. Ни registration, ни catalog match, ни `FindEmptyTerrainPosition`, ни голограмма не являются гарантией runtime spawn.
 
 ## Связанные документы
 
@@ -217,7 +217,7 @@ Markdown-изменения этого справочника не требую�
 
 ## Справочники каталогов в production
 
-В Configs/Generated добавлен ME_EditableEntityLabelsSnapshot.conf (схема 2, каталоги CIV/FIA/US/USSR игры 1.8.0.13) с классами сериализации. ME_VehicleBoundsSnapshot.conf и его reader перенесены на схему 5 с группами фракций; production GUID габаритов сохранён. Инструкция: [VEHICLE_CATALOG_REFERENCE.md](../ME_Vehicle_Spawn/VEHICLE_CATALOG_REFERENCE.md). Справочник меток помогает интерпретировать include/exclude, но не заменяет текущий каталог и не гарантирует runtime-спавн. Пользователь подтвердил проверку переноса в production Workbench 24.09.2026.
+ME_EditableEntityLabelsSnapshot.conf остаётся справочником меток схемы 2 для каталогов CIV/FIA/US/USSR игры 1.8.0.13. ME_VehicleBoundsSnapshot.conf обновлён до схемы 6 с представителем каждого типа; production GUID сохранён. Инструкция: [VEHICLE_CATALOG_REFERENCE.md](../ME_Vehicle_Spawn/VEHICLE_CATALOG_REFERENCE.md). Справочники не заменяют текущий каталог и не гарантируют runtime spawn. Пользователь подтвердил проверку новой схемы в production Workbench 05.10.2026.
 
 
-Production обновлён: пересечения со статическими объектами проверяются по локальным границам модели с мировым transform (OBB); препятствия отмечены ориентированным красным каркасом. Пересечение OBB — WARNING с просьбой перепроверить размещение. Неудачный поиск свободной позиции — отдельный ERROR, пересечение сфер точек остаётся ERROR. Это редакторская диагностика, не гарантия результата runtime-спавна. Проверка текущего переноса в production Workbench подтверждена пользователем 24.09.2026.
+Пересечения со статическими объектами проверяются по локальным границам модели с мировым transform (OBB); препятствия отмечены ориентированным красным каркасом. Пересечение OBB и областей двух точек — WARNING с просьбой перепроверить размещение. Неудачный поиск свободной позиции — отдельный ERROR. Это редакторская диагностика, не гарантия результата runtime spawn. Пользователь подтвердил новый интерфейс и форматирование пассажирских меток в production Workbench 05.10.2026.
